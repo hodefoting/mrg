@@ -1,0 +1,68 @@
+<html>
+  <head><title>MicroRaptor Gui</title>
+    <style type='text/css'>
+      @import url("mrg.css");
+    </style>
+  </head>
+  <body>
+    <h1>Todo</h1>
+    <ul>
+      <li>fix undesired initial linewrap when tight on space</li>
+      <li>add keybindings display</li>
+      <li>make cursor work along with hover.. 
+          set cursor on each detected hover?.. 
+          some way of figuring out this needs to happen..</li>
+      <li>do immediate re-render if geo is unstable, or a better way to queue
+      things up?</li>
+      <li>add a paginated PDF output mode?</li>
+    </ul>
+    <h3>compositor</h3>
+    <ul>
+      <li>use process internal mrg first (needs idle mechanism..)</li>
+      <li>use ufb like mmaped framebuffers, for some clients bringing
+      linking dependencies down to practically 0</li>
+    </ul>
+
+    <h3>CSS</h3>
+    <ul>
+      <li>screen height percentage %vh %vw</li>
+      <li>trigger rerender for hover on enter/leave? </li>
+    </ul>
+
+    <h3>SVG</h3>
+    <ul>
+      <li>circle</li>
+      <li>more path commands</li>
+      <li>gradients (definitions)</li>
+    </ul>
+    <h3>events</h3>
+    <ul>
+      <li>interleaved drags with different buttons</li>
+    </ul>
+    <h3>browser chrome</h3>
+    <ul>
+      <li>back/forward buttons</li>
+      <li>reload?</li>
+      <li>download</li>
+    </ul>
+    <h3>whishlist</h3>
+    <ul>
+      <li>css image background</li>
+      <li>express printing of symbols or not through CSS</li>
+      <li>fixed table layout, based on first row like in <a
+  href='http://www.w3.org/TR/CSS2/tables.html#fixed-table-layout'>CSS2.1 spec
+  fixed table layout.</a></li>
+    </ul>
+    <div class='navbar_wrap'>
+      <div class='navbar'>
+        <a href='mrg.html'>mrg</a>
+        <a href='events.html'>events</a>
+        <a href='bindings.html'>bindings</a>
+        <a href='css.html'>CSS</a>
+        <a href='xhtml.html'>XHTML</a>
+        <a href='svg.html'>SVG</a>
+        <a href='todo.html'>todo</a>
+      </div>
+    </div>
+  </body>
+</html>

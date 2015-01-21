@@ -1,0 +1,2 @@
+source: horiz-dist.html
+command:  ../examples/browser horiz-dist.html -o output/horiz-dist.png

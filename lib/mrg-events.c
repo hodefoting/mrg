@@ -1,0 +1,524 @@
+/* mrg - MicroRaptor Gui
+ * Copyright (c) 2014 Øyvind Kolås <pippin@hodefoting.com>
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "mrg-internal.h"
+
+void mrg_clear (Mrg *mrg)
+{
+  if (mrg->frozen)
+    return;
+  mrg_list_free (&mrg->items);
+  if (mrg->backend->mrg_clear)
+    mrg->backend->mrg_clear (mrg);
+
+  _mrg_clear_bindings (mrg);
+}
+
+MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
+{
+  MrgList *a;
+
+  if (type == MRG_KEY_DOWN ||
+      type == MRG_KEY_UP ||
+      type == (MRG_KEY_DOWN|MRG_KEY_UP))
+  {
+    for (a = mrg->items; a; a = a->next)
+    {
+      MrgItem *item = a->data;
+      if (item->types & type)
+        return item;
+    }
+    return NULL;
+  }
+
+  for (a = mrg->items; a; a = a->next)
+  {
+    MrgItem *item= a->data;
+  
+    double u, v;
+    u = x;
+    v = y;
+
+#if MRG_CAIRO
+    cairo_matrix_transform_point (&item->inv_matrix, &u, &v);
+#endif
+
+    if (u >= item->x0 && v >= item->y0 &&
+        u <  item->x1 && v <  item->y1 &&
+        item->types & type)
+      return item;
+  }
+  return NULL;
+}
+
+static int rectangle_equal (MrgItem *a, MrgItem *b)
+{
+  return a->x0 == b->x0 &&
+         a->y0 == b->y0 &&
+         a->x1 == b->x1 &&
+         a->y1 == b->y1 
+#if MRG_CAIRO
+         && !memcmp (&a->inv_matrix, &b->inv_matrix, sizeof (a->inv_matrix))
+#endif
+         ;
+}
+
+void _mrg_item_ref (MrgItem *mrgitem)
+{
+  if (mrgitem->ref_count < 0)
+  {
+    fprintf (stderr, "EEEEK!\n");
+  }
+  mrgitem->ref_count++;
+}
+void _mrg_item_unref (MrgItem *mrgitem)
+{
+  if (mrgitem->ref_count <= 0)
+  {
+    fprintf (stderr, "EEEEK!\n");
+    return;
+  }
+  mrgitem->ref_count--;
+  if (mrgitem->ref_count <=0)
+  {
+    {
+      int i;
+      for (i = 0; i < mrgitem->cb_count; i++)
+      {
+        if (mrgitem->cb[i].finalize)
+          mrgitem->cb[i].finalize (mrgitem->cb[i].data1, mrgitem->cb[i].data2,
+                                   mrgitem->cb[i].finalize_data);
+      }
+    }
+    free (mrgitem);
+  }
+}
+
+void mrg_listen (Mrg     *mrg,
+                 MrgType  types,
+                 float   x,
+                 float   y,
+                 float   width,
+                 float   height,
+                 MrgCb    cb,
+                 void*    data1,
+                 void*    data2)
+{
+  if (types == MRG_DRAG_MOTION)
+    types = MRG_DRAG_MOTION | MRG_DRAG_PRESS;
+  return mrg_listen_full (mrg, types, x, y, width, height, cb, data1, data2,
+                          NULL, NULL);
+}
+
+void mrg_listen_full (Mrg     *mrg,
+                      MrgType  types,
+                      float   x,
+                      float   y,
+                      float   width,
+                      float   height,
+                      MrgCb    cb,
+                      void    *data1,
+                      void    *data2,
+                      void   (*finalize)(void *listen_data, void *listen_data2, void *finalize_data),
+                      void    *finalize_data)
+{
+  if (!mrg->frozen)
+  {
+    MrgItem *item;
+
+    if (y > mrg->height * 2 ||
+        x > mrg->width * 2 ||
+        x < -mrg->width ||
+        y < -mrg->height)
+    {
+      if (finalize)
+        finalize (data1, data2, finalize_data);
+      return;
+    }
+    
+    item = calloc (sizeof (MrgItem), 1);
+    item->x0 = x;
+    item->y0 = y;
+    item->x1 = x + width;
+    item->y1 = y + height;
+    item->cb[0].types = types;
+    item->cb[0].cb = cb;
+    item->cb[0].data1 = data1;
+    item->cb[0].data2 = data2;
+    item->cb[0].finalize = finalize;
+    item->cb[0].finalize_data = finalize_data;
+    item->cb_count = 1;
+    item->types = types;
+#if MRG_CAIRO
+    cairo_get_matrix (mrg_cr (mrg), &item->inv_matrix);
+    cairo_matrix_invert (&item->inv_matrix);
+#endif
+
+    if (mrg->items)
+    {
+      MrgList *l;
+      for (l = mrg->items; l; l = l->next)
+      {
+        MrgItem *item2 = l->data;
+        if (rectangle_equal (item, item2))
+        {
+          /* found an item, copy over cb data  */
+          item2->cb[item2->cb_count] = item->cb[0];
+          free (item);
+          item2->cb_count++;
+          item2->types |= types;
+          return;
+        }
+      }
+    }
+    item->ref_count = 1;
+    mrg_list_prepend_full (&mrg->items, item, (void*)_mrg_item_unref, NULL);
+    //mrg_list_append (&mrg->items, item);
+  }
+}
+
+
+static int
+_mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, float y)
+{
+  static MrgEvent s_event;
+  MrgEvent transformed_event;
+  int i;
+
+  if (!event)
+  {
+    event = &s_event;
+    event->mrg = mrg;
+    event->type = type;
+    event->x = x;
+    event->y = y;
+  }
+  transformed_event = *event;
+  transformed_event.device_x = event->x;
+  transformed_event.device_y = event->y;
+
+#if MRG_CAIRO
+  {
+    double tx, ty;
+    tx = transformed_event.x;
+    ty = transformed_event.y;
+  cairo_matrix_transform_point (&item->inv_matrix, &tx, &ty);
+    transformed_event.x = tx;
+    transformed_event.y = ty;
+    tx = transformed_event.delta_x;
+    ty = transformed_event.delta_y;
+  cairo_matrix_transform_distance (&item->inv_matrix, &tx, &ty);
+    transformed_event.delta_x = tx;
+    transformed_event.delta_y = ty;
+  }
+#endif
+
+  event = &transformed_event;
+
+  for (i = item->cb_count-1; i >= 0; i--)
+  {
+    if (item->cb[i].types & (type))
+    {
+      int val = item->cb[i].cb (event, item->cb[i].data1, item->cb[i].data2);
+      if (val)
+        return val;
+    }
+  }
+  return 0;
+}
+
+static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type)
+{
+  MrgItem *current = _mrg_detect (mrg, x, y, MRG_ANY);
+
+  if (mrg->prev == NULL || current == NULL || !rectangle_equal (current, mrg->prev))
+  {
+    int focus_radius = 2;
+    if (current)
+      _mrg_item_ref (current);
+
+    if (mrg->prev)
+    {
+      {
+        MrgRectangle rect = {floor(mrg->prev->x0-focus_radius),
+                             floor(mrg->prev->y0-focus_radius),
+                             ceil(mrg->prev->x1)-floor(mrg->prev->x0) + focus_radius * 2,
+                             ceil(mrg->prev->y1)-floor(mrg->prev->y0) + focus_radius * 2};
+        mrg_queue_draw (mrg, &rect);
+      }
+
+      _mrg_emit_cb (mrg, mrg->prev, NULL, MRG_LEAVE, x, y);
+      _mrg_item_unref (mrg->prev);
+      mrg->prev = NULL;
+    }
+    if (current)
+    {
+      {
+        MrgRectangle rect = {floor(current->x0-focus_radius),
+                             floor(current->y0-focus_radius),
+                             ceil(current->x1)-floor(current->x0) + focus_radius * 2,
+                             ceil(current->y1)-floor(current->y0) + focus_radius * 2};
+        mrg_queue_draw (mrg, &rect);
+      }
+      _mrg_emit_cb (mrg, current, NULL, MRG_ENTER, x, y);
+      mrg->prev = current;
+    }
+  }
+  current = _mrg_detect (mrg, x, y, type);
+  return current;
+}
+
+
+int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
+{
+  MrgItem *mrg_item = _mrg_update_item (mrg, x, y, MRG_PRESS | MRG_DRAG_PRESS);
+  mrg->pointer_x = x;
+  mrg->pointer_y = y;
+
+  mrg->drag_event.type = MRG_PRESS;
+  mrg->drag_event.x = mrg->drag_event.start_x = mrg->drag_event.prev_x = x;
+  mrg->drag_event.y = mrg->drag_event.start_y = mrg->drag_event.prev_y = y;
+  mrg->drag_event.delta_x = mrg->drag_event.delta_y = 0;
+  mrg->drag_event.device_no = device_no;
+
+  if (mrg->pointer_down[device_no] == 1)
+  {
+    fprintf (stderr, "device %i already doen\n", device_no);
+  }
+  mrg->pointer_down[device_no] = 1;
+
+
+  if (mrg_item && (mrg_item->types & MRG_DRAG))
+  {
+    mrg->is_press_grabbed = 1;
+    _mrg_item_ref (mrg_item);
+    if (mrg->grab)
+      _mrg_item_unref (mrg->grab);
+    mrg->grab = mrg_item;
+    mrg->drag_event.type = MRG_DRAG_PRESS;
+  }
+
+  mrg_queue_draw (mrg, NULL); /* in case of style change */
+
+  if (mrg_item)
+  {
+    return _mrg_emit_cb (mrg, mrg_item, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_PRESS:MRG_PRESS, x, y);
+  }
+
+  return 0;
+}
+
+void mrg_resized (Mrg *mrg, int width, int height)
+{
+  MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_KEY_DOWN);
+  
+  mrg->drag_event.mrg = mrg;
+  mrg->drag_event.type = MRG_KEY_DOWN;
+  mrg->drag_event.key_name = "resize-event";
+
+  if (item)
+  {
+    _mrg_emit_cb (mrg, item, &mrg->drag_event, MRG_KEY_DOWN, 0, 0);
+  }
+}
+
+int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
+{
+  MrgItem *mrg_item;
+  int was_grabbed = 0;
+  mrg->drag_event.type = MRG_RELEASE;
+  mrg->drag_event.x = x;
+  mrg->drag_event.mrg = mrg;
+  mrg->drag_event.y = y;
+  mrg->drag_event.device_no = device_no;
+
+  mrg_queue_draw (mrg, NULL); /* in case of style change */
+
+  if (mrg->pointer_down[device_no] == 0)
+  {
+    fprintf (stderr, "device %i already up\n", device_no);
+  }
+  mrg->pointer_down[device_no] = 0;
+
+  mrg->pointer_x = x;
+  mrg->pointer_y = y;
+
+  if (mrg->is_press_grabbed)
+  {
+    mrg->drag_event.type = MRG_DRAG_RELEASE;
+    mrg->is_press_grabbed = 0;
+    mrg_item = mrg->grab;
+    was_grabbed = 1;
+  }
+  else
+  {
+    mrg_item = _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE);
+  }
+  if (mrg_item)
+  {
+    return _mrg_emit_cb (mrg, mrg_item, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
+  }
+
+  if (was_grabbed)
+  {
+    _mrg_item_unref (mrg->grab);
+    mrg->grab = NULL;
+  }
+  return 0;
+}
+
+int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
+{
+  MrgItem   *mrg_item;
+
+  mrg->drag_event.type = MRG_MOTION;
+  mrg->drag_event.mrg = mrg;
+  mrg->drag_event.x = x;
+  mrg->drag_event.y = y;
+
+
+  mrg->drag_event.device_no = mrg->pointer_down[1]?1:
+                         mrg->pointer_down[2]?2:
+                         mrg->pointer_down[3]?3:0;
+
+  mrg->pointer_x = x;
+  mrg->pointer_y = y;
+
+  if (mrg->is_press_grabbed)
+  {
+    mrg->drag_event.type = MRG_DRAG_MOTION;
+    mrg_item = mrg->grab;
+  }
+  else
+  {
+    mrg_item = _mrg_update_item (mrg, x, y, MRG_MOTION | MRG_DRAG_MOTION);
+  }
+
+  /* XXX: too brutal; should use enter/leave events */
+  //mrg_queue_draw (mrg, NULL);
+
+  if (mrg_item)
+  {
+    int i;
+    for (i = 0; i < mrg_item->cb_count; i++)
+    {
+      if (mrg_item->cb[i].types & (MRG_DRAG_MOTION | MRG_MOTION))
+      {
+        if (  !(mrg_item->cb[i].types & MRG_DRAG_MOTION) ||
+                mrg->is_press_grabbed)
+        if (_mrg_emit_cb (mrg, mrg_item, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_MOTION:MRG_MOTION, x, y))
+          goto done;
+      }
+    }
+    done:
+    mrg->drag_event.delta_x = x - mrg->drag_event.prev_x;
+    mrg->drag_event.delta_y = y - mrg->drag_event.prev_y;
+    mrg->drag_event.prev_x = x;
+    mrg->drag_event.prev_y = y;
+    return 1;
+  }
+  return 0;
+}
+
+int mrg_key_press (Mrg *mrg, unsigned int keyval,
+                   const char *string)
+{
+  MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_KEY_DOWN);
+
+  /* XXX: shouldn't only be a detect,.. it should iterate through _all_
+   * keybindings
+   */
+
+  /* XXX: there will also be a bug with more than 8 0,0,0,0 bindings
+   * registered
+   */
+
+  if (item)
+  {
+    int i;
+    mrg->drag_event.mrg = mrg;
+    mrg->drag_event.type = MRG_KEY_DOWN;
+    mrg->drag_event.unicode = keyval; 
+    mrg->drag_event.key_name = string;
+
+    for (i = 0; i < item->cb_count; i++)
+    {
+      if (item->cb[i].types & (MRG_KEY_DOWN))
+      {
+        if (item->cb[i].cb (&mrg->drag_event, item->cb[i].data1, item->cb[i].data2))
+          return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+void mrg_freeze           (Mrg *mrg)
+{
+  mrg->frozen ++;
+}
+
+void mrg_thaw             (Mrg *mrg)
+{
+  mrg->frozen --;
+}
+
+float mrg_pointer_x (Mrg *mrg)
+{
+  return mrg->pointer_x;
+}
+
+float mrg_pointer_y (Mrg *mrg)
+{
+  return mrg->pointer_y;
+}
+
+void _mrg_debug_overlays (Mrg *mrg)
+{
+#if MRG_CAIRO
+  MrgList *a;
+  cairo_t *cr = mrg_cr (mrg);
+  cairo_save (cr);
+
+  cairo_set_line_width (cr, 1);
+  cairo_set_source_rgba (cr, 1,0.5,0.5,0.5);
+  for (a = mrg->items; a; a = a->next)
+  {
+    double current_x = mrg_pointer_x (mrg);
+    double current_y = mrg_pointer_y (mrg);
+    MrgItem *item = a->data;
+    cairo_matrix_t matrix = item->inv_matrix;
+
+    cairo_matrix_transform_point (&matrix, &current_x, &current_y);
+
+#if 1
+    if (current_x >= item->x0 && current_x < item->x1 &&
+        current_y >= item->y0 && current_y < item->y1)
+#endif
+    {
+      cairo_matrix_invert (&matrix);
+      cairo_set_matrix (cr, &matrix);
+      cairo_rectangle (cr, item->x0, item->y0,
+                       (item->x1-item->x0),
+                       (item->y1-item->y0));
+      cairo_stroke (cr);
+    }
+  }
+  cairo_restore (cr);
+#endif
+}
+

@@ -1,0 +1,2 @@
+source: svg.html
+command:  ../examples/browser svg.html -o output/svg.png

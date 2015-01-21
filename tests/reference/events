@@ -1,0 +1,2 @@
+source: events.html
+command:  ../examples/browser events.html -o output/events.png

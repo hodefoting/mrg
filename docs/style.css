@@ -1,0 +1,100 @@
+
+
+      body {font-family: Sans; stroke-width:0; margin: 1em;
+      color: #000; background-color: #0000;}
+      p { border: 1px solid green; margin-bottom:1em; text-indent: 1em; }
+
+      .foo { position: fixed; top: 10%; right: 20%; 
+        color: cyan;
+        border-right: .2em solid red;
+        border-bottom: .2em solid red;
+        border-left: .2em solid yellow;
+        background: blue;
+        padding: 1.2em;
+        display: block;
+      }
+
+      .bar {
+        margin:0;left: 0%;
+        background-color:yellow;
+        position: fixed; bottom: 0%; width: 100%;
+      }
+      .barbar {
+        color: red; 
+        padding: 1em;
+        border: 8px solid #999;
+        overflow: hidden;
+      }
+      .bax {
+        border: 2px solid red;
+      }
+      .floatright {
+        float: right;
+        color: rgb(255,235,0);
+        width: 3em;
+        height: 3em;
+        margin-left: 1em;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        padding-top: 0.5em;
+        margin-bottom: 0.5em;
+        margin-top: 0.5em;
+        padding-bottom: 0.5em;
+        border: 2px solid green;
+        display: block;
+      }
+      .cleared{
+        clear: both;
+      }
+
+      .asdf {
+        text-decoration: stroke;
+        -mr-text-decoration-stroke-width: 0.2;
+        float:left;
+        width: 20%;
+        overflow: hidden;
+        font-size: 0.5em;
+        margin-right: 1em;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+        margin-bottom: 0.5em;
+        margin-top: 0.5em;
+        border: 2px solid green;
+        display: block;
+      }
+
+      .floatleft {
+        float: left;
+        width: 3em;
+        height: 3em;
+        margin-right: 1em;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+        margin-bottom: 0.5em;
+        margin-top: 0.5em;
+        border: 2px solid green;
+        display: block;
+      }
+
+#hor1, #hor2, #hor3, #hor4, #hor5, #hor6 {
+  border-top: 10px solid black;
+  border-left: 4px solid yellow;
+  border-right: 8px solid blue;
+  border-bottom: 12px solid green;
+  margin-bottom: 1em;
+  background: blue;
+}
+
+#hor1 { background:red; width: 5em; margin-left: auto; margin-right:auto;}
+#hor2 { background:red; width: 5em; margin-left: auto;}
+#hor3 { background:red; width: 5em; margin-right: auto;}
+#hor4 { background:red; margin-left: 4em;}
+#hor5 { background:red; width: auto; margin-left: auto; margin-right: 4em;}
+#hor6 { background:red; width: auto; margin-right: 4em; margin-left: 4em}
+
+h1 { text-stroke-width: 0.2em; text-stroke-color:rgba(125,0,0,0.1); }
+

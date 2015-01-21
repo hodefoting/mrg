@@ -1,0 +1,2 @@
+source: mrg.html
+command:  ../examples/browser mrg.html -o output/mrg.png

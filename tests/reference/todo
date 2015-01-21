@@ -1,0 +1,2 @@
+source: todo.html
+command:  ../examples/browser todo.html -o output/todo.png

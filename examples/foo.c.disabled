@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2014 Øyvind Kolås <pippin@hodefoting.com>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#define _BSD_SOURCE
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <libgen.h>
+#include "mrg.h"
+
+char *input[][2] =
+{
+  {"",         "bar"},
+  {"foo",      "bar"},
+  {"foo",      "/bar"},
+  {"/foo",     "bar"},
+  {"/foo/",     "bar"},
+  {"/foo/foo", "bar"},
+  {"/foo/foo/", "bar"},
+  {"/foo/foo/aaa", "bar"},
+  {"http://host/foo/baz", "bar"},
+  {"http://host/", "bar"},
+  {"http://host/", "/bar"},
+
+  {"http://host/foo/baz", "/bar"},
+  {"http://host/foo/baz#asdf", "://otherhost/bar"},
+  {"http://host/foo/baz#asdf", "//otherhost/bar"},
+  {"file:///home/foo/bax", "bar#vasd"},
+  {"file:///home/foo/", "bar"},
+  {"file:///home/foo/", "/omm"},
+  {"file:///home/pippin/src/mrg/examples/css.html", "svg.html"},
+  {"http://host:8080/foo/baz", "http://fnord/a/b.css"},
+
+
+  {"http://host:8080/fo/o/baz", "/bar"},
+  {"http://host:8080/fo/o/baz", "bar"},
+  {"http://host:8080/fo/o/baz", "../bar"},
+  {"http://host:8080/fo/o/baz", "../../bar"},
+
+  {"http://host:8080/fo/o/baz/", "/bar"},
+  {"http://host:8080/fo/o/baz/", "bar"},
+  {"http://host:8080/fo/o/baz/", "../bar"},
+  {"http://host:8080/fo/o/baz/", "../../bar"},
+  {"http://host:8080/fo/o/baz", "bar/boo"},
+
+  {"http://host:8080/foo/baz", "/bar"},
+  {"http://host:8080/foo/baz", "bar"},
+  {"http://host:8080/foo/baz", "../bar"},
+  {"http://host:8080/foo/baz", "../../bar"},
+
+  {"http://host:8080/foo/baz/", "/bar"},
+  {"http://host:8080/foo/baz/", "bar"},
+  {"http://host:8080/foo/baz/", "../bar"},
+  {"http://host:8080/foo/baz/", "../../bar"},
+  {"http://host:8080/foo/baz", "bar/boo"},
+  {NULL, NULL}
+};
+
+char *uris[] = {
+  "http://foo.com:23/bar/baz#max",
+  "http://foo/bar/baz",
+  "http://foo:42/bar/",
+  "http://foo/bar",
+  "http://foo/",
+  "http://foo",
+  "http://",
+  "://foo/bar/baz#max",
+  "//foo/bar/baz#max",
+  "//foo/bar/",
+  "//foo/bar",
+  "//foo:23/bar",
+  "//foo/",
+  "/foo/bar/baz",
+  "foo/bar/#moo",
+  "/foo",
+  "foo",
+  "foo/",
+  NULL
+};
+
+
+int split_uri (char *uri,
+               char **protocol,
+               char **host,
+               char **port,
+               char **path,
+               char **fragment);
+
+int main (int argc, char **argv)
+{
+  int i;
+  for (i = 0; uris[i]; i++)
+  {
+    char *tmp = strdup (uris[i]);
+    char *protocol = NULL;
+    char *host = NULL;
+    char *port = NULL;
+    char *path = NULL;
+    char *fragment = NULL;
+    printf ("%s ", tmp);
+
+    split_uri (tmp, &protocol, &host, &port, &path, &fragment);
+    
+    printf ("%s,%s,%s,%s,%s\n", protocol, host, port, path, fragment);
+
+    free (tmp);
+  }
+  for (i = 0; input[i][0]; i++)
+  {
+    printf ("%s - %s = %s\n", input[i][0], input[i][1], 
+        mrg_resolve_uri (input[i][0], input[i][1]));
+  }
+
+  return 0;
+}

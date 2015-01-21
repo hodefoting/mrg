@@ -1,0 +1,64 @@
+/* this is the global microraptor stylesheet, used as a global theme */
+
+document { background-color: #white; }
+tasklist { color: red; display: block; }
+time {
+  display:block;
+  margin-left:auto;
+  width:13em;
+  margin-right:auto;
+}
+terminal {
+  background-color: #000;
+  color: white;
+  position:fixed;
+  top:0;
+  padding:0.5em;
+  font-family:monospace;
+  font-size:11;
+}
+ 
+calendar-wrap {
+  display:block;
+  height: 5em;
+  absolute:  /* bug! */
+  top: 10px;
+  left:0;
+}
+
+calendar {
+  display:block;
+  margin-left:auto;width:14em;
+  color:white;color:white;text-background:black;text-stroke:2px #0007;
+  margin-right:auto;
+  font-family:monospace;
+}
+  
+header {
+  display:block;
+  width: 100%;
+  margin-top:-0.6em;
+  background: black;
+  line-height: 1.0;
+  color:white;
+  font-size: 12px; 
+}
+
+applications {
+  border:0;width:4em;float:left;color:white; margin-top:0.2em;padding-left: 0. 2em;} 
+
+close      { border:0;width:1em;float:right;color: black; margin-top:0.2em;padding-left: 0.2em;
+}
+max        { width:1em;float:right;color: black; border:0.7px solid black; margin-top:0.2em;0.   4em;}
+
+client     { border: 1px solid #777; display:block;position:absolute;}
+
+title      { padding-left: 0.2em; 
+  display:block;position:fixed;background:#eee; color: #666;
+  font-size: 12px;padding-top:0.4em; }
+client.focused title { color: black; }
+dir        { border: 1px solid blue; }
+
+entry      { display: block; width: 40%; }
+entry.dir  { color: red }
+entry size { float: right; }

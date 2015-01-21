@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   version="1.0"
+   width="744.09448"
+   height="1052.3622"
+   id="svg2">
+
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4">
+    <linearGradient
+       id="linearGradient2047">
+      <stop
+         id="stop2049"
+         style="stop-color:#000000;stop-opacity:1"
+         offset="0" />
+      <stop
+         id="stop2051"
+         style="stop-color:#000000;stop-opacity:0"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       x1="-8.0449543"
+       y1="384.60239"
+       x2="516.3194"
+       y2="384.60239"
+       id="linearGradient2053"
+       xlink:href="#linearGradient2047"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     transform="matrix(0.58566323,0,0,0.58566323,-3.3333202,38.943483)"
+     id="layer1">
+    <path
+       d="m 81.428574,256.64791 c 0,0 -78.5714241,52.85714 -84.2857159,148.57142 C -8.0568223,491.01397 100,588.07648 100,588.07648 c 0,0 94.28572,94.28572 142.85715,-8.57143 48.57142,-102.85714 68.57142,-268.57143 160,-231.42857 91.42857,37.14286 140,-42.85714 85.71428,-85.71429 C 434.28572,219.50505 170.00001,5.2193171 152.85714,146.64791 c -6.6132,54.5589 -71.428566,110 -71.428566,110 z"
+       id="path1306"
+       style="fill:url(#linearGradient2053);fill-opacity:1;fill-rule:evenodd;stroke:#00fb00;stroke-width:10.01200008;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <rect
+       width="360"
+       height="280"
+       x="330"
+       y="639.505"
+       id="rect2037"
+       style="fill:#90db00;fill-opacity:1;stroke:none" />
+  </g>
+</svg>

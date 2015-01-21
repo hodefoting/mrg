@@ -1,0 +1,45 @@
+
+<html><head><title>using css in immediate mode drawing</title>
+    <style>
+      body {font-family: Sans; margin: 1em;
+      }
+      p, div{ background-color:#f005; padding-bottom: 0.5em; }
+      #navbar {
+        color: red; 
+        background-color:#ff18;
+        border: 8px solid #999;
+        margin:0;left: 0%;
+        padding-bottom: 1em;
+        position: fixed; height: 4em; bottom: 0%; width: 100%;
+      }
+      tt { color: green; }
+    </style>
+    </head>
+    <body>
+      <h1>MicroRaptor Gui</h1>
+      <p>MicroRaptor provides CSS based means of controlling the appearance of
+      text, and other properties of your user interface. </p>
+
+      <p>Instead of associating the css styling information with render-nodes,
+      microraptor gui associates it with a stack of rendering styles. While
+      drawing you have access to the values of the style currently computed
+      from the CSS stylesheet in the struct you get a pointer to with
+      <tt>MrgStyle *mrg_style(mrg);</tt>.
+      To push
+      a new context onto this stack use <tt>mrg_start (mrg, "div");</tt>, each
+      such context should be closed with <tt>mrg_end (mrg);</tt>. The pairing
+      of mrg_start and mrg_end calls should correspond with cairo calls.</p>
+
+
+      <h2>Short-comings (of HTML4 renderer)</h2>
+      <p>There is no respect for CSS <em>z-index</em>; paint order is document
+      order. Global controls should be added / painted last.</p>
+      <p>no <em>table</em> tag ... for now</p>
+      <div id='navbar'>
+        navbar
+      </div>
+
+    </body>
+</html>
+
+

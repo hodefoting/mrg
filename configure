@@ -1,0 +1,85 @@
+#!/bin/sh
+
+# this configure script is a sanity check, not really a configurator
+#
+
+# buildapi-variable-no-builddir
+# buildapi-variable-supports-runtime-devel
+
+LIB_PKGMODULES='mmm'
+
+if ( grep 'MRG_CAIRO 1' lib/mrg-config.h > /dev/null ); then 
+  LIB_PKGMODULES=$LIB_PKGMODULES" cairo"
+fi
+grep 'MRG_GTK 1' lib/mrg-config.h > /dev/null && LIB_PKGMODULES=$LIB_PKGMODULES" gtk+-3.0"
+
+
+# if there is no config file, perhaps do auto-detect for pkg-config?
+
+echo > config
+while [ "$1" ] ; do
+
+  if ( echo $1 | grep "^--disable-cairo" > /dev/null ); then
+    cat lib/mrg-config.h | sed 's/define MRG_CAIRO.*/define MRG_CAIRO 0/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/cairo//`
+  fi
+
+  if ( echo $1 | grep "^--enable-cairo"  > /dev/null ); then
+    cat lib/mrg-config.h | sed 's/define MRG_CAIRO.*/define MRG_CAIRO 1/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/cairo//`
+    LIB_PKGMODULES=$LIB_PKGMODULES" cairo"
+  fi
+
+  if ( echo $1 | grep "^--disable-gtk" > /dev/null ); then
+    cat lib/mrg-config.h | sed 's/define MRG_GTK.*/define MRG_GTK 0/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/gtk+-3.0//`
+  fi
+
+  if ( echo $1 | grep "^--enable-gtk"  > /dev/null ); then
+    cat lib/mrg-config.h | sed 's/define MRG_GTK.*/define MRG_GTK 1/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/gtk+-3.0//`
+    LIB_PKGMODULES=$LIB_PKGMODULES" gtk+-3.0"
+  fi
+
+  if ( echo $1 | grep "^--prefix=" > /dev/null ); then
+    echo PREFIX=`echo $1 | sed 's/^--prefix=//'` >> config
+  fi
+  if ( echo $1 | grep "^--libdir=" > /dev/null ); then
+    echo LIBDIR=`echo $1 | sed 's/^--libdir=//'` >> config
+  fi
+  if ( echo $1 | grep "^CFLAGS=" > /dev/null ); then
+    echo CFLAGS=`echo $1 | sed 's/^CFLAGS=//'` >> config
+  fi
+  if ( echo $1 | grep "^CXXFLAGS=" > /dev/null ); then
+    echo CXXFLAGS=`echo $1 | sed 's/^CXXFLAGS=//'` >> config
+  fi
+
+  if [ "x$1" = "x--help" ]; then
+    echo ""
+    echo "Usage:"
+    echo "  ./configure [--prefix=/opt] [--libdir=/lib] [CFLAGS='-Ofast'] [CXXFLAGS='..']"
+    echo " Dependency options:"
+    echo "   --enable-cairo --disable-cairo"
+    echo "   --enable-gtk --disable-gtk"
+    exit 0
+  fi
+
+  shift;
+done
+
+echo LIB_PKGMODULES=`echo $LIB_PKGMODULES` >> config
+
+echo The configure script for `make _name`
+echo ""
+echo "checking for dependencies"
+
+deps='pkg-config make sed grep'
+for a in $deps;do which $a > /dev/null || ( echo "$a missing"; exit);done
+
+make _pkgtest || exit
+echo ""
+echo "dependencies: "$LIB_PKGMODULES

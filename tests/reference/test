@@ -1,0 +1,2 @@
+source: test.html
+command:  ../examples/browser test.html -o output/test.png

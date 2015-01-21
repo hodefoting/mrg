@@ -1,0 +1,2 @@
+source: nth-child.html
+command:  ../examples/browser nth-child.html -o output/nth-child.png

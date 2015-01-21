@@ -1,0 +1,61 @@
+<html><head><title>MicroRaptor Gui</title>
+    <style>
+      @import url("mrg.css");
+    </style>
+    </head>
+    <body>
+      <h1>MicroRaptor Gui</h1>
+      
+      <p>MicroRaptor Gui is a C API for creating user interfaces, it can be
+      used as an application writing environment or as an interactive canvas
+      for part of a larger interface.</p>
+
+      <p>Drawing with microraptor is done using <a
+        href='http://cairographics.org/'>cairo</a>. Interspersed with the
+      cairo drawing calls you can register motion, press and drag <a
+        href='events.html'>pointer
+        event</a> callbacks rectangles for the drawn scene.
+
+      <a href='bindings.html'>Key bindings</a> are also registered while/after
+      drawing.  For control over styling (and positioning) of text and other
+      elements micro raptor uses <a href='css.html'>CSS</a>/<a
+        href='xhtml.html'>XHTML</a>, in mrg
+      pushing and popping named style contexts corresponds to the nesting
+      hierarchy of a DOM.</p>
+
+      <h3>Backends / dependencies</h3>
+
+      <p>MicroRaptor Gui has three <span style="font-size:0.8em;">independent</span> backends it can use, SDL-1.2,
+      GTK+-3.0 and ANSI/vt100 terminals, the GTK backend provides both full
+      application hosting, and a widget for use as a canvas in
+      GTK+applications. The terminal backends has mouse support, is utf8
+      native and for simple text-centric applications you can even build
+      static libraries skipping even the cairo support.</p>
+      
+      <h3>Immediate mode UIs</h3>
+      <p>
+      In terms of programming paradigm, microraptor contains aspects of 
+      both traditional retained widget-tree/scene-graph ui's and 
+      <a href="http://iki.fi/sol/imgui/">(purist) immediate mode uis</a>.
+      Since microraptor doesn't have a retained scenegraph, and some of
+      the freedoms gained with <em>imgui</em>, like being able to paint
+      incrementally directly from data-structures are also gained
+      with microraptor.
+      </p>
+      
+      <div class='navbar_wrap'>
+        <div class='navbar'>
+          <a href='mrg.html'>mrg</a>
+          <a href='events.html'>events</a>
+          <a href='bindings.html'>bindings</a>
+          <a href='css.html'>CSS</a>
+          <a href='xhtml.html'>XHTML</a>
+          <a href='svg.html'>SVG</a>
+          <a href='todo.html'>todo</a>
+        </div>
+      </div>
+
+    </body>
+</html>
+
+
