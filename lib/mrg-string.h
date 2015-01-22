@@ -16,7 +16,7 @@
  */
 
 #ifndef MRG_STRING_H
-#define mrg_STRING_H
+#define MRG_STRING_H
 
 typedef struct _MrgString MrgString;
 

@@ -271,8 +271,8 @@ void _mrg_set_clean  (Mrg *mrg)
   mrg->dirty.height = 0;
 }
 
-void  mrg_set_ui           (Mrg *mrg, void (*ui)(Mrg *mrg, void *ui_data),
-                                      void *ui_data)
+void  mrg_set_ui (Mrg *mrg, void (*ui)(Mrg *mrg, void *ui_data),
+                  void *ui_data)
 {
   mrg->ui_update = ui;
   mrg->user_data = ui_data;
@@ -323,22 +323,28 @@ cairo_t *mrg_cr (Mrg *mrg)
 static long  frame_start;
 static long  frame_end;
 
-
 int  _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2);
 void mrg_text_edit_bindings (Mrg *mrg);
 void mrg_focus_bindings (Mrg *mrg);
 
-
 typedef struct IdleCb {
   int (*cb) (Mrg *mrg, void *idle_data);
   void *idle_data;
+  int   ticks_remaining;
+  int   is_idle;
+  int   id;
 } IdleCb;
 
+static long prev_ticks = 0;
 
 void _mrg_idle_iteration (Mrg *mrg)
 {
   MrgList *l;
   MrgList *to_remove = NULL;
+  long ticks = _mrg_ticks ();
+  long tick_delta = ticks - prev_ticks;
+  prev_ticks = ticks;
+
   if (!mrg->idles)
   {
     return;
@@ -347,8 +353,14 @@ void _mrg_idle_iteration (Mrg *mrg)
   {
     IdleCb *item = l->data;
 
-    if (!item->cb (mrg, item->idle_data))
-      mrg_list_prepend (&to_remove, item);
+    if (item->ticks_remaining >= 0)
+      item->ticks_remaining -= tick_delta;
+
+    if (item->ticks_remaining < 0)
+    {
+      if (item->cb (mrg, item->idle_data) == FALSE)
+        mrg_list_prepend (&to_remove, item);
+    }
   }
   for (l = to_remove; l; l = l->next)
     mrg_list_remove (&mrg->idles, l->data);
@@ -627,6 +639,7 @@ void  mrg_set_edge_top (Mrg *mrg, float val)
   mrg_set_xy (mrg, _mrg_dynamic_edge_left (mrg) + mrg_style(mrg)->text_indent
       , mrg->state->edge_top + mrg_em (mrg));
 }
+
 float mrg_edge_top (Mrg *mrg)
 {
   return mrg->state->edge_top;
@@ -719,8 +732,42 @@ void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
               mrg_mrg_motion, mrg, NULL);
   mrg_listen (mrg2, MRG_RELEASE, 0, 0, mrg_width (mrg), mrg_height (mrg),
               mrg_mrg_release, mrg, NULL);
+
   cairo_restore (cr);
 #endif
+}
+
+void mrg_remove_idle (Mrg *mrg, int handle)
+{
+  MrgList *l;
+  MrgList *to_remove = NULL;
+
+  if (!mrg->idles)
+  {
+    return;
+  }
+  for (l = mrg->idles; l; l = l->next)
+  {
+    IdleCb *item = l->data;
+    if (item->id == handle)
+      mrg_list_prepend (&to_remove, item);
+  }
+  for (l = to_remove; l; l = l->next)
+    mrg_list_remove (&mrg->idles, l->data);
+}
+
+int mrg_add_timeout (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
+{
+  IdleCb *item = calloc (sizeof (IdleCb), 1);
+  item->cb = idle_cb;
+  item->idle_data = idle_data;
+  item->id = ++mrg->idle_id;
+  item->ticks_remaining = ms * 1000;
+  mrg_list_append (&mrg->idles, item);
+
+  /* XXX: should return a handle that can be used for removal */
+
+  return item->id;
 }
 
 int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
@@ -728,9 +775,19 @@ int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idl
   IdleCb *item = calloc (sizeof (IdleCb), 1);
   item->cb = idle_cb;
   item->idle_data = idle_data;
+  item->id = ++mrg->idle_id;
+  item->ticks_remaining = -1;
+  item->is_idle = 1;
   mrg_list_append (&mrg->idles, item);
-  return 1;
+
+  /* XXX: should return a handle that can be used for removal */
+
+  return item->id;
 }
+
+
+
+
 
 void  mrg_set_position  (Mrg *mrg, int x, int y)
 {

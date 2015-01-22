@@ -139,15 +139,27 @@ void mrg_listen_full (Mrg     *mrg,
   if (!mrg->frozen)
   {
     MrgItem *item;
+#if MRG_CAIRO
+    cairo_t *cr = mrg_cr (mrg);
+#endif
 
-    if (y > mrg->height * 2 ||
-        x > mrg->width * 2 ||
-        x < -mrg->width ||
-        y < -mrg->height)
+    /* early bail for listeners outside screen  */
     {
-      if (finalize)
-        finalize (data1, data2, finalize_data);
-      return;
+      double tx = x;
+      double ty = y;
+
+#if MRG_CAIRO
+      cairo_user_to_device (cr, &tx, &ty);
+#endif
+      if (ty > mrg->height * 2 ||
+          tx > mrg->width * 2 ||
+          tx < -mrg->width * 2 ||
+          ty < -mrg->height * 2)
+      {
+        if (finalize)
+          finalize (data1, data2, finalize_data);
+        return;
+      }
     }
     
     item = calloc (sizeof (MrgItem), 1);
@@ -164,7 +176,7 @@ void mrg_listen_full (Mrg     *mrg,
     item->cb_count = 1;
     item->types = types;
 #if MRG_CAIRO
-    cairo_get_matrix (mrg_cr (mrg), &item->inv_matrix);
+    cairo_get_matrix (cr, &item->inv_matrix);
     cairo_matrix_invert (&item->inv_matrix);
 #endif
 
@@ -174,6 +186,8 @@ void mrg_listen_full (Mrg     *mrg,
       for (l = mrg->items; l; l = l->next)
       {
         MrgItem *item2 = l->data;
+
+        /* reuse previous rectangles, when they are exactly the same */
         if (rectangle_equal (item, item2))
         {
           /* found an item, copy over cb data  */
@@ -187,10 +201,8 @@ void mrg_listen_full (Mrg     *mrg,
     }
     item->ref_count = 1;
     mrg_list_prepend_full (&mrg->items, item, (void*)_mrg_item_unref, NULL);
-    //mrg_list_append (&mrg->items, item);
   }
 }
-
 
 static int
 _mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, float y)
@@ -281,7 +293,6 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type)
   current = _mrg_detect (mrg, x, y, type);
   return current;
 }
-
 
 int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
 {

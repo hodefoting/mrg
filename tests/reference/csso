@@ -1,2 +1,2 @@
 source: csso.html
-command:  ../examples/browser csso.html -o output/csso.png
+command:  ../mrg browser csso.html -o output/csso.png

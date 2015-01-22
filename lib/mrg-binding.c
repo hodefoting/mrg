@@ -28,7 +28,8 @@ void mrg_add_binding (Mrg *mrg,
   for (i = 0; mrg->bindings[i].nick; i++)
     if (!strcmp (mrg->bindings[i].nick, key))
     {
-      /* we just add them, with later ones having priority.. */
+      /* we just add them, with later ones having priority..
+       */
     }
   for (i = 0; mrg->bindings[i].nick; i ++);
 

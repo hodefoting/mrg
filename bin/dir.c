@@ -1,5 +1,5 @@
 #if 0
-permit clicking path bar
+todo: permit clicking path bar
 #endif
 
 /* mrg - MicroRaptor Gui
@@ -29,6 +29,8 @@ permit clicking path bar
 #include <dirent.h>
 #include <libgen.h>
 #include "mrg.h"
+#include "mrg-string.h"
+#include "host.h"
 
 static int vertical_pan (MrgEvent *e, void *data1, void *data2)
 {
@@ -41,11 +43,27 @@ static int vertical_pan (MrgEvent *e, void *data1, void *data2)
   return 0;
 }
 
-typedef struct State
+typedef void (*UiCb) (Mrg *mrg, void *state);
+/*
+ *  top-level state, should just keep around a main ui context,. with a
+ *  different sub-state?
+ */
+
+typedef struct _State State;
+
+struct _State
 {
-  Mrg  *mrg;
-  char *path;
-} State;
+  UiCb   ui;   /* XXX: must be first child, due to editor aliasing of struct */
+  Mrg   *mrg;
+  char  *path;
+
+  char  *cached_path;
+  State *sub_state; /* cached */
+  Host  *host;
+};
+
+State *edit_state_new (const char *path);
+void edit_state_destroy (State *state);
 
 static float pos[2] = {0,0}; // XXX: move into state?
 
@@ -65,6 +83,7 @@ static void go_parent (State *state)
 static void go_next (State *state)
 {
   char *lastslash = strrchr (state->path, '/');
+  system ("killall -9 mrg-tmp 2>&1");
   if (lastslash)
   {
     struct dirent **namelist;
@@ -104,6 +123,7 @@ static void go_next (State *state)
 static void go_prev (State *state)
 {
   char *lastslash = strrchr (state->path, '/');
+  system ("killall -9 mrg-tmp 2>&1");
   if (lastslash)
   {
     struct dirent **namelist;
@@ -143,6 +163,16 @@ static void go_prev (State *state)
   }
 }
 
+static int edit_cb (MrgEvent *event, void *data1, void *data2)
+{
+  State *state = data1;
+
+  state->sub_state = edit_state_new (state->path);
+  mrg_queue_draw (event->mrg, NULL);
+
+  return 1;
+}
+
 static int go_next_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_next (data1);
@@ -164,12 +194,13 @@ static int go_parent_cb (MrgEvent *event, void *data1, void *data2)
   return 1;
 }
 
+#if 1
 static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
-  fprintf (stderr, "a\n");
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
   return 1;
 }
+#endif
 
 static int entry_pressed (MrgEvent *event, void *data1, void *data2)
 {
@@ -256,8 +287,7 @@ static void render_dir (Mrg *mrg, void *data)
         else
           mrg_start (mrg, "entry.unknown", NULL);
 
-
-        if (S_ISDIR(stat_buf.st_mode))
+        if (S_ISDIR (stat_buf.st_mode))
         {
           /* mrg_start (mrg, "size.dir", NULL);
              mrg_print (mrg, "[DIR]");
@@ -291,9 +321,9 @@ static void render_dir (Mrg *mrg, void *data)
     mrg_end (mrg);
     free (namelist);
     
-    mrg_add_binding (mrg, "escape", NULL, NULL, go_parent_cb, state);
-    mrg_add_binding (mrg, " ", NULL, NULL, go_next_cb, state);
-    mrg_add_binding (mrg, "control- ", NULL, NULL, go_prev_cb, state);
+    mrg_add_binding (mrg, "escape",    "parent",   NULL, go_parent_cb, state);
+    mrg_add_binding (mrg, " ",         "next",     NULL, go_next_cb, state);
+    mrg_add_binding (mrg, "control- ", "previous", NULL, go_prev_cb, state);
   }
 }
 
@@ -339,19 +369,12 @@ file_get_contents (const char  *path,
 static void ui_png (Mrg *mrg, void *data)
 {
   State *state = data;
-
   mrg_image (mrg, 0, 0, mrg_width (mrg), -1, state->path);
-
-  mrg_start (mrg, "h2", NULL);
-  mrg_print (mrg, state->path);
-  mrg_end (mrg);
-
-  mrg_add_binding (mrg, "escape", NULL, NULL, go_parent_cb, state);
-  mrg_add_binding (mrg, " ", NULL, NULL, go_next_cb, state);
+  mrg_add_binding (mrg, "escape",    NULL, NULL, go_parent_cb, state);
+  mrg_add_binding (mrg, " ",         NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control- ", NULL, NULL, go_prev_cb, state);
 }
 
-#include "mrg-string.h"
 
 static void ui_xhtml (Mrg *mrg, void *data)
 {
@@ -371,9 +394,10 @@ static void ui_xhtml (Mrg *mrg, void *data)
   }
   mrg_string_free (tmp, 1);
 
-  mrg_add_binding (mrg, "escape", NULL, NULL, go_parent_cb, state);
-  mrg_add_binding (mrg, " ", NULL, NULL, go_next_cb, state);
+  mrg_add_binding (mrg, "escape",    NULL, NULL, go_parent_cb, state);
+  mrg_add_binding (mrg, " ",         NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control- ", NULL, NULL, go_prev_cb, state);
+  mrg_add_binding (mrg, "control-e", NULL, NULL, edit_cb, state);
 }
 
 static void ui_txt (Mrg *mrg, void *data)
@@ -395,97 +419,175 @@ static void ui_txt (Mrg *mrg, void *data)
     free (contents);
   }
 
-  mrg_add_binding (mrg, "escape", NULL, NULL, go_parent_cb, state);
-  mrg_add_binding (mrg, " ", NULL, NULL, go_next_cb, state);
+  mrg_add_binding (mrg, "escape",    NULL, NULL, go_parent_cb, state);
+  mrg_add_binding (mrg, " ",         NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control- ", NULL, NULL, go_prev_cb, state);
+  mrg_add_binding (mrg, "control-e", NULL, NULL, edit_cb, state);
 }
 
 typedef struct _ExtHandler ExtHandler;
 
 struct _ExtHandler {
   const char *suffix;
-  void (*ui) (Mrg *mrg, void *data);
+  UiCb        ui;
+  State    *(*ui_cons) (const char *path);
 };
 
 static ExtHandler ext_handlers[]={
-  {".png",  ui_png},
-  {".html", ui_xhtml},
-  {".svg",  ui_xhtml},
-  {".c",    ui_txt},
-  {".txt",  ui_txt},
-  {NULL,    ui_txt},
+  {".png",  ui_png,   NULL},
+  {".html", ui_xhtml, NULL},
+  {".svg",  ui_xhtml, NULL},
+  {".c",    NULL,     edit_state_new},
+  {".txt",  ui_txt,   NULL},
+  {NULL,    ui_txt,   NULL},
 };
 
-static void render_file (Mrg *mrg, void *data)
+void resolve_renderer (State *state)
 {
-  State *state = data;
-  int i;
-  for (i = 0; i < sizeof(ext_handlers)/sizeof(ext_handlers[0]); i++)
+  struct stat stat_buf;
+  
+  if (state->cached_path)
   {
-    if (ext_handlers[i].suffix)
+    if (!strcmp (state->path, state->cached_path))
+      return;
+    free (state->cached_path);
+  }
+  state->cached_path = strdup (state->path);
+
+  lstat (state->path, &stat_buf);
+
+  if (state->sub_state)
+  {
+    edit_state_destroy (state->sub_state);
+    state->sub_state = NULL;
+  }
+  state->ui        = NULL;
+
+  if (S_ISREG(stat_buf.st_mode))
+  {
+    int i;
+    for (i = 0; i < sizeof(ext_handlers)/sizeof(ext_handlers[0]); i++)
     {
-      if (strstr (state->path, ext_handlers[i].suffix))
+      if (ext_handlers[i].suffix)
       {
-        ext_handlers[i].ui (mrg, data);
-        break;
+        if (strstr (state->path, ext_handlers[i].suffix))
+        {
+          if (ext_handlers[i].ui)
+            state->ui = ext_handlers[i].ui;
+          else
+          {
+            state->sub_state = ext_handlers[i].ui_cons (state->path);
+            mrg_queue_draw (state->mrg, NULL);
+          }
+          return;
+        }
+      }
+      else
+      {
+        state->ui = ext_handlers[i].ui;
+        return;
       }
     }
-    else
-    {
-      ext_handlers[i].ui (mrg, data);
-      break;
-    }
   }
+  else if (S_ISDIR(stat_buf.st_mode))
+    state->ui = render_dir;
+}
+
+static int eeek (MrgEvent *e, void *data1, void *data2)
+{
+  system ("/tmp/test &");
+  return 1;
+}
+
+static int reresolve_cb (MrgEvent *e, void *data1, void *data2)
+{
+  State *state = data1;
+  if (state->sub_state)
+  {
+    edit_state_destroy (state->sub_state);
+    state->sub_state = NULL;
+  }
+  mrg_queue_draw (e->mrg, NULL);
+  return 0;
 }
 
 static void gui (Mrg *mrg, void *data)
 {
   State *state = data;
+  state->mrg = mrg;
 
-  struct stat stat_buf;
 
-  mrg_listen (mrg, MRG_DRAG, 0,0, mrg_width(mrg), mrg_height(mrg), vertical_pan, pos, NULL);
+  resolve_renderer (state);
+
+  if (!state->sub_state)
+    mrg_listen (mrg, MRG_DRAG, 0,0, mrg_width(mrg), mrg_height(mrg), vertical_pan, pos, NULL);
 
 #if MRG_CAIRO
   cairo_save (mrg_cr (mrg));
   cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
 #endif
 
-  lstat (state->path, &stat_buf);
 
-  mrg_set_edge_left (mrg, 10);
+  if (state->sub_state)
+  {
+    state->sub_state->ui (mrg, state->sub_state);
+  
+    mrg_add_binding (mrg, "control-e", NULL, NULL, reresolve_cb, state);
+  }
+  else
+  {
+    mrg_set_edge_left (mrg, 10);
 
-  if (S_ISREG(stat_buf.st_mode))
-    render_file (mrg, data);
-  else if (S_ISDIR(stat_buf.st_mode))
-    render_dir (mrg, data);
-  else 
-    go_parent (state);
+    if (!state->ui)
+      go_parent (state);
+    else
+      state->ui (mrg, data);
+  }
 
 #if MRG_CAIRO
   cairo_restore (mrg_cr (mrg));
 #endif
 
+  host_render (mrg, state->host);
+
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_add_binding (mrg, "f", NULL, NULL, toggle_fullscreen_cb, NULL);
+  mrg_add_binding (mrg, "F2", NULL, NULL, eeek, state);
+  mrg_add_binding (mrg, "F11", NULL, NULL, go_prev_cb, state);
+  mrg_add_binding (mrg, "F12", NULL, NULL, go_next_cb, state);
+  mrg_add_binding (mrg, "F9", NULL, NULL, toggle_fullscreen_cb, state);
+
+  mrg_add_binding (mrg, "control-right", NULL, NULL, go_next_cb, state);
+  mrg_add_binding (mrg, "control-left", NULL, NULL, go_prev_cb, state);
+
 }
+
+extern int host_fixed_pos;
 
 int dir_main (int argc, char **argv)
 {
-  Mrg *mrg = mrg_new (-1, -1, NULL);
-  //Mrg *mrg = mrg_new (480, 320, NULL);
+  Mrg *mrg;
+  
+  //if (getenv ("DISPLAY"))
+  mrg = mrg_new (1024, 768, NULL);
+ // else
+ //   mrg = mrg_new (-1, -1, NULL);
+  //Mrg *mrg = mrg_new (1024, 768, NULL);
+  //Mrg *mrg = mrg_new (800, 600, NULL);
 
   State *state = calloc (sizeof (State), 1);
   {
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);
     state->path = strdup (tmp);
+    state->host = host_new (mrg, "/tmp/foo");
   }
-  state->mrg = mrg;
+  
+  host_fixed_pos = 1;
 
   mrg_set_ui (mrg, gui, state);
   mrg_main (mrg);
 
   free (state->path);
   free (state);
+
   return 0;
 }

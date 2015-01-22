@@ -1,5 +1,5 @@
 CC=gcc
-LIB_PKGMODULES=cairo mmm
+LIB_PKGMODULES=cairo mmm gtk+-3.0
 PROJECT_NAME=mrg
 PROJECT_DESCRIPTION=Microraptor GUI
 SYMBOL_PREFIX=
@@ -16,6 +16,7 @@ lib/mrg-events.h \
 lib/mrg-style.h \
 lib/mrg-text.h \
 lib/mrg-audio.h \
+lib/mrg-string.h \
 lib/mrg-util.h
 
 
@@ -56,10 +57,10 @@ clean: extra-clean
 
 install: install-extra
 install-extra:
-	install mrg-host mrg-terminal mrg-acoustics mrg-edit mrg-browser $(DESTDIR)$(PREFIX)/bin/
+	install mrg-host mrg-terminal mrg-edit mrg-browser $(DESTDIR)$(PREFIX)/bin/
 
 extra-clean:
-	rm -f mrg.static
+	rm -f mrg.static data.inc
 	rm -f tests/output/*
 
 mrg.static: bin/*.c libmrg.a

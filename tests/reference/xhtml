@@ -1,2 +1,2 @@
 source: xhtml.html
-command:  ../examples/browser xhtml.html -o output/xpng.html
+command:  ../mrg browser xhtml.html -o output/xpng.html

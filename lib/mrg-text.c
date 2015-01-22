@@ -88,6 +88,213 @@ static float _mrg_text_shift (Mrg *mrg)
 }
 #endif
 
+const char * hl_punctuation[] =
+{";", ",", "(", ")", "{", "}", NULL};
+const char * hl_operators [] =
+{"-", "+", "=", "*", "/", "return", "<", ">", 
+ "if", "else", "break", "case", NULL};
+const char * hl_types[] =
+{"int", "cairo_t", "Mrg", "float", "double",
+  "char", "const", "static", "void", "NULL",
+  "#include", "#define", NULL};
+
+static int is_one_of (const char *word, const char **words)
+{
+  int i;
+  for (i = 0; words[i]; i++)
+  {
+    if (!strcmp (words[i], word))
+      return 1;
+  }
+  return 0;
+}
+
+static int is_a_number (const char *word)
+{
+  int yep = 1;
+  int i;
+  for (i = 0; word[i]; i++)
+  {
+    if (word[i] < '0' || word[i] > '9')
+      yep = 0;
+  }
+  return yep;
+}
+
+/* the syntax highlighting is done with static globals; deep in the text
+ * rendering, this permits the editing code to recognize which string is
+ * edited and directly work with pointer arithmetic on that instead of
+ * marked up xml for the highlighting.
+ */
+enum {
+  MRG_HL_NEUTRAL      = 0,
+  MRG_HL_NEXT_NEUTRAL = 1,
+  MRG_HL_STRING       = 2,
+  MRG_HL_STRING_ESC   = 3,
+  MRG_HL_SLASH        = 4,
+  MRG_HL_LINECOMMENT  = 5,
+  MRG_HL_COMMENT      = 6,
+  MRG_HL_COMMENT_STAR = 7,
+};
+
+static int state = MRG_HL_NEUTRAL;
+static int mrg_syntax_hl = 0;
+void mrg_syntax_hl_start (Mrg *mrg)
+{
+  mrg_syntax_hl = 1;
+  state = MRG_HL_NEUTRAL;
+}
+
+void mrg_syntax_hl_stop (Mrg *mrg)
+{
+  mrg_syntax_hl = 0;
+}
+
+static void mrg_hl_token (cairo_t *cr, const char *word)
+{
+  switch (state)
+  {
+    case MRG_HL_NEUTRAL:
+      if (!strcmp (word, "\""))
+      {
+        state = MRG_HL_STRING;
+      }
+      else if (!strcmp (word, "/"))
+      {
+        state = MRG_HL_SLASH;
+      }
+      break;
+    case MRG_HL_SLASH:
+      if (!strcmp (word, "/"))
+      {
+        state = MRG_HL_LINECOMMENT;
+      } else if (!strcmp (word, "*"))
+      {
+        state = MRG_HL_COMMENT;
+      } else
+      {
+        state = MRG_HL_NEUTRAL;
+      }
+      break;
+    case MRG_HL_LINECOMMENT:
+      if (!strcmp (word, "\n"))
+      {
+        state = MRG_HL_NEUTRAL;
+      }
+      break;
+    case MRG_HL_COMMENT:
+      if (!strcmp (word, "*"))
+      {
+        state = MRG_HL_COMMENT_STAR;
+      }
+      break;
+    case MRG_HL_COMMENT_STAR:
+      if (!strcmp (word, "/"))
+      {
+        state = MRG_HL_NEUTRAL;
+      }
+      else
+      {
+        state = MRG_HL_COMMENT;
+      }
+      break;
+    case MRG_HL_STRING:
+      if (!strcmp (word, "\""))
+      {
+        state = MRG_HL_NEXT_NEUTRAL;
+      }
+      else if (!strcmp (word, "\\"))
+      {
+        state = MRG_HL_STRING_ESC;
+      }
+      break;
+    case MRG_HL_STRING_ESC:
+      state = MRG_HL_STRING;
+      break;
+    case MRG_HL_NEXT_NEUTRAL:
+      state = MRG_HL_NEUTRAL;
+      break;
+  }
+
+  switch (state)
+  {
+    case MRG_HL_NEUTRAL:
+      if (is_a_number (word))
+        cairo_set_source_rgb (cr, 0.5, 0.0, 0.0);
+      else if (is_one_of (word, hl_punctuation))
+        cairo_set_source_rgb (cr, 0.4, 0.4, 0.4);
+      else if (is_one_of (word, hl_operators))
+        cairo_set_source_rgb (cr, 0, 0.5, 0);
+      else if (is_one_of (word, hl_types))
+        cairo_set_source_rgb (cr, 0.2, 0.2, 0.5);
+      else 
+        cairo_set_source_rgb (cr, 0, 0, 0);
+      break;
+    case MRG_HL_STRING:
+        cairo_set_source_rgb (cr, 1, 0, 0.5);
+      break;
+    case MRG_HL_COMMENT:
+    case MRG_HL_COMMENT_STAR:
+    case MRG_HL_LINECOMMENT:
+        cairo_set_source_rgb (cr, 0.4, 0.4, 1);
+      break;
+
+  }
+
+  cairo_show_text (cr, word);
+}
+
+/* hook syntax highlighter in here..  */
+void mrg_hl_text (cairo_t *cr, const char *text)
+{
+  if (!mrg_syntax_hl)
+  {
+    cairo_show_text (cr, text);
+    return;
+  }
+  int i;
+  MrgString *word = mrg_string_new ("");
+  for (i = 0; i < text[i]; i++)
+  {
+    switch (text[i])
+    {
+      case ';':
+      case '-':
+      case '>':
+      case '<':
+      case '=':
+      case '+':
+      case '"':
+      case '*':
+      case '/':
+      case '\\':
+      case '[':
+      case ']':
+      case ')':
+      case ',':
+      case '(':
+        if (word->length)
+        {
+          mrg_hl_token (cr, word->str);
+          mrg_string_set (word, "");
+        }
+        mrg_string_append_byte (word, text[i]);
+        mrg_hl_token (cr, word->str);
+        mrg_string_set (word, "");
+        break;
+      default:
+        cairo_set_source_rgb (cr, 0,0,0);
+        mrg_string_append_byte (word, text[i]);
+        break;
+    }
+  }
+  if (word->length)
+    mrg_hl_token (cr, word->str);
+
+  mrg_string_free (word, 1);
+  //cairo_show_text (cr, text);
+}
+
 /* x and y in cairo user units ; returns x advance in user units  */
 float mrg_draw_string (Mrg *mrg, MrgStyle *style, 
                       float x, float y,
@@ -173,8 +380,17 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
     mrg_cairo_set_source_color (cr, &style->color);
     cairo_move_to   (cr, x, y - _mrg_text_shift (mrg));
     cairo_get_current_point (cr, &old_x, NULL);
+
+    /* when syntax highlighting,.. should do it as a coloring
+     * directly here..
+     */
+#if 0
     cairo_show_text (cr, string);
+#else
+    mrg_hl_text (cr, string);
+#endif
     cairo_get_current_point (cr, &new_x, NULL);
+
 #else
     new_x = old_x = 0;
 #endif
@@ -242,6 +458,8 @@ float paint_span_bg (Mrg   *mrg, float x, float y,
 #if MRG_CAIRO
   MrgStyle *style = mrg_style (mrg);
   cairo_t *cr = mrg_cr (mrg);
+  if (!cr)
+    return 0.0;
   float left_pad = 0.0;
   float left_border = 0.0;
   if (style->display != MRG_DISPLAY_INLINE)
@@ -253,7 +471,6 @@ float paint_span_bg (Mrg   *mrg, float x, float y,
     left_border = style->border_left_width;
     mrg->state->span_bg_started = 1;
   }
-
 
   if (style->background_color.alpha > 0.001)
   {
@@ -293,7 +510,21 @@ mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length)
   float wwidth = measure_word_width (mrg, string);
   float left_pad;
   left_pad = paint_span_bg (mrg, x, y, wwidth);
-  mrg_draw_string (mrg, &mrg->state->style, x + left_pad, y, string, utf8_length);
+
+  {
+    double tx = x;
+    double ty = y;
+    cairo_user_to_device (mrg_cr (mrg), &tx, &ty);
+    if (ty > mrg->height * 2 ||
+        tx > mrg->width * 2 ||
+        tx < -mrg->width * 2 ||
+        ty < -mrg->height * 2)
+    {
+    }
+    else
+    mrg_draw_string (mrg, &mrg->state->style, x + left_pad, y, string, utf8_length);
+  }
+
   return wwidth + left_pad;
 }
 
@@ -699,6 +930,7 @@ static int mrg_print_wrap (Mrg        *mrg,
   return wraps;
 }
 
+/* calling this for a full text is horribly slow */
 int mrg_print_get_xy (Mrg *mrg, const char *string, int no, float *x, float *y)
 {
   int ret;
@@ -717,7 +949,7 @@ int mrg_print_get_xy (Mrg *mrg, const char *string, int no, float *x, float *y)
       return ret;
     }
   if (y) *y = mrg->y;
-  if (x) *x = mrg->x + no; // XXX: only correct for nct
+  if (x) *x = mrg->x + no; // XXX: only correct for nct/monospace
 
   return 0;
 }
@@ -754,7 +986,6 @@ void _mrg_text_init (Mrg *mrg)
   mrg->state->style.line_height = 1.0;
   mrg->state->style.print_symbols = 0;
 }
-
 
 void  mrg_text_listen_full (Mrg *mrg, MrgType types,
                             MrgCb cb, void *data1, void *data2,
@@ -849,24 +1080,38 @@ static int cmd_up (MrgEvent *event, void *data1, void *data2)
   mrg_set_edge_left (mrg, e_s - mrg->state->style.padding_left);
   mrg_set_edge_right (mrg, e_e + mrg->state->style.padding_right);
 
-
-
   mrg_set_xy (mrg, e_x, e_y);
   mrg_print_get_xy (mrg, *mrg->edited, mrg->cursor_pos, &cx, &cy);
 
   {
     int no;
-    for (no = mrg_utf8_strlen (*mrg->edited) - 1; no>=0; no--)
+    int best = mrg->cursor_pos;
+    float best_y = cy;
+    float best_score = 1000000000000.0;
+    for (no = mrg->cursor_pos - 1; no>= mrg->cursor_pos - 256 && no > 0; no--)
     {
       float x, y;
+      float attempt_score = 0.0;
       mrg_set_xy (mrg, e_x, e_y);
       mrg_print_get_xy (mrg, *mrg->edited, no, &x, &y);
-      if (x <= cx && y <= cy - 1)
+
+      if (y < cy && best_y == cy)
+        best_y = y;
+
+      if (y < cy)
+        attempt_score = (best_y - y);
+      else
+        attempt_score = 1000.0;
+
+      attempt_score += fabs(cx-x) / 10000000.0;
+
+      if (attempt_score < best_score)
       {
-        mrg->cursor_pos = no;
-        break;
+        best_score = attempt_score;
+        best = no;
       }
     }
+    mrg->cursor_pos = best;
   }
 
   if (mrg->cursor_pos < 0)
@@ -875,11 +1120,25 @@ static int cmd_up (MrgEvent *event, void *data1, void *data2)
   return 1;
 }
 
+int mrg_get_cursor_pos (Mrg *mrg)
+{
+  return mrg->cursor_pos;
+}
+
+void mrg_set_cursor_pos (Mrg *mrg, int pos)
+{
+  mrg->cursor_pos = pos;
+  mrg_queue_draw (mrg, NULL);
+}
+
 static int cmd_down (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
   float e_x, e_y, e_s, e_e, e_em;
   float cx, cy;
+
+  if (!mrg->edited || !(*mrg->edited))
+    return 0;
  
   mrg_get_edit_state (mrg, &e_x, &e_y, &e_s, &e_e, &e_em);
   mrg_set_edge_left (mrg, e_s - mrg->state->style.padding_left);
@@ -889,22 +1148,55 @@ static int cmd_down (MrgEvent *event, void *data1, void *data2)
 
   {
     int no;
-    for (no = 0; no < mrg_utf8_strlen (*mrg->edited); no++)
+    int best = mrg->cursor_pos;
+    float best_score = 10000000000.0;
+    float best_y = cy;
+    int strl = mrg_utf8_strlen (*mrg->edited);
+    for (no = mrg->cursor_pos + 1; no < mrg->cursor_pos + 256 && no < strl; no++)
     {
       float x, y;
+      float attempt_score = 0.0;
       mrg_set_xy (mrg, e_x, e_y);
       mrg_print_get_xy (mrg, *mrg->edited, no, &x, &y);
-      if (x >= cx && y >= cy + 1)
+
+      if (y > cy && best_y == cy)
+        best_y = y;
+
+      if (y > cy)
+        attempt_score = (y - best_y);
+      else
+        attempt_score = 1000.0;
+
+      attempt_score += fabs(cx-x) / 10000000.0;
+
+      if (attempt_score <= best_score)
       {
-        mrg->cursor_pos = no;
-        break;
+        best_score = attempt_score;
+        best = no;
       }
     }
+    mrg->cursor_pos = best;
   }
 
   if (mrg->cursor_pos >= mrg_utf8_strlen (*mrg->edited))
     mrg->cursor_pos = mrg_utf8_strlen (*mrg->edited) - 1;
   mrg_queue_draw (mrg, NULL);
+  return 1;
+}
+
+static int cmd_page_down (MrgEvent *event, void *data1, void *data2)
+{
+  int i;
+  for (i = 0; i < 6; i++)
+    cmd_down (event, data1, data2);
+  return 1;
+}
+
+static int cmd_page_up (MrgEvent *event, void *data1, void *data2)
+{
+  int i;
+  for (i = 0; i < 6; i++)
+    cmd_up (event, data1, data2);
   return 1;
 }
 
@@ -983,17 +1275,18 @@ static int cmd_escape (MrgEvent *event, void *data, void *data2)
 
 void mrg_text_edit_bindings (Mrg *mrg)
 {
-  mrg_add_binding (mrg, "escape",  NULL, "Stop editing", cmd_escape,      NULL);
+  mrg_add_binding (mrg, "escape",    NULL, "Stop editing", cmd_escape,      NULL);
   mrg_add_binding (mrg, "return",    NULL, "insert newline", cmd_return,    NULL);
-  //mrg_add_binding (mrg, "space",     NULL, "label", cmd_space,     NULL);
-  mrg_add_binding (mrg, "home",      NULL, "Go to start of text", cmd_home,      NULL);
-  mrg_add_binding (mrg, "end",       NULL, "Go to end of text", cmd_end,       NULL);
-  mrg_add_binding (mrg, "left",      NULL, "Move cursor left", cmd_left,      NULL);
-  mrg_add_binding (mrg, "right",     NULL, "Move cursor right", cmd_right,     NULL);
+  mrg_add_binding (mrg, "home",      NULL, "Go to start of text", cmd_home, NULL);
+  mrg_add_binding (mrg, "end",       NULL, "Go to end of text", cmd_end,    NULL);
+  mrg_add_binding (mrg, "left",      NULL, "Move cursor left", cmd_left,    NULL);
+  mrg_add_binding (mrg, "right",     NULL, "Move cursor right", cmd_right,  NULL);
   mrg_add_binding (mrg, "up",        NULL, "Move cursor up", cmd_up,        NULL);
-  mrg_add_binding (mrg, "down",      NULL, "Move cursor down", cmd_down,      NULL);
+  mrg_add_binding (mrg, "down",      NULL, "Move cursor down", cmd_down,    NULL);
+  mrg_add_binding (mrg, "page-up",   NULL, "Move cursor up", cmd_page_up,     NULL);
+  mrg_add_binding (mrg, "page-down", NULL, "Move cursor down", cmd_page_down, NULL);
   mrg_add_binding (mrg, "backspace", NULL, "Remove character left of cursor", cmd_backspace, NULL);
-  mrg_add_binding (mrg, "delete",    NULL, "Remove selected character", cmd_delete,    NULL);
+  mrg_add_binding (mrg, "delete",    NULL, "Remove selected character", cmd_delete, NULL);
   mrg_add_binding (mrg, "unhandled", NULL, "Insert if key name is one char", cmd_unhandled, NULL);
 }
 
@@ -1004,10 +1297,15 @@ void mrg_edit_string (Mrg *mrg, char **string,
                         void  *user_data),
                       void *user_data)
 {
+  if (mrg->edited == string)
+    return;
   mrg->edited = string;
   mrg->update_string = update_string;
   mrg->update_string_user_data = user_data;
-  mrg->cursor_pos = mrg_utf8_strlen (*string);
+  if (string)
+    mrg->cursor_pos = mrg_utf8_strlen (*string);
+  else
+    mrg->cursor_pos = 0;
   mrg_queue_draw (mrg, NULL);
 }
 
@@ -1026,4 +1324,9 @@ mrg_printf (Mrg *mrg, const char *format, ...)
   va_end (ap);
   mrg_print (mrg, buffer);
   free (buffer);
+}
+
+void  mrg_set_font_size   (Mrg *mrg, float size)
+{
+    mrg_set_stylef (mrg, "font-size:%fpx;", size);
 }

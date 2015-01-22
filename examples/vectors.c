@@ -103,7 +103,7 @@ static void ui (Mrg *mrg, void *data)
 
 int main (int argc, char **argv)
 {
-  Mrg *mrg = mrg_new (640, 480, NULL);
+  Mrg *mrg = mrg_new (320, 240, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
   return 0;

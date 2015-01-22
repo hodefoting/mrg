@@ -38,6 +38,8 @@ float mrg_edge_top        (Mrg *mrg);
 float mrg_edge_right      (Mrg *mrg);
 float mrg_edge_bottom     (Mrg *mrg);
 
+void  mrg_set_font_size   (Mrg *mrg, float size);
+
 void  mrg_set_line_spacing (Mrg *mrg, float line_spacing);
 float mrg_line_spacing     (Mrg *mrg); 
 int   mrg_print_get_xy     (Mrg *mrg, const char *str, int no, float *x, float *y);
@@ -52,6 +54,9 @@ void mrg_edit_string       (Mrg *mrg, char **string,
                             const char *new_string,
                             void  *user_data),
                             void *user_data);
+
+int mrg_get_cursor_pos  (Mrg *mrg);
+void mrg_set_cursor_pos (Mrg *mrg, int pos);
 
 /* should accept at lest 4-8 stacked cb's */
 void  mrg_text_listen (Mrg *mrg, MrgType types,
@@ -73,3 +78,5 @@ void mrg_xml_render (Mrg *mrg,
                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
                      void *link_data);
 
+void mrg_syntax_hl_start (Mrg *mrg);
+void mrg_syntax_hl_stop (Mrg *mrg);

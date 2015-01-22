@@ -40,6 +40,7 @@
 #include "mmm.h"
 #include <unistd.h>
 #include "mrg-list.h"
+#include "host.h"
 
 #if MRG_SDL
 #include <SDL/SDL.h>
@@ -55,11 +56,13 @@ typedef struct _Host   Host;
 
 struct _Client
 {
-/******************/
+  /******************/
+
   long  pid;        /* magic hack, -1 means in-process */
   char *filename;
   Mmm  *mmm;
-/******************/
+  
+  /******************/
 
   Mrg         *mrg;
   float        int_x;
@@ -148,7 +151,7 @@ static int resize_drag (MrgEvent *e, void *client_, void *host_)
     if (client->pid != -1)
     {
       mmm_host_get_size (client->mmm, &width, &height);
-      width += e->delta_x;
+      width  += e->delta_x;
       height += e->delta_y;
       if (width > 80 && height > 40)
       {
@@ -174,6 +177,8 @@ static int resize_drag (MrgEvent *e, void *client_, void *host_)
 }
 
 static int pos = 10;
+
+int host_fixed_pos = 0;
 
 static void validate_client (Host *host, const char *client_name)
 {
@@ -209,16 +214,23 @@ static void validate_client (Host *host, const char *client_name)
       if (mmm_get_x (client->mmm) == 0 &&
           mmm_get_y (client->mmm) == 0)
       {
-        mmm_set_x (client->mmm, pos);
-        mmm_set_y (client->mmm, 30+pos);
+        if (host_fixed_pos)
+        {
+          mmm_set_x (client->mmm, mrg_width (host->mrg) - 512 - 3);
+          mmm_set_y (client->mmm, 3);
+        }
+        else
+        {
+          mmm_set_x (client->mmm, pos);
+          mmm_set_y (client->mmm, 30+pos);
 
-        pos += 12;
+          pos += 12;
+        }
       }
     }
     mrg_list_append (&host->clients, client);
   }
 }
-
 
 void add_client_mrg (Host        *host,
                      Mrg         *mrg,
@@ -323,9 +335,8 @@ static int mrg_client_press (MrgEvent *event, void *client_, void *host_)
 
 static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 {
-  //Host *host = host_;
   Client *client = client_;
-  Mmm *mmm = client->mmm;
+  Mmm    *mmm    = client->mmm;
 
   char buf[256];
   if (event->mrg->pointer_down[1])
@@ -338,7 +349,6 @@ static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 
 static int mrg_client_release (MrgEvent *event, void *client_, void *host_)
 {
-  //Host *host = host_;
   Client *client = client_;
   Mmm *mmm = client->mmm;
   char buf[256];
@@ -380,7 +390,6 @@ static int key_down_cb (MrgEvent *event, void *host_, void *data2)
 static int kill_client (MrgEvent *event, void *client_, void *data2)
 {
   Client *client = client_;
-  //kill (client->pid, 3);
   if (client->pid != -1)
     kill (client->pid, 9);
   return 0;
@@ -487,6 +496,7 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
   {
     if (client->pid == -1)
     {
+      if (!host_fixed_pos)
       start_client (mrg, x, y, width, height, host->focused == client);
       mrg_render_to_mrg (client->mrg, mrg, x, y);
     }
@@ -506,6 +516,7 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
         host->focused = client;
       }
 
+      if (!host_fixed_pos)
       start_client (mrg, x, y, width, height, host->focused == client);
 
       if (pixels)
@@ -514,8 +525,20 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
         surface = cairo_image_surface_create_for_data ((void*)pixels, CAIRO_FORMAT_ARGB32, width, height, rowstride);
         cairo_save (cr);
         cairo_translate (cr, x, y);
+
+        if (host_fixed_pos)
+        {
+          cairo_rectangle (cr, 0, 0, width, height);
+          cairo_set_source_rgb (cr, 0,0,0);
+          cairo_set_line_width (cr, 2.0);
+          cairo_stroke (cr);
+        }
+
         cairo_set_source_surface (cr, surface, 0, 0);
-        cairo_paint (cr);
+        if (host->focused == client || !host_fixed_pos)
+          cairo_paint (cr);
+        else
+          cairo_paint_with_alpha (cr, 0.5);
         cairo_surface_destroy (surface);
 #endif
         mmm_read_done (client->mmm);
@@ -538,6 +561,8 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
     }
   }
 
+      if (!host_fixed_pos)
+      {
   start_title (mrg, x - 3, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT);
   mrg_listen (mrg, MRG_DRAG_MOTION, x, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT,
       titlebar_drag, client, host);
@@ -564,6 +589,7 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
     mrg_end (mrg);
   }
   mrg_end (mrg);
+      }
 
   if (cwidth)
   {
@@ -611,13 +637,45 @@ static void draw_calendar (Mrg *mrg)
   mrg_end (mrg);
 }
 
+void host_render (Mrg *mrg, Host *host)
+{
+  MrgList *l;
+  float ptr_x = mrg_pointer_x (mrg);
+  float ptr_y = mrg_pointer_y (mrg);
+
+  host_monitor_dir (host);
+  host->focused = NULL;
+
+  if (host_fixed_pos)
+  {
+    for (l = host->clients; l; l = l->next)
+    {
+      Client *client = l->data;
+      if (l->next)
+      {
+        if (client->pid != -1)
+        {
+          kill (client->pid, 9);
+          client->pid = -2;
+        }
+      }
+      else
+      {
+        render_client (host, client, ptr_x, ptr_y);
+      }
+    }
+  }
+  else
+  for (l = host->clients; l; l = l->next)
+  {
+    Client *client = l->data;
+    render_client (host, client, ptr_x, ptr_y);
+  }
+}
+
 static void render_ui (Mrg *mrg, void *data)
 {
   Host *host = data;
-  MrgList *l;
-
-  float ptr_x = mrg_pointer_x (mrg);
-  float ptr_y = mrg_pointer_y (mrg);
 
   mrg_start (mrg, "host", NULL);
 
@@ -625,8 +683,8 @@ static void render_ui (Mrg *mrg, void *data)
   mrg_start (mrg, "header", NULL);
   mrg_start (mrg, "time", NULL);
   {
-    time_t secs = time(0); struct tm *local = localtime(&secs);
-    const char *day_names[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    time_t secs               = time(0); struct tm *local = localtime(&secs);
+    const char *day_names[]   = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
     const char *month_names[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     mrg_text_listen (mrg, MRG_PRESS, time_pressed, NULL, NULL);
     mrg_printf(mrg, "%s %i %s %02d:%02d",
@@ -646,14 +704,7 @@ static void render_ui (Mrg *mrg, void *data)
 
   mrg_end (mrg);
 
-  host_monitor_dir (host);
-  host->focused = NULL;
-
-  for (l = host->clients; l; l = l->next)
-  {
-    Client *client = l->data;
-    render_client (host, client, ptr_x, ptr_y);
-  }
+  host_render (mrg, host);
 
   if (show_cal)
   {
@@ -666,26 +717,17 @@ static void render_ui (Mrg *mrg, void *data)
   mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, key_down_cb, host, NULL);
 }
 
-static void init_env (Host *host)
+static void init_env (Host *host, const char *path)
 {
   char buf[512];
   if (host->fbdir)
     return;
-
-  host->fbdir = "/tmp/mmm";
-  //if (getenv ("MMM_PATH"))
-  //  host->fbdir = getenv ("MMM_PATH");
-  //else
-    setenv ("MMM_PATH", host->fbdir, 1);
+  host->fbdir = strdup (path);
+  setenv ("MMM_PATH", host->fbdir, 1);
   sprintf (buf, "mkdir %s &> /dev/null", host->fbdir);
   system (buf);
 }
 
-Host *host_new (void)
-{
-  Host *host = calloc (sizeof (Host), 1);
-  return host;
-}
 
 void host_destroy (Host *host)
 {
@@ -697,7 +739,6 @@ static int host_idle_check (Mrg *mrg, void *data)
   Host *host = data;
   MrgList *l;
   
-  //
   for (l = host->clients; l; l = l->next)
   {
     Client *client = l->data;
@@ -730,10 +771,18 @@ static int host_idle_check (Mrg *mrg, void *data)
     else
     {
       // XXX
-
     }
   }
   return 1;
+}
+
+Host *host_new (Mrg *mrg, const char *path)
+{
+  Host *host = calloc (sizeof (Host), 1);
+  init_env (host, path);
+  host->mrg = mrg;
+  mrg_add_idle (mrg, host_idle_check, host);
+  return host;
 }
 
 static void tasklist_ui (Mrg *mrg, void *data)
@@ -752,30 +801,23 @@ static void tasklist_ui (Mrg *mrg, void *data)
   mrg_end (mrg);
 }
 
-
 int host_main (int argc, char **argv)
 {
   Mrg *mrg;
-
-  setenv("MMM_IS_COMPOSITOR", "foo", 1);
-  host = host_new ();
 
   //if (getenv ("DISPLAY"))
   //  mrg = mrg_new (640, 480, NULL);
   //else
   mrg = mrg_new (-1, -1, NULL);
-  host->mrg = mrg;
-  mrg_set_ui (mrg, render_ui, host);
+  host = host_new (mrg, "/tmp/mmm");
 
-  unsetenv("MMM_IS_COMPOSITOR");
-  init_env (host);
+  mrg_set_ui (mrg, render_ui, host);
 
   //system ("mrg-acoustics &");
 
-  mrg_add_idle (mrg, host_idle_check, host);
   mrg_css_set (mrg, css);
 
-  add_int_client (host, tasklist_ui, host, 40, 40, 300, 300);
+  if(0)add_int_client (host, tasklist_ui, host, 40, 40, 300, 300);
 
   mrg_main (mrg);
   mrg_destroy (mrg);

@@ -1,2 +1,2 @@
 source: mrg.html
-command:  ../examples/browser mrg.html -o output/mrg.png
+command:  ../mrg browser mrg.html -o output/mrg.png

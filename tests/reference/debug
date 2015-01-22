@@ -1,2 +1,2 @@
 source: debug.html
-command:  ../examples/browser debug.html -o output/debug.png
+command:  ../mrg browser debug.html -o output/debug.png

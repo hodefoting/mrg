@@ -1,2 +1,2 @@
 source: acid1.html
-command:  ../examples/browser acid1.html -o output/acid1.png
+command:  ../mrg browser acid1.html -o output/acid1.png

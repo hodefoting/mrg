@@ -44,7 +44,6 @@ int terminal_main   (int argc, char **argv);
 int browser_main    (int argc, char **argv);
 int session_main    (int argc, char **argv);
 int acoustics_main  (int argc, char **argv);
-int taskman_main    (int argc, char **argv);
 
 AppMap mains[]={
 
@@ -69,10 +68,6 @@ AppMap mains[]={
     session_main,   APP_FLAG_DEFAULTS,
     "launch a session (runs hosts in a loop)"},
     
-  {"taskman", "",
-    taskman_main,   APP_FLAG_DEFAULTS,
-    "visual task manager"},
-
   {"acoustics", "",
     acoustics_main, APP_FLAG_DEFAULTS,
     "audio host daemon, monitors clients for pcm data, when it exists mixes the data and feeds it to the audio device. "},

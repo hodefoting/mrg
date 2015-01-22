@@ -78,9 +78,21 @@ static void mrg_gtk_main (Mrg *mrg,
   gtk_main ();
 }
 
+
 static cairo_t *mrg_gtk_cr (Mrg *mrg)
 {
-  return mrg->cr;
+  static cairo_t *static_cr = NULL;
+  cairo_surface_t *surface;
+
+  if (mrg->cr)
+    return mrg->cr;
+  if (static_cr)
+    return static_cr;
+
+  surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+                                        1,1);
+  static_cr = cairo_create (surface);
+  return static_cr;
 }
 
 static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer mrg)
@@ -122,6 +134,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     case GDK_KEY_F9:        name = "F9";        break;
     case GDK_KEY_F10:       name = "F10";       break;
     case GDK_KEY_F11:       name = "F11";       break;
+    case GDK_KEY_F12:       name = "F12";       break;
     case GDK_KEY_Escape:    name = "escape";    break;
     case GDK_KEY_Tab:       name = "tab";       break;
     case GDK_KEY_Up:        name = "up";        break;

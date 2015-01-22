@@ -62,3 +62,13 @@ dir        { border: 1px solid blue; }
 entry      { display: block; width: 40%; }
 entry.dir  { color: red }
 entry size { float: right; }
+
+.cursor { border-bottom: 4px solid red; background: #bbbbbb; }
+
+editor { font-family: Monospace; font-size: 35px;}
+
+#compiler_output { position: fixed; top: 0; color: red;
+                   font-weight: bold;
+                   width: 512px; background-color: #ffff77bb;
+                   font-size: 16px; }
+

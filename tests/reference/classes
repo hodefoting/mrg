@@ -1,2 +1,2 @@
 source: classes.html
-command:  ../examples/browser classes.html -o output/classes.png
+command:  ../mrg browser classes.html -o output/classes.png

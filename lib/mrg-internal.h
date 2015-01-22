@@ -363,6 +363,7 @@ struct _Mrg {
   void        *text_listen_finalize_data;
 
   MrgList     *idles;
+  int          idle_id;
 
 };
 

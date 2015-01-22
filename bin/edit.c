@@ -25,43 +25,37 @@
 #include <dirent.h>
 #include <libgen.h>
 #include "mrg.h"
+#include "mrg-string.h"
 
 static int drag_pos (MrgEvent *e, void *data1, void *data2)
 {
   if (e->type == MRG_DRAG_MOTION && e->device_no == 1)
   {
     float *pos = data1;
-    //pos[0] += e->delta_x;
     pos[1] += e->delta_y;
     mrg_queue_draw (e->mrg, NULL);
   }
   return 0;
 }
 
+typedef void (*UiCb) (Mrg *mrg, void *state);
+
 typedef struct State
 {
-  Mrg   *mrg;
-  char  *path;
-  char  *data;
-  long   length;
-  int    mode;
+  UiCb       ui;
+  Mrg       *mrg;
+  char      *path;
+  char      *data;
+  long       length;
+  int        mode;
+  MrgString *compiler_output;
+
+  int        compile_timeout;
+
+  int        started;
 } State;
 
 static float pos[2] = {0,0};
-
-#if 0
-static int save_cb (MrgEvent *event, void *data1, void *data2)
-{
-  fprintf (stderr, "save!\n");
-  return 1;
-}
-#endif
-
-static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
-{
-  mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  return 1;
-}
 
 static int
 file_get_contents (const char  *path,
@@ -102,60 +96,269 @@ file_get_contents (const char  *path,
   return 0;
 }
 
-#include "mrg-string.h"
-
-static void gui (Mrg *mrg, void *data)
+static void
+file_set_contents (const char *path, const char *data, long length)
 {
-  State *state = data;
+  FILE *fp = fopen (path, "wb");
+  if (length == -1)
+    length = strlen (data);
+  fwrite(data, length, 1, fp);
+  fclose (fp);
+}
 
-  mrg_listen (mrg, MRG_DRAG, 0,0,mrg_width(mrg), mrg_height(mrg), drag_pos, pos, NULL);
+static int compile_cb (MrgEvent *event, void *data1, void *data2)
+{
+  FILE *fp;
+  State *state = data1;
 
-  mrg_start (mrg, "editor", NULL);
+  int max_lines = 4;
+  system ("rm -f /tmp/mrg-tmp");
 
-#if MRG_CAIRO
-  cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
-#endif
+  if (!strstr (state->path, ".c"))
+    return 1;
 
-  mrg_set_edge_left (mrg, 10);
+  file_set_contents ("/tmp/live.c", state->data, -1);
 
-  mrg_print (mrg, state->data);
+  fp = popen ("rm -f /tmp/mrg-tmp ;ccache gcc /tmp/live.c -std=c99  `pkg-config --cflags --libs mrg` -o /tmp/mrg-tmp 2>&1", "r");
+  mrg_string_set (state->compiler_output, "");
+  if (fp)
+  {
+    char buf[4096];
+    while (fgets(buf, sizeof(buf)-1, fp) && --max_lines > 0)
+      mrg_string_append_str (state->compiler_output, buf);
+    pclose (fp);
+  }
+  else
+  {
+    mrg_string_append_str (state->compiler_output, "popen failed");
+  }
+  
+  return 1;
+}
 
-  mrg_end (mrg);
+static int save_cb (MrgEvent *event, void *data1, void *data2)
+{
+  State *state = data1;
+  file_set_contents (state->path, state->data, -1);
+  fprintf (stderr, "saved\n");
+  return 1;
+}
 
-  mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_add_binding (mrg, "f", NULL, NULL, toggle_fullscreen_cb, NULL);
+#include <unistd.h>
+
+static int run_cb (MrgEvent *event, void *data1, void *data2)
+{
+  compile_cb (event, data1, data2);
+  system ("/tmp/mrg-tmp &");
+  usleep (30000);
+  return 1;
 }
 
 static void update_string (Mrg *mrg, char **string_loc, const char *new_string,
-                               void *user_data)
+                           void *user_data)
 {
   free (*string_loc);
   *string_loc = strdup (new_string);
 }
 
+static char *last_str = NULL;
+
+static int background_task (Mrg *mrg, void *data)
+{
+  State *state = data;
+
+  if (last_str)
+  {
+    if (!strcmp (last_str, state->data))
+    {
+      state->compile_timeout = 0;
+      mrg_queue_draw (mrg, NULL);
+      return 0;
+    }
+    else
+    {
+      free (last_str);
+      last_str = NULL;
+    }
+  }
+
+  run_cb (NULL, state, NULL);
+  last_str = strdup (state->data);
+  mrg_queue_draw (mrg, NULL);
+  state->compile_timeout = 0;
+
+  return 0;
+}
+
+static int move_y = 0;
+
+
+static void gui (Mrg *mrg, void *data)
+{
+  State *state = data;
+
+  if (move_y < 0)
+  {
+    pos[1] -= mrg_height (mrg) / 8;
+  }
+  else if (move_y > 0)
+  {
+    pos[1] += mrg_height (mrg) / 8;
+  }
+
+  state->mrg = mrg;
+  mrg_edit_string (mrg, &state->data, update_string, NULL);
+
+  if (!state->started)
+  {
+    if (strstr (state->data, "cp="))
+    {
+      int cursor_pos = atoi (strstr (state->data, "cp=") + strlen("cp="));
+      mrg_set_cursor_pos (mrg, cursor_pos);
+    }
+    else
+    {
+      mrg_set_cursor_pos (mrg, 1);
+    }
+    if (strstr (state->data, "off="))
+    {
+      int offset = atoi (strstr (state->data, "off=") + strlen("off="));
+      pos[1] = offset;
+    }
+    else
+    {
+      pos[1] = 0.0;
+    }
+
+    state->started = 1;
+  }
+
+  mrg_listen (mrg, MRG_DRAG, 0,0,mrg_width(mrg), mrg_height(mrg), drag_pos, pos, NULL);
+  mrg_start (mrg, "editor", NULL);
+
+#if MRG_CAIRO
+  cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
+#endif
+  mrg_set_edge_left (mrg, 10);
+
+
+  mrg_print (mrg, "\n");
+
+  {
+    float x, y;
+  
+    mrg_print_get_xy (mrg, state->data, mrg_get_cursor_pos (mrg), &x, &y);
+
+    y += pos[1];
+
+    if (y > mrg_height (mrg) - mrg_em (mrg) * 1)
+    {
+      move_y = -1;
+      mrg_queue_draw (mrg, NULL);
+    }
+    else if (y < mrg_em (mrg) * 2)
+    {
+      move_y = 1;
+      mrg_queue_draw (mrg, NULL);
+    }
+    else
+      move_y = 0;
+
+    //fprintf (stderr, "%f %f\n", x, y);
+  }
+
+  /* turn on syntax highlighting of fragments output */
+  mrg_syntax_hl_start (mrg);
+
+  mrg_print (mrg, state->data);
+
+  mrg_syntax_hl_stop (mrg);
+  /* turn off syntax highlighting of fragments output */
+
+  mrg_end (mrg);
+
+  {
+    int cursor_pos = mrg_get_cursor_pos (mrg);
+    int line_no = 0;
+    int col_no = 0;
+    int i;
+    char *p;
+
+    for (i = 0, p = state->data; *p && i < cursor_pos; p++, i++)
+      if (*p=='\n')
+      {
+        line_no ++;
+        col_no = 0;
+      }
+      else
+      {
+        col_no ++;
+      }
+
+    mrg_set_xy (mrg, 0, mrg_height (mrg));
+    mrg_printf (mrg, "%s line %i col %i (%i:%f)\n", state->path, line_no + 1, col_no + 1, cursor_pos, pos[1]);
+  }
+
+  mrg_add_binding (mrg, "F5", NULL, NULL, run_cb, state);
+  mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
+  mrg_add_binding (mrg, "control-s", NULL, NULL, save_cb, state);
+
+  if (state->compiler_output->length > 0)
+  mrg_printf_xml (mrg, "<div id='compiler_output'>%s</div> ",
+                  state->compiler_output->str);
+
+  if (!state->compile_timeout)
+  {
+    state->compile_timeout = mrg_add_timeout (mrg, 500, 
+      background_task, state);
+  }
+}
+
+State *edit_state_new (const char *path)
+{
+  State *state = calloc (sizeof (State), 1);
+  state->path  = strdup (path);
+  file_get_contents (state->path, &state->data, &state->length);
+  state->ui    = gui;
+  state->compiler_output = mrg_string_new ("");
+
+  pos[0] = 0;
+  pos[1] = 0;
+
+  run_cb (NULL, state, NULL);
+
+  state->started = 0;
+
+  return state;
+}
+
+void edit_state_destroy (State *state)
+{
+  mrg_edit_string (state->mrg, NULL, NULL, NULL);
+  if (state->path)
+    free (state->path);
+  if (state->data)
+    free (state->data);
+  if (state->compile_timeout)
+  {
+    mrg_remove_idle (state->mrg, state->compile_timeout);
+    state->compile_timeout = 0;
+  }
+  mrg_string_free (state->compiler_output, 1);
+  free (state);
+}
 
 int edit_main (int argc, char **argv)
 {
-  //Mrg *mrg = mrg_new (-1, -1, NULL);
-  State *state = calloc (sizeof (State), 1);
+  State *state;
   Mrg *mrg;
   {
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);
-    state->path = strdup (tmp);
+    state = edit_state_new (tmp);
   }
-  file_get_contents (state->path, &state->data, &state->length);
-  if (!state->data)
-    return -1;
-
   mrg = mrg_new (480, 640, NULL);
-
-  state->mrg = mrg;
-
-  mrg_edit_string (mrg, &state->data, update_string, NULL);
-  mrg_set_ui (mrg, gui, state);
+  mrg_set_ui (mrg, state->ui, state);
   mrg_main (mrg);
-
-  free (state->path);
-  free (state);
+  edit_state_destroy (state);
   return 0;
 }

@@ -1,2 +1,2 @@
 source: float-madness.html
-command:  ../examples/browser float-madness.html -o output/float-madness.png
+command:  ../mrg browser float-madness.html -o output/float-madness.png
