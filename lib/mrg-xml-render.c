@@ -1316,9 +1316,9 @@ again:
 
 void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
-                     char *html,
                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
-                     void *link_data)
+                     void *link_data,
+                     char *html)
 {
 #if MRG_CAIRO
   MrgXml *xmltok      = xmltok_buf_new (html);
@@ -1767,9 +1767,30 @@ void mrg_xml_render (Mrg *mrg,
 #endif
 }
 
+void mrg_xml_renderf (Mrg *mrg,
+                      char *uri_base,
+                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
+                      void *link_data,
+                      char *format,
+                      ...)
+{
+  va_list ap;
+  size_t needed;
+  char  *buffer;
+  va_start(ap, format);
+  needed = vsnprintf(NULL, 0, format, ap) + 1;
+  buffer = malloc(needed);
+  va_end (ap);
+  va_start(ap, format);
+  vsnprintf(buffer, needed, format, ap);
+  va_end (ap);
+  mrg_xml_render (mrg, uri_base, link_cb, link_data, buffer);
+  free (buffer);
+}
+
 void mrg_print_xml (Mrg *mrg, char *xml)
 {
-  mrg_xml_render (mrg, NULL, xml, NULL, NULL);
+  mrg_xml_render (mrg, NULL, NULL, NULL, xml);
 }
 
 void

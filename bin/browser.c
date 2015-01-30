@@ -149,7 +149,7 @@ static void render_ui (Mrg *mrg, void *data)
              !strcmp (mime_type, "text/svg"))
     {
       mrg_stylesheet_clear (mrg);
-      mrg_xml_render (mrg, mr->uri, contents, href_cb, mr);
+      mrg_xml_render (mrg, mr->uri, href_cb, mr, contents);
     }
     else
     {

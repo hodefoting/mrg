@@ -74,9 +74,16 @@ void  mrg_text_listen_done (Mrg *mrg);
  */
 void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
-                     char *html,
                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
-                     void *link_data);
+                     void *link_data,
+                     char *html);
+
+void mrg_xml_renderf (Mrg *mrg,
+                      char *uri_base,
+                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
+                      void *link_data,
+                      char *format,
+                      ...);
 
 void mrg_syntax_hl_start (Mrg *mrg);
 void mrg_syntax_hl_stop (Mrg *mrg);
