@@ -93,6 +93,11 @@ struct _Host
 
 Host *host;
 
+int host_client_has_focus (Host *host)
+{
+  return host->focused != NULL;
+}
+
 #if 0
 static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {

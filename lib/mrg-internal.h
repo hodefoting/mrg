@@ -340,6 +340,7 @@ struct _Mrg {
 
   /** text editing state follows **/
   char    **edited;
+  int       text_edit_blocked;
   void    (*update_string) (Mrg *mrg, char **string_log, const char *new_string, void *user_data);
   void     *update_string_user_data;
   int       cursor_pos; 

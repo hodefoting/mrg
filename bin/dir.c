@@ -527,7 +527,6 @@ static void gui (Mrg *mrg, void *data)
   cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
 #endif
 
-
   if (state->sub_state)
   {
     state->sub_state->ui (mrg, state->sub_state);
@@ -542,6 +541,15 @@ static void gui (Mrg *mrg, void *data)
       go_parent (state);
     else
       state->ui (mrg, data);
+  }
+
+  if (host_client_has_focus (state->host))
+  {
+    _mrg_block_edit (mrg);
+  }
+  else
+  {
+    _mrg_unblock_edit (mrg);
   }
 
 #if MRG_CAIRO

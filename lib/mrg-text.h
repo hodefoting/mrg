@@ -85,5 +85,8 @@ void mrg_xml_renderf (Mrg *mrg,
                       char *format,
                       ...);
 
+void _mrg_block_edit (Mrg *mrg);
+void _mrg_unblock_edit (Mrg *mrg);
+
 void mrg_syntax_hl_start (Mrg *mrg);
 void mrg_syntax_hl_stop (Mrg *mrg);

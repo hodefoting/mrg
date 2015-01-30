@@ -409,7 +409,7 @@ void mrg_prepare (Mrg *mrg)
 
   mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, _mrg_bindings_key_down, NULL, NULL);
 
-  if (mrg->edited)
+  if (mrg->edited && mrg->text_edit_blocked <= 0)
     mrg_text_edit_bindings (mrg);
 
 #if 0

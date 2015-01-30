@@ -1330,3 +1330,12 @@ void  mrg_set_font_size   (Mrg *mrg, float size)
 {
     mrg_set_stylef (mrg, "font-size:%fpx;", size);
 }
+
+void _mrg_block_edit (Mrg *mrg)
+{
+  mrg->text_edit_blocked = 1;
+}
+void _mrg_unblock_edit (Mrg *mrg)
+{
+  mrg->text_edit_blocked = 0;
+}
