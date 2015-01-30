@@ -400,7 +400,6 @@ void mrg_prepare (Mrg *mrg)
       cairo_clip (cr);
     }
     mrg_cairo_set_source_color (cr, &mrg_style(mrg)->background_color);
-    //cairo_set_source_rgb (cr, 1,1,1);
     cairo_save (cr);
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint (cr);

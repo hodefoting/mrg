@@ -312,7 +312,6 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
   }
   mrg->pointer_down[device_no] = 1;
 
-
   if (mrg_item && (mrg_item->types & MRG_DRAG))
   {
     mrg->is_press_grabbed = 1;

@@ -7,4 +7,4 @@ Features:
   pointer/keyboard events
   CSS styling/layout
   Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
-  SDL/GTK/framebuffer/terminal backends
+  SDL/GTK/framebuffer/terminal backends.

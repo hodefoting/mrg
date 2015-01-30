@@ -192,6 +192,7 @@ static int background_task (Mrg *mrg, void *data)
 
 static int move_y = 0;
 
+#include <sys/time.h>
 
 static void gui (Mrg *mrg, void *data)
 {
@@ -240,7 +241,6 @@ static void gui (Mrg *mrg, void *data)
   cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
 #endif
   mrg_set_edge_left (mrg, 10);
-
 
   mrg_print (mrg, "\n");
 
@@ -296,7 +296,15 @@ static void gui (Mrg *mrg, void *data)
       }
 
     mrg_set_xy (mrg, 0, mrg_height (mrg));
-    mrg_printf (mrg, "%s line %i col %i (%i:%f)\n", state->path, line_no + 1, col_no + 1, cursor_pos, pos[1]);
+    mrg_printf (mrg, "%s line %i col %i (%i:%.2f)", state->path, line_no + 1, col_no + 1, cursor_pos, pos[1]);
+
+    {
+      struct timeval tv;
+      gettimeofday (&tv, NULL);
+      mrg_printf (mrg, "%02i:%02i", ((tv.tv_sec/60/60)%24)+1,
+                                    ((tv.tv_sec/60)%60));
+        
+    }
   }
 
   mrg_add_binding (mrg, "F5", NULL, NULL, run_cb, state);
