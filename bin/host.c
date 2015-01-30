@@ -374,12 +374,17 @@ static int applications_pressed (MrgEvent *event, void *mmm, void *data2)
   return 0;
 }
 
-static int key_down_cb (MrgEvent *event, void *host_, void *data2)
+int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
 {
   Host *host = host_;
   if (host->focused)
   {
+    fprintf (stderr, "Aaa\n");
     mmm_add_event (host->focused->mmm, event->key_name);
+  }
+  else
+  {
+    fprintf (stderr, "Bbb\n");
   }
   return 0;
 }
@@ -712,9 +717,8 @@ static void render_ui (Mrg *mrg, void *data)
   }
 
   mrg_end (mrg);
-
   mrg_add_binding (mrg, "F10", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, key_down_cb, host, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, host_key_down_cb, host, NULL);
 }
 
 static void init_env (Host *host, const char *path)

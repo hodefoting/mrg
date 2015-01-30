@@ -510,12 +510,12 @@ static int reresolve_cb (MrgEvent *e, void *data1, void *data2)
   mrg_queue_draw (e->mrg, NULL);
   return 0;
 }
+int host_key_down_cb (MrgEvent *event, void *host_, void *data2);
 
 static void gui (Mrg *mrg, void *data)
 {
   State *state = data;
   state->mrg = mrg;
-
 
   resolve_renderer (state);
 
@@ -549,6 +549,7 @@ static void gui (Mrg *mrg, void *data)
 #endif
 
   host_render (mrg, state->host);
+  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, host_key_down_cb, state->host, NULL);
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
   mrg_add_binding (mrg, "F2", NULL, NULL, eeek, state);
@@ -558,7 +559,6 @@ static void gui (Mrg *mrg, void *data)
 
   mrg_add_binding (mrg, "control-right", NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control-left", NULL, NULL, go_prev_cb, state);
-
 }
 
 extern int host_fixed_pos;

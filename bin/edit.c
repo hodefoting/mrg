@@ -119,7 +119,7 @@ static int compile_cb (MrgEvent *event, void *data1, void *data2)
 
   file_set_contents ("/tmp/live.c", state->data, -1);
 
-  fp = popen ("rm -f /tmp/mrg-tmp ;ccache gcc /tmp/live.c -std=c99  `pkg-config --cflags --libs mrg` -o /tmp/mrg-tmp 2>&1", "r");
+  fp = popen ("rm -f /tmp/mrg-tmp ;gcc /tmp/live.c -std=c99  `pkg-config --cflags --libs mrg` -o /tmp/mrg-tmp 2>&1", "r");
   mrg_string_set (state->compiler_output, "");
   if (fp)
   {
