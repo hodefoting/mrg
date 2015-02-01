@@ -26,6 +26,7 @@ todo: permit clicking path bar
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <dirent.h>
 #include <libgen.h>
 #include "mrg.h"
@@ -393,6 +394,16 @@ static void ui_xhtml (Mrg *mrg, void *data)
     free (contents);
   }
   mrg_string_free (tmp, 1);
+
+
+  {
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    mrg_set_xy (mrg, mrg_width (mrg) - mrg_em (mrg) * 4, mrg_height (mrg));
+    mrg_printf (mrg, "%02i:%02i", ((tv.tv_sec/60/60)%24)+1,
+                                  ((tv.tv_sec/60)%60));
+        
+  }
 
   mrg_add_binding (mrg, "escape",    NULL, NULL, go_parent_cb, state);
   mrg_add_binding (mrg, " ",         NULL, NULL, go_next_cb, state);

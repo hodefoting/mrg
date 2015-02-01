@@ -298,13 +298,14 @@ static void gui (Mrg *mrg, void *data)
     mrg_set_xy (mrg, 0, mrg_height (mrg));
     mrg_printf (mrg, "%s line %i col %i (%i:%.2f)", state->path, line_no + 1, col_no + 1, cursor_pos, pos[1]);
 
-    {
-      struct timeval tv;
-      gettimeofday (&tv, NULL);
-      mrg_printf (mrg, "%02i:%02i", ((tv.tv_sec/60/60)%24)+1,
-                                    ((tv.tv_sec/60)%60));
+  {
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    mrg_set_xy (mrg, mrg_width (mrg) - mrg_em (mrg) * 4, mrg_height (mrg));
+    mrg_printf (mrg, "%02i:%02i", ((tv.tv_sec/60/60)%24)+1,
+                                  ((tv.tv_sec/60)%60));
         
-    }
+  }
   }
 
   mrg_add_binding (mrg, "F5", NULL, NULL, run_cb, state);
