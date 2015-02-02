@@ -27,10 +27,11 @@ static void ui (Mrg *mrg, void *data) {
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }
 
-void main () {
+int main () {
   Mrg *mrg = mrg_new (512, 384, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
+  return 0;
 }
 
 int drag_cb (MrgEvent *event, void *data1, void *data2) {

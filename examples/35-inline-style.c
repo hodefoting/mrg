@@ -7,10 +7,11 @@ void ui (Mrg *mrg, void *data) {
   mrg_printf (mrg, "\nhello there\n");
 }
 
-void main () {
+int main () {
   Mrg *mrg = mrg_new (512, 384, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
+  return 0;
 }
 
 void make_big (Mrg *mrg) {

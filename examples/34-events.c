@@ -8,6 +8,7 @@ int handle_event_cb (MrgEvent *event,
                      void *data1, void *data2) {
   event_copy = *event;
   mrg_queue_draw (event->mrg, NULL);
+  return 0;
 }
  
 void ui (Mrg *mrg, void *data) { 
@@ -41,6 +42,8 @@ destroy_notify, and a destroy_notify_data args*/
    case MRG_DRAG_PRESS: mrg_print (mrg, "MRG_DRAG_PRESS"); break;
    case MRG_DRAG_MOTION: mrg_print (mrg, "MRG_DRAG_MOTION"); break;
    case MRG_DRAG_RELEASE: mrg_print (mrg, "MRG_DRAG_RELEASE"); break;
+   case MRG_PRESS_AND_HOLD: mrg_print (mrg, "MRG_PRESS_AND_HOLD"); break;
+   default: break;
 }
  mrg_print (mrg, "\n");
 
@@ -64,10 +67,11 @@ destroy_notify, and a destroy_notify_data args*/
  
 }
 
-void main () {
+int main () {
   Mrg *mrg = mrg_new (512, 384, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
+  return 0;
 }
 
 void make_big (Mrg *mrg) {

@@ -76,8 +76,9 @@ void render_ui (Mrg *mrg, void *data) {
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }
 
-void main () {
+int main () {
   Mrg *mrg = mrg_new (640, 480, NULL);
   mrg_set_ui (mrg, render_ui, NULL);
   mrg_main (mrg);
+  return 0;
 }

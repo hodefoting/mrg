@@ -31,10 +31,11 @@ void ui (Mrg *mrg, void *data) {
               drag_cb, NULL, NULL);
 }
 
-void main () {
+int main () {
   Mrg *mrg = mrg_new (512, 384, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
+  return 0;
 }
 
 void make_big (Mrg *mrg) {
