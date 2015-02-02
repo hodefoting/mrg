@@ -1,9 +1,6 @@
 #include "mrg.h"
 
-char *text = "hello there";
-
-static int drag_pos (MrgEvent *e, void *data1, void *data2)
-{
+int drag_pos (MrgEvent *e, void *data1, void *data2) {
   if (e->type == MRG_DRAG_MOTION)
   {
     float *pos = data1;
@@ -26,8 +23,7 @@ static int drag_pos (MrgEvent *e, void *data1, void *data2)
   return 0;
 }
 
-static void render_ui (Mrg *mrg, void *data)
-{
+void render_ui (Mrg *mrg, void *data) {
   {
     static float pos[2] = {10, 200};
     static int active = 0;
@@ -41,7 +37,7 @@ static void render_ui (Mrg *mrg, void *data)
     else
       mrg_set_style (mrg, "color:green");
 
-    mrg_print (mrg, text);
+    mrg_print (mrg, "mmm");
     mrg_text_listen_done (mrg);
   }
 
@@ -57,7 +53,7 @@ static void render_ui (Mrg *mrg, void *data)
     else
     mrg_set_style (mrg, "color:green");
 
-    mrg_print (mrg, text);
+    mrg_print (mrg, "mrg");
     mrg_text_listen_done (mrg);
   }
 
@@ -73,17 +69,15 @@ static void render_ui (Mrg *mrg, void *data)
     else
     mrg_set_style (mrg, "color:green");
 
-    mrg_print (mrg, text);
+    mrg_print (mrg, "nchanterm");
     mrg_text_listen_done (mrg);
   }
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }
 
-int main (int argc, char **argv)
-{
+void main () {
   Mrg *mrg = mrg_new (640, 480, NULL);
   mrg_set_ui (mrg, render_ui, NULL);
   mrg_main (mrg);
-  return 0;
 }
