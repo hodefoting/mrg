@@ -18,7 +18,7 @@
 /* audio should be a separate daemon that reads client files */
 
 /* daemons should have their process files in the same directory,
- * permitting the system to be self introspectable.
+ * permitting all process of the system to be self-introspectable.
  *
  * drag and drop configuration using filesystem as repository.
  *
