@@ -466,6 +466,10 @@ static void mrg_parse_style_id (Mrg *mrg, const char *style_id,
   const char *p;
   char temp[128] = "";
   int  temp_l = 0;
+  if (!style_id)
+  {
+    return; // XXX: why does this happen?
+  }
 
   memset (node, 0, sizeof (MrgStyleNode));
 
