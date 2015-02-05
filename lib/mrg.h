@@ -120,7 +120,15 @@ void mrg_set_mrg_get_contents (Mrg *mrg,
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y);
 
 int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data);
+
+int mrg_add_idle_full (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data,
+                                 void (*destroy_notify)(void *destroy_data), void *destroy_data);
+
 int mrg_add_timeout (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data);
+
+int mrg_add_timeout_full (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data,
+                                 void (*destroy_notify)(void *destroy_data), void *destroy_data);
+
 void mrg_remove_idle (Mrg *mrg, int handle);
 
 #include "mrg-events.h"

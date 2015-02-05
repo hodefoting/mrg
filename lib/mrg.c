@@ -330,6 +330,10 @@ void mrg_focus_bindings (Mrg *mrg);
 typedef struct IdleCb {
   int (*cb) (Mrg *mrg, void *idle_data);
   void *idle_data;
+
+  void (*destroy_notify)(void *destroy_data);
+  void *destroy_data;
+
   int   ticks_remaining;
   int   is_idle;
   int   id;
@@ -363,7 +367,12 @@ void _mrg_idle_iteration (Mrg *mrg)
     }
   }
   for (l = to_remove; l; l = l->next)
+  {
+    IdleCb *item = l->data;
+    if (item->destroy_notify)
+      item->destroy_notify (item->destroy_data);
     mrg_list_remove (&mrg->idles, l->data);
+  }
 }
 
 void mrg_prepare (Mrg *mrg)
@@ -756,24 +765,35 @@ void mrg_remove_idle (Mrg *mrg, int handle)
       mrg_list_prepend (&to_remove, item);
   }
   for (l = to_remove; l; l = l->next)
+  {
+    IdleCb *item = l->data;
+    if (item->destroy_notify)
+      item->destroy_notify (item->destroy_data);
     mrg_list_remove (&mrg->idles, l->data);
+  }
 }
 
-int mrg_add_timeout (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
+int mrg_add_timeout_full (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data,
+                          void (*destroy_notify)(void *destroy_data), void *destroy_data)
 {
   IdleCb *item = calloc (sizeof (IdleCb), 1);
   item->cb = idle_cb;
   item->idle_data = idle_data;
   item->id = ++mrg->idle_id;
   item->ticks_remaining = ms * 1000;
+  item->destroy_notify = destroy_notify;
+  item->destroy_data = destroy_data;
   mrg_list_append (&mrg->idles, item);
-
-  /* XXX: should return a handle that can be used for removal */
-
   return item->id;
 }
 
-int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
+int mrg_add_timeout (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
+{
+  return mrg_add_timeout_full (mrg, ms, idle_cb, idle_data, NULL, NULL);
+}
+
+int mrg_add_idle_full (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data,
+                                 void (*destroy_notify)(void *destroy_data), void *destroy_data)
 {
   IdleCb *item = calloc (sizeof (IdleCb), 1);
   item->cb = idle_cb;
@@ -781,16 +801,16 @@ int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idl
   item->id = ++mrg->idle_id;
   item->ticks_remaining = -1;
   item->is_idle = 1;
+  item->destroy_notify = destroy_notify;
+  item->destroy_data = destroy_data;
   mrg_list_append (&mrg->idles, item);
-
-  /* XXX: should return a handle that can be used for removal */
-
   return item->id;
 }
 
-
-
-
+int mrg_add_idle (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data)
+{
+  return mrg_add_idle_full (mrg, idle_cb, idle_data, NULL, NULL);
+}
 
 void  mrg_set_position  (Mrg *mrg, int x, int y)
 {
