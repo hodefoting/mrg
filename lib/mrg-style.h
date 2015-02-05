@@ -225,38 +225,33 @@ struct _MrgStyle {
   MrgColor          text_stroke_color;
   float             tab_size;
 
-  /* copying style structs takes quite a bit of the time in the system,
-   * packing bits ends up saving a lot
-   *
-   * XXX: this is a gcc extension...
-   */
-  MrgFillRule         fill_rule:1;
-  MrgFontStyle        font_style:2;
-  MrgFontWeight       font_weight:2;
-  MrgLineCap          stroke_linecap:2;
-  MrgLineJoin         stroke_linejoin:2;
-  MrgTextAlign        text_align:2;
-  MrgFloat            float_:2;
-  MrgClear            clear:2;
-  MrgOverflow         overflow:2;
-  MrgDisplay          display:2;
-  MrgPosition         position:2;
-  MrgBoxSizing        box_sizing:2;
-  MrgVerticalAlign    vertical_align:3;
-  MrgWhiteSpace       white_space:3;
-  MrgUnicodeBidi      unicode_bidi:2;
-  MrgDirection        direction:1;
-  MrgListStyle        list_style:3;
-  unsigned int        stroke:1;
-  unsigned int        fill:1;
-  unsigned int        width_auto:1;
-  unsigned int        margin_left_auto:1;
-  unsigned int        margin_right_auto:1;
-  unsigned int        print_symbols:1;
+  MrgFillRule         fill_rule;
+  MrgFontStyle        font_style;
+  MrgFontWeight       font_weight;
+  MrgLineCap          stroke_linecap;
+  MrgLineJoin         stroke_linejoin;
+  MrgTextAlign        text_align;
+  MrgFloat            float_;
+  MrgClear            clear;
+  MrgOverflow         overflow;
+  MrgDisplay          display;
+  MrgPosition         position;
+  MrgBoxSizing        box_sizing;
+  MrgVerticalAlign    vertical_align;
+  MrgWhiteSpace       white_space;
+  MrgUnicodeBidi      unicode_bidi;
+  MrgDirection        direction;
+  MrgListStyle        list_style;
+  unsigned char       stroke;
+  unsigned char       fill;
+  unsigned char       width_auto;
+  unsigned char       margin_left_auto;
+  unsigned char       margin_right_auto;
+  unsigned char       print_symbols;
   MrgColor            stroke_color;
 
   /* vector shape / box related */
-  MrgColor          fill_color;
+  MrgColor            fill_color;
 
   MrgColor          border_top_color;
   MrgColor          border_left_color;
