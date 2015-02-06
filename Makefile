@@ -59,6 +59,12 @@ install: install-extra
 install-extra:
 	install mrg-host mrg-terminal mrg-edit mrg-browser $(DESTDIR)$(PREFIX)/bin/
 
+luajit/mrg_h.lua: lib/*.h Makefile
+	echo "local ffi = require'ffi'" > $@
+	echo "ffi.cdef[[" >> $@
+	cat lib/*.h >> $@
+	echo "]]" >> $@
+
 extra-clean:
 	rm -f mrg.static data.inc
 	rm -f tests/output/*
