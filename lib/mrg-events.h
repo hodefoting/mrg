@@ -47,6 +47,8 @@ enum _MrgType {
 typedef enum   _MrgType  MrgType;
 typedef struct _MrgEvent MrgEvent;
 
+
+
 struct _MrgRectangle {
   int x;
   int y;
@@ -92,6 +94,18 @@ void mrg_add_binding (Mrg *mrg,
                       const char *label,
                       MrgCb cb,
                       void  *cb_data);
+
+
+void mrg_add_binding_full (Mrg *mrg,
+                      const char *key,
+                      const char *action,
+                      const char *label,
+                      MrgCb cb,
+                      void  *cb_data,
+        MrgDestroyNotify destroy_notify,
+                      void  *destroy_data);
+
+
 
 /**
  * mrg_listen:

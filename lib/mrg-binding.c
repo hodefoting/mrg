@@ -17,12 +17,25 @@
 
 #include "mrg-internal.h"
 
+
 void mrg_add_binding (Mrg *mrg,
                       const char *key,
                       const char *action,
                       const char *label,
                       MrgCb cb,
                       void  *cb_data)
+{
+  mrg_add_binding_full (mrg, key, action, label, cb, cb_data, NULL, NULL);
+}
+
+void mrg_add_binding_full (Mrg *mrg,
+                      const char *key,
+                      const char *action,
+                      const char *label,
+                      MrgCb cb,
+                      void  *cb_data,
+                      MrgDestroyNotify destroy_notify,
+                      void  *destroy_data)
 {
   int i;
   for (i = 0; mrg->bindings[i].nick; i++)
@@ -42,6 +55,8 @@ void mrg_add_binding (Mrg *mrg,
     mrg->bindings[i].label = label ? strdup (label) : NULL;
   mrg->bindings[i].cb = cb;
   mrg->bindings[i].cb_data = cb_data;
+  mrg->bindings[i].destroy_notify = destroy_notify;
+  mrg->bindings[i].destroy_data = destroy_data;
 }
 
 int _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
@@ -86,6 +101,8 @@ void _mrg_clear_bindings (Mrg *mrg)
       free (mrg->bindings[i].command);
     if (mrg->bindings[i].label)
       free (mrg->bindings[i].label);
+    if (mrg->bindings[i].destroy_notify)
+      mrg->bindings[i].destroy_notify (mrg->bindings[i].destroy_data);
   }
   memset (&mrg->bindings, 0, sizeof (mrg->bindings));
 }

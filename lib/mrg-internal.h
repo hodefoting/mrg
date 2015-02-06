@@ -77,14 +77,13 @@ typedef struct MrgBinding {
   char *label;
   MrgCb cb;
   void *cb_data;
+  MrgDestroyNotify destroy_notify;
+  void  *destroy_data;
 } MrgBinding;
 
 
 typedef struct MrgItem {
-#if MRG_CAIRO
   cairo_matrix_t  inv_matrix;  /* for event coordinate transforms */
-#endif
-
 
   /* circles, as well as poly-lines/beziers could be added.. */
   float          x0;
@@ -351,9 +350,7 @@ struct _Mrg {
   float     e_em;
   float     offset_x;
   float     offset_y;
-#if MRG_CAIRO
   cairo_scaled_font_t *scaled_font;
-#endif
 
   MrgType      text_listen_types;
   MrgCb        text_listen_cb;
