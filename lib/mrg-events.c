@@ -17,6 +17,21 @@
 
 #include "mrg-internal.h"
 
+void _mrg_clear_text_closures (Mrg *mrg)
+{
+  int i;
+  for (i = 0; i < mrg->text_listen_count; i ++)
+  {
+    if (mrg->text_listen_finalize[i])
+       mrg->text_listen_finalize[i](
+         mrg->text_listen_data1[i],
+         mrg->text_listen_data2[i],
+         mrg->text_listen_finalize_data[i]);
+  }
+  mrg->text_listen_count  = 0;
+  mrg->text_listen_active = 0;
+}
+
 void mrg_clear (Mrg *mrg)
 {
   if (mrg->frozen)
@@ -26,6 +41,7 @@ void mrg_clear (Mrg *mrg)
     mrg->backend->mrg_clear (mrg);
 
   _mrg_clear_bindings (mrg);
+  _mrg_clear_text_closures (mrg);
 }
 
 MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
@@ -134,7 +150,8 @@ void mrg_listen_full (Mrg     *mrg,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2,
-                      void   (*finalize)(void *listen_data, void *listen_data2, void *finalize_data),
+                      void   (*finalize)(void *listen_data, void *listen_data2,
+                                         void *finalize_data),
                       void    *finalize_data)
 {
   if (!mrg->frozen)

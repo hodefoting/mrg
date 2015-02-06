@@ -60,6 +60,7 @@ typedef struct _MrgHtmlState MrgHtmlState;
 #define MRG_MAX_FLOATS      64
 #define MRG_MAX_CBS         64
 
+
 typedef struct MrgItemCb {
   MrgType types;
   MrgCb   cb;
@@ -80,7 +81,6 @@ typedef struct MrgBinding {
   MrgDestroyNotify destroy_notify;
   void  *destroy_data;
 } MrgBinding;
-
 
 typedef struct MrgItem {
   cairo_matrix_t  inv_matrix;  /* for event coordinate transforms */
@@ -304,6 +304,7 @@ struct _Mrg {
   MrgBinding     bindings[640];
   int            n_bindings;
 
+
   float          x; /* in px */
   float          y; /* in px */
 
@@ -352,13 +353,15 @@ struct _Mrg {
   float     offset_y;
   cairo_scaled_font_t *scaled_font;
 
-  MrgType      text_listen_types;
-  MrgCb        text_listen_cb;
-  void        *text_listen_data1;
-  void        *text_listen_data2;
+  MrgType      text_listen_types[640];
+  MrgCb        text_listen_cb[640];
+  void        *text_listen_data1[640];
+  void        *text_listen_data2[640];
 
-  void       (*text_listen_finalize)(void *listen_data, void *listen_data2, void *finalize_data);
-  void        *text_listen_finalize_data;
+  void       (*text_listen_finalize[640])(void *listen_data, void *listen_data2, void *finalize_data);
+  void        *text_listen_finalize_data[640];
+  int          text_listen_count;
+  int          text_listen_active;
 
   MrgList     *idles;
   int          idle_id;

@@ -44,10 +44,15 @@ void  mrg_set_line_spacing (Mrg *mrg, float line_spacing);
 float mrg_line_spacing     (Mrg *mrg); 
 int   mrg_print_get_xy     (Mrg *mrg, const char *str, int no, float *x, float *y);
 void  mrg_set_wrap         (Mrg *mrg, int do_wrap);
+
+/* */
+
 float mrg_draw_string      (Mrg *mrg, MrgStyle *style, 
                             float x, float y,
                             const char *string,
                             int utf8_len);
+
+
 void mrg_edit_string       (Mrg *mrg, char **string,
                             void (*update_string)(Mrg *mrg,
                             char **string_loc,
@@ -58,7 +63,6 @@ void mrg_edit_string       (Mrg *mrg, char **string,
 int mrg_get_cursor_pos  (Mrg *mrg);
 void mrg_set_cursor_pos (Mrg *mrg, int pos);
 
-/* should accept at lest 4-8 stacked cb's */
 void  mrg_text_listen (Mrg *mrg, MrgType types,
                        MrgCb cb, void *data1, void *data2);
 

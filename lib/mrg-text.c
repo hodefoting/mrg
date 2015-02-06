@@ -388,16 +388,16 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
 
   }
 
-  if (mrg->text_listen_cb)
+  if (mrg->text_listen_active)
   {
     float em = mrg_em (mrg);
-
+    int no = mrg->text_listen_count-1;
     mrg_listen (mrg,
-                mrg->text_listen_types,
+                mrg->text_listen_types[no],
                 old_x, y - em, new_x - old_x + 1, em * mrg->state->style.line_height,
-                mrg->text_listen_cb,
-                mrg->text_listen_data1,
-                mrg->text_listen_data2);
+                mrg->text_listen_cb[no],
+                mrg->text_listen_data1[no],
+                mrg->text_listen_data2[no]);
   }
 
   if (temp_string)
@@ -410,7 +410,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
 }
 
 float mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length);
-
 
 float paint_span_bg_final (Mrg   *mrg, float x, float y,
                            float  width)
@@ -486,7 +485,6 @@ float paint_span_bg (Mrg   *mrg, float x, float y,
 
   return left_pad + left_border;
 }
-
 
 float
 mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length)
@@ -972,12 +970,18 @@ void  mrg_text_listen_full (Mrg *mrg, MrgType types,
                       void   (*finalize)(void *listen_data, void *listen_data2, void *finalize_data),
                       void    *finalize_data)
 {
-  mrg->text_listen_types = types;
-  mrg->text_listen_cb = cb;
-  mrg->text_listen_data1 = data1;
-  mrg->text_listen_data2 = data2;
-  mrg->text_listen_finalize = finalize;
-  mrg->text_listen_finalize_data = finalize_data;
+
+  int no = mrg->text_listen_count;
+
+  mrg->text_listen_types[no] = types;
+  mrg->text_listen_cb[no] = cb;
+  mrg->text_listen_data1[no] = data1;
+  mrg->text_listen_data2[no] = data2;
+  mrg->text_listen_finalize[no] = finalize;
+  mrg->text_listen_finalize_data[no] = finalize_data;
+
+  mrg->text_listen_count++;
+  mrg->text_listen_active = 1;
 }
 
 void  mrg_text_listen (Mrg *mrg, MrgType types,
@@ -988,7 +992,7 @@ void  mrg_text_listen (Mrg *mrg, MrgType types,
 
 void  mrg_text_listen_done (Mrg *mrg)
 {
-  mrg->text_listen_cb = NULL;
+  mrg->text_listen_active = 0;
 }
 
 static int cmd_home (MrgEvent *event, void *data1, void *data2)

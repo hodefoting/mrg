@@ -522,6 +522,7 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
 
 function M.new(width,height, backend) return C.mrg_new(width, height, backend) end
 
+
 ffi.metatype('Mrg', {__index = {
   -- maybe we should add a _full version to this as well, then all callback
   -- things in the code would be lifecycle managed.
@@ -558,6 +559,8 @@ ffi.metatype('Mrg', {__index = {
     return C.mrg_add_binding_full (mrg, key, action,label,cb_fun, cb_data, notify_fun, NULL)
   end,
 
+  -- XXX text_listen currently leaks/is broken wrt destroy notify
+  
   text_listen      = function (mrg, types, cb, data1, data2)
     -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
@@ -566,6 +569,7 @@ ffi.metatype('Mrg', {__index = {
       notify_fun:free();
       return 0;
     end
+
     notify_fun = ffi.cast ("MrgCb", notify_cb)
     cb_fun = ffi.cast ("MrgCb", cb)
     return C.mrg_text_listen_full (mrg, types, cb_fun, data1, data2, notify_fun, NULL)

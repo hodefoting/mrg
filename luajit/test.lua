@@ -18,6 +18,17 @@ function (mrg, data)
   cr:arc (x, y, 20, 0, 3.14151*2)
   cr:stroke ()
 
+  mrg:set_xy(0, mrg:em() * 4)
+  mrg:text_listen(Mrg.PRESS, function(event,d1,d2)
+    mrg:quit();
+      -- XXX text_listen currently leaks/is broken wrt destroy notify
+    return 0;
+  end)
+  mrg:print("quit")
+  mrg:text_listen_done()
+
+  mrg:print(" " .. x .. ", " .. y)
+
   mrg:listen(Mrg.MOTION, 0, 0, mrg:width(), mrg:height(), function (event, d1, d2)
        x = event.x; y = event.y;
        event.mrg:queue_draw(NULL)
@@ -25,6 +36,7 @@ function (mrg, data)
      end)
 
   mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
+
 
 end)
 mrg:main()

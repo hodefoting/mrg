@@ -47,8 +47,6 @@ enum _MrgType {
 typedef enum   _MrgType  MrgType;
 typedef struct _MrgEvent MrgEvent;
 
-
-
 struct _MrgRectangle {
   int x;
   int y;

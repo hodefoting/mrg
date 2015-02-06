@@ -96,13 +96,13 @@ void _mrg_clear_bindings (Mrg *mrg)
   int i;
   for (i = 0; mrg->bindings[i].nick; i ++)
   {
+    if (mrg->bindings[i].destroy_notify)
+      mrg->bindings[i].destroy_notify (mrg->bindings[i].destroy_data);
     free (mrg->bindings[i].nick);
     if (mrg->bindings[i].command)
       free (mrg->bindings[i].command);
     if (mrg->bindings[i].label)
       free (mrg->bindings[i].label);
-    if (mrg->bindings[i].destroy_notify)
-      mrg->bindings[i].destroy_notify (mrg->bindings[i].destroy_data);
   }
   memset (&mrg->bindings, 0, sizeof (mrg->bindings));
 }
