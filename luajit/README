@@ -1,0 +1,6 @@
+If you've built and installed cairo and microraptor gui, and have luajit
+installed and in the path, you should be able to directly run test.lua
+
+Most API of Micro-raptor gui is bound, functions taking callbacks as function
+pointers in C are properly memory managed - otherwise luajit quickly runs out
+of resources.
