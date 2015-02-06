@@ -294,7 +294,6 @@ cairo_t *mrg_cr (Mrg *mrg)
     return mrg->backend->mrg_cr (mrg);
   else
   {
-#if MRG_CAIRO
   unsigned char *pixels = NULL;
   cairo_t *cr;
   cairo_surface_t *surface;
@@ -315,8 +314,6 @@ cairo_t *mrg_cr (Mrg *mrg)
   cairo_surface_destroy (surface);
   mrg->cr = cr;
   return cr;
-#endif
-  return NULL;
   }
 }
 
@@ -393,7 +390,6 @@ void mrg_prepare (Mrg *mrg)
 
   mrg_start (mrg, "document", NULL);
 
-#if MRG_CAIRO
   {
     cairo_t *cr = mrg_cr (mrg);
     cairo_save (cr);
@@ -414,7 +410,6 @@ void mrg_prepare (Mrg *mrg)
     cairo_paint (cr);
     cairo_restore (cr);
   }
-#endif
 
   mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, _mrg_bindings_key_down, NULL, NULL);
 
@@ -432,9 +427,7 @@ void mrg_flush  (Mrg *mrg)
   //_mrg_debug_overlays (mrg);
   mrg_end (mrg);
 
-#if MRG_CAIRO
   cairo_restore (mrg_cr (mrg));
-#endif
 
   if (mrg->backend->mrg_flush)
     mrg->backend->mrg_flush (mrg);
@@ -553,10 +546,8 @@ void mrg_start_with_style (Mrg        *mrg,
 
   _mrg_init_style (mrg);
 
-#if MRG_CAIRO
   if (mrg->in_paint)
     cairo_save (mrg_cr (mrg));
-#endif
 
   {
     char *collated_style = _mrg_stylesheet_collate_style (mrg);
@@ -570,9 +561,7 @@ void mrg_start_with_style (Mrg        *mrg,
   {
     mrg_set_style (mrg, style);
   }
-#if MRG_CAIRO
   _mrg_layout_pre (mrg, &mrg->html);
-#endif
 }
 
 void mrg_start (Mrg *mrg, const char *style_id, void *id_ptr)
@@ -582,9 +571,7 @@ void mrg_start (Mrg *mrg, const char *style_id, void *id_ptr)
 
 void mrg_end (Mrg *mrg)
 {
-#if MRG_CAIRO
   _mrg_layout_post (mrg, &mrg->html);
-#endif
   if (mrg->state->style_id)
   {
     free (mrg->state->style_id);
@@ -594,10 +581,8 @@ void mrg_end (Mrg *mrg)
   if (mrg->state_no < 0)
     fprintf (stderr, "unbalanced mrg_start/mrg_end, too many ends\n");
   mrg->state = &mrg->states[mrg->state_no];
-#if MRG_CAIRO
   if (mrg->in_paint)
     cairo_restore (mrg_cr (mrg));
-#endif
 }
 
 void mrg_style_defaults (Mrg *mrg);
@@ -696,7 +681,6 @@ void  mrg_ui_update (Mrg *mrg)
   mrg_flush (mrg);
 }
 
-#if MRG_CAIRO
 static int mrg_mrg_press (MrgEvent *event, void *mrg, void *data2)
 {
   mrg_pointer_press (mrg, event->x, event->y, event->device_no);
@@ -714,11 +698,9 @@ static int mrg_mrg_release (MrgEvent *event, void *mrg, void *data2)
   mrg_pointer_release (mrg, event->x, event->y, event->device_no);
   return 0;
 }
-#endif
 
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
 {
-#if MRG_CAIRO
   unsigned char *pixels = NULL;
   cairo_surface_t *surface;
   int width, height;
@@ -746,7 +728,6 @@ void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
               mrg_mrg_release, mrg, NULL);
 
   cairo_restore (cr);
-#endif
 }
 
 void mrg_remove_idle (Mrg *mrg, int handle)

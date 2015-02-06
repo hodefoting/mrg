@@ -24,11 +24,9 @@ static void mrg_item_center (MrgItem *item, float *cx, float *cy)
   double x = (item->x0 + item->x1)/2;
   double y = (item->y0 * 0.2 + item->y1 * 0.8);
 
-#if MRG_CAIRO
   cairo_matrix_t mat = item->inv_matrix;
   cairo_matrix_invert (&mat);
   cairo_matrix_transform_point (&mat, &x, &y);
-#endif
 
   if (cx) *cx = x;
   if (cy) *cy = y;

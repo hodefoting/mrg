@@ -54,9 +54,7 @@ int mrg_quit_cb (MrgEvent *event, void *data1, void *data2)
 
 void mrg_cairo_set_source_color (cairo_t *cr, MrgColor *color)
 {
-#if MRG_CAIRO
   cairo_set_source_rgba (cr, color->red, color->green, color->blue, color->alpha);
-#endif
 }
 
 void mrg_color_set (MrgColor *color, float red, float green, float blue, float alpha)

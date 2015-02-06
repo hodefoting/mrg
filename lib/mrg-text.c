@@ -34,7 +34,7 @@ float _mrg_dynamic_edge_right (Mrg *mrg)
 
 void _mrg_get_ascent_descent (Mrg *mrg, float *ascent, float *descent)
 {
-#if MRG_CAIRO
+#if 1 // MRG_CAIRO
   cairo_scaled_font_t *scaled_font = mrg->scaled_font;
   cairo_font_extents_t extents;
   if (mrg_is_terminal (mrg))
@@ -61,7 +61,7 @@ void _mrg_get_ascent_descent (Mrg *mrg, float *ascent, float *descent)
 
 static float measure_word_width (Mrg *mrg, const char *word)
 {
-#if MRG_CAIRO
+#if 1 // MRG_CAIRO
   cairo_scaled_font_t *scaled_font = mrg->scaled_font;
   cairo_text_extents_t extents;
   if (mrg_is_terminal (mrg))
@@ -78,7 +78,6 @@ static float measure_word_width (Mrg *mrg, const char *word)
 #endif
 }
 
-#if MRG_CAIRO
 static float _mrg_text_shift (Mrg *mrg)
 {
   //MrgStyle *style = mrg_style (mrg);
@@ -86,7 +85,6 @@ static float _mrg_text_shift (Mrg *mrg)
   _mrg_get_ascent_descent (mrg, &ascent, &descent);
   return (descent * 0.9); // XXX
 }
-#endif
 
 const char * hl_punctuation[] =
 {";", ",", "(", ")", "{", "}", NULL};
@@ -331,11 +329,9 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
     /* XXX: include transforms */
     int offset;
     double u = x , v = y;
-#if MRG_CAIRO
     cairo_matrix_t matrix;
     cairo_get_matrix (mrg_cr (mrg), &matrix);
     cairo_matrix_transform_point (&matrix, &u, &v);
-#endif
 
     //u = floor(u);
     //v = floor(v);
@@ -364,7 +360,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
   }
   else if (mrg->in_paint)
   {
-#if MRG_CAIRO
     cairo_set_font_size (cr, style->font_size);
 
     if (style->text_stroke_width > 0.01)
@@ -391,9 +386,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
 #endif
     cairo_get_current_point (cr, &new_x, NULL);
 
-#else
-    new_x = old_x = 0;
-#endif
   }
 
   if (mrg->text_listen_cb)
@@ -423,7 +415,6 @@ float mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_lengt
 float paint_span_bg_final (Mrg   *mrg, float x, float y,
                            float  width)
 {
-#if MRG_CAIRO
   MrgStyle *style = mrg_style (mrg);
   cairo_t *cr = mrg_cr (mrg);
   if (style->display != MRG_DISPLAY_INLINE)
@@ -447,15 +438,11 @@ float paint_span_bg_final (Mrg   *mrg, float x, float y,
   _mrg_border_right (mrg, x, y - mrg_em (mrg), width, mrg_em (mrg));
 
   return style->padding_right + style->border_right_width;
-#else
-  return 0;
-#endif
 }
 
 float paint_span_bg (Mrg   *mrg, float x, float y,
                      float  width)
 {
-#if MRG_CAIRO
   MrgStyle *style = mrg_style (mrg);
   cairo_t *cr = mrg_cr (mrg);
   if (!cr)
@@ -498,9 +485,6 @@ float paint_span_bg (Mrg   *mrg, float x, float y,
   }
 
   return left_pad + left_border;
-#else
-  return 0;
-#endif
 }
 
 
@@ -608,12 +592,10 @@ static void _mrg_spaces (Mrg *mrg, int count)
         {
           if (mrg->state->style.text_decoration & MRG_REVERSE)
           {
-#if MRG_CAIRO
             cairo_t *cr = mrg_cr (mrg);
             cairo_rectangle (cr, mrg->x + diff*0.1, mrg->y + mrg_em(mrg)*0.2, diff*0.8, -mrg_em (mrg)*1.1);
             cairo_set_source_rgb (cr, 1,1,1);
             cairo_fill (cr);
-#endif
           }
         }
         mrg->x += diff;
@@ -816,13 +798,11 @@ static int mrg_print_wrap (Mrg        *mrg,
       mrg->e_we = mrg_edge_right(mrg);
       mrg->e_em = mrg_em (mrg);
 
-#if MRG_CAIRO
       if (mrg->scaled_font)
         cairo_scaled_font_destroy (mrg->scaled_font);
       cairo_set_font_size (mrg_cr (mrg), mrg_style(mrg)->font_size);
       mrg->scaled_font = cairo_get_scaled_font (mrg_cr (mrg));
       cairo_scaled_font_reference (mrg->scaled_font);
-#endif
     }
 
   for (c = 0 ; c < length && data[c] && ! mrg->state->overflowed; c++)

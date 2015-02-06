@@ -70,13 +70,11 @@ static void mrg_mmm_flush (Mrg *mrg)
     mrg->dirty.height = 0;
 
   mmm_write_done (mmm, mrg->dirty.x, mrg->dirty.y, mrg->dirty.width, mrg->dirty.height);
-#if MRG_CAIRO
   if (mrg->cr)
   {
     cairo_destroy (mrg->cr);
     mrg->cr = NULL;
   }
-#endif
 }
 
 #if 0

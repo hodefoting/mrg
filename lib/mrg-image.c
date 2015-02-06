@@ -17,9 +17,6 @@
 
 #include "mrg-internal.h"
 
-#if MRG_CAIRO
-
-
 struct _MrgImage
 {
   char *path;
@@ -35,13 +32,11 @@ static void free_image (Mrg *mrg, void *data)
   cairo_surface_destroy (image->surface);
   free (data);
 }
-#endif
 
 MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
                            int *width,
                            int *height)
 {
-#if MRG_CAIRO
   MrgList *l;
 
   if (!path)
@@ -69,14 +64,12 @@ MrgImage *mrg_query_image (Mrg *mrg, const char *path,
       return mrg_query_image (mrg, path, width, height);
     }
   }
-#endif
   return NULL;
 }
 
 
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path)
 {
-#if MRG_CAIRO
   int orig_width, orig_height;
   MrgImage *image;
   cairo_t *cr = mrg_cr (mrg);
@@ -114,5 +107,4 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
   cairo_set_source_surface (cr, surface, 0, 0);
   cairo_paint (cr);
   cairo_restore (cr);
-#endif
 }

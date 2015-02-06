@@ -44,13 +44,11 @@ static unsigned char *mrg_mem_get_pixels (Mrg *mrg, int *rowstride)
 
 static void mrg_mem_flush (Mrg *mrg)
 {
-#if MRG_CAIRO
   if (mrg->cr)
   {
     cairo_destroy (mrg->cr);
     mrg->cr = NULL;
   }
-#endif
 }
 
 static void mrg_mem_main (Mrg *mrg,
@@ -93,11 +91,8 @@ static Mrg *_mrg_mem_new (int width, int height)
   MrgMem *backend = calloc (sizeof (MrgMem), 1);
 
   mrg = calloc (sizeof (Mrg), 1);
-#if MRG_CAIRO
   backend->allocated = width * height * 4;
   backend->pixels = calloc (backend->allocated, 1);
-#endif
-
   mrg->backend = &mrg_backend_mem;
   mrg->backend_data = backend;
   _mrg_init (mrg, width, height);

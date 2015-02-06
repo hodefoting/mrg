@@ -328,13 +328,11 @@ static void mrg_nct_flush (Mrg *mrg)
 
   nct_flush (backend->term);
 
-#if MRG_CAIRO
   if (mrg->cr)
   {
     cairo_destroy (mrg->cr);
     mrg->cr = NULL;
   }
-#endif
 }
 
 #include <stdio.h>
@@ -485,9 +483,7 @@ static Mrg *_mrg_terminal_new (int width, int height)
   setvbuf(stdin, NULL, _IONBF, 0); 
 
   mrg = calloc (sizeof (Mrg), 1);
-#if MRG_CAIRO
   backend->nct_pixels = calloc (width * height * 4, 1);
-#endif
   mrg->glyphs = calloc ((width/CPX) * (height/CPX) * 4, 1);
   mrg->styles = calloc ((width/CPX) * (height/CPX) * 1, 1);
 

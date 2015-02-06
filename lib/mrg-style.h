@@ -19,11 +19,7 @@
 #ifndef MRG_STYLE_H__
 #define MRG_STYLE_H__
 
-#if MRG_CAIRO
 #include <cairo.h>
-#else
-#define cairo_t void
-#endif
 
 struct _MrgColor {
   float red;

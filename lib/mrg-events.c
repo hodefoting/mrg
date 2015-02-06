@@ -53,9 +53,7 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
     u = x;
     v = y;
 
-#if MRG_CAIRO
     cairo_matrix_transform_point (&item->inv_matrix, &u, &v);
-#endif
 
     if (u >= item->x0 && v >= item->y0 &&
         u <  item->x1 && v <  item->y1 &&
@@ -71,9 +69,7 @@ static int rectangle_equal (MrgItem *a, MrgItem *b)
          a->y0 == b->y0 &&
          a->x1 == b->x1 &&
          a->y1 == b->y1 
-#if MRG_CAIRO
          && !memcmp (&a->inv_matrix, &b->inv_matrix, sizeof (a->inv_matrix))
-#endif
          ;
 }
 
@@ -139,18 +135,14 @@ void mrg_listen_full (Mrg     *mrg,
   if (!mrg->frozen)
   {
     MrgItem *item;
-#if MRG_CAIRO
     cairo_t *cr = mrg_cr (mrg);
-#endif
 
     /* early bail for listeners outside screen  */
     {
       double tx = x;
       double ty = y;
 
-#if MRG_CAIRO
       cairo_user_to_device (cr, &tx, &ty);
-#endif
       if (ty > mrg->height * 2 ||
           tx > mrg->width * 2 ||
           tx < -mrg->width * 2 ||
@@ -175,10 +167,8 @@ void mrg_listen_full (Mrg     *mrg,
     item->cb[0].finalize_data = finalize_data;
     item->cb_count = 1;
     item->types = types;
-#if MRG_CAIRO
     cairo_get_matrix (cr, &item->inv_matrix);
     cairo_matrix_invert (&item->inv_matrix);
-#endif
 
     if (mrg->items)
     {
@@ -223,7 +213,6 @@ _mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, f
   transformed_event.device_x = event->x;
   transformed_event.device_y = event->y;
 
-#if MRG_CAIRO
   {
     double tx, ty;
     tx = transformed_event.x;
@@ -237,7 +226,6 @@ _mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, f
     transformed_event.delta_x = tx;
     transformed_event.delta_y = ty;
   }
-#endif
 
   event = &transformed_event;
 
@@ -499,7 +487,6 @@ float mrg_pointer_y (Mrg *mrg)
 
 void _mrg_debug_overlays (Mrg *mrg)
 {
-#if MRG_CAIRO
   MrgList *a;
   cairo_t *cr = mrg_cr (mrg);
   cairo_save (cr);
@@ -529,6 +516,5 @@ void _mrg_debug_overlays (Mrg *mrg)
     }
   }
   cairo_restore (cr);
-#endif
 }
 

@@ -21,7 +21,6 @@
 #include <math.h>
 #include "mrg-internal.h"
 
-#if MRG_CAIRO
 static void
 _mrg_draw_background_increment (Mrg *mrg, void *data, int last);
 
@@ -192,7 +191,6 @@ static void clear_both (MrgHtml *ctx)
 
 static void mrg_path_fill_stroke (Mrg *mrg)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
   if (style->fill_color.alpha > 0.001)
@@ -208,12 +206,10 @@ static void mrg_path_fill_stroke (Mrg *mrg)
     cairo_stroke (cr);
   }
   cairo_new_path (cr);
-#endif
 }
 
 void _mrg_border_top (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -233,11 +229,9 @@ void _mrg_border_top (Mrg *mrg, int x, int y, int width, int height)
     cairo_fill (cr);
   }
   cairo_restore (cr);
-#endif
 }
 void _mrg_border_bottom (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -257,12 +251,10 @@ void _mrg_border_bottom (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-#endif
 }
 
 void _mrg_border_top_r (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -282,11 +274,9 @@ void _mrg_border_top_r (Mrg *mrg, int x, int y, int width, int height)
     cairo_fill (cr);
   }
   cairo_restore (cr);
-#endif
 }
 void _mrg_border_bottom_r (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -306,12 +296,10 @@ void _mrg_border_bottom_r (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-#endif
 }
 
 void _mrg_border_top_l (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -331,11 +319,9 @@ void _mrg_border_top_l (Mrg *mrg, int x, int y, int width, int height)
     cairo_fill (cr);
   }
   cairo_restore (cr);
-#endif
 }
 void _mrg_border_bottom_l (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -355,13 +341,11 @@ void _mrg_border_bottom_l (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-#endif
 }
 
 
 void _mrg_border_top_m (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -381,11 +365,9 @@ void _mrg_border_top_m (Mrg *mrg, int x, int y, int width, int height)
     cairo_fill (cr);
   }
   cairo_restore (cr);
-#endif
 }
 void _mrg_border_bottom_m (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -405,11 +387,9 @@ void _mrg_border_bottom_m (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-#endif
 }
 void _mrg_border_left (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -429,12 +409,9 @@ void _mrg_border_left (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-
-#endif
 }
 void _mrg_border_right (Mrg *mrg, int x, int y, int width, int height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   MrgStyle *style = mrg_style (mrg);
 
@@ -454,7 +431,6 @@ void _mrg_border_right (Mrg *mrg, int x, int y, int width, int height)
   }
 
   cairo_restore (cr);
-#endif
 }
 
 static void mrg_box (Mrg *mrg, int x, int y, int width, int height)
@@ -468,7 +444,6 @@ static void mrg_box (Mrg *mrg, int x, int y, int width, int height)
 
 static void mrg_box_fill (Mrg *mrg, MrgStyle *style, float x, float y, float width, float height)
 {
-#if MRG_CAIRO
   cairo_t *cr = mrg_cr (mrg);
   if (style->background_color.alpha <= 0.0001)
     return;
@@ -490,7 +465,6 @@ static void mrg_box_fill (Mrg *mrg, MrgStyle *style, float x, float y, float wid
     cairo_fill (cr);
   }
   cairo_restore (cr);
-#endif
 }
 
 /*
@@ -640,10 +614,8 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
   switch (style->position)
   {
     case MRG_POSITION_RELATIVE:
-#if MRG_CAIRO
       /* XXX: deal with style->right and style->bottom */
       cairo_translate (mrg_cr (mrg), style->left, style->top);
-#endif
     case MRG_POSITION_STATIC:
 
 
@@ -766,10 +738,8 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
             width = mrg_edge_right (mrg) - mrg_edge_left (mrg);
         }
 
-#if MRG_CAIRO
         cairo_identity_matrix (mrg_cr (mrg));
         cairo_scale (mrg_cr(mrg), mrg_ddpx (mrg), mrg_ddpx (mrg));
-#endif
         ctx->state->floats = 0;
 
         mrg_set_edge_left (mrg, style->left + style->margin_left + style->border_left_width + style->padding_left);
@@ -808,14 +778,12 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
                         from previous frame, we could use it here */
        && style->overflow == MRG_OVERFLOW_HIDDEN)
        {
-#if MRG_CAIRO
          cairo_rectangle (mrg_cr(mrg),
             ctx->state->block_start_x - style->padding_left - style->border_left_width,
             ctx->state->block_start_y - mrg_em(mrg) - style->padding_top - style->border_top_width,
             width + style->border_right_width + style->border_left_width + style->padding_left + style->padding_right, //mrg_edge_right (mrg) - mrg_edge_left (mrg) + style->padding_left + style->padding_right + style->border_left_width + style->border_right_width,
             height + style->padding_top + style->padding_bottom + style->border_top_width + style->border_bottom_width);
          cairo_clip (mrg_cr(mrg));
-#endif
        }
 
     ctx->state->ptly = 0;
@@ -916,7 +884,6 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
         geo->height);
 
     {
-#if MRG_CAIRO
       cairo_matrix_t transform;
       cairo_get_matrix (mrg_cr (mrg), &transform);
       double x = mrg->pointer_x;
@@ -935,7 +902,6 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
       {
         geo->hover = 0;
       }
-#endif
     }
 
     //mrg_edge_right (mrg) - mrg_edge_left (mrg), mrg_y (mrg) - (ctx->state->block_start_y - mrg_em(mrg)));
@@ -954,10 +920,8 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
     mrg->x += paint_span_bg_final (mrg, mrg->x, mrg->y, 0);
   }
 
-#if MRG_CAIRO
   if (style->position == MRG_POSITION_RELATIVE)
     cairo_translate (mrg_cr (mrg), -style->left, -style->top);
-#endif
 
   if (style->float_ ||
       style->position == MRG_POSITION_ABSOLUTE ||
@@ -1312,7 +1276,6 @@ again:
     }
   }
 }
-#endif
 
 void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
@@ -1320,7 +1283,6 @@ void mrg_xml_render (Mrg *mrg,
                      void *link_data,
                      char *html)
 {
-#if MRG_CAIRO
   MrgXml *xmltok      = xmltok_buf_new (html);
   MrgHtml *ctx        = &mrg->html;
   char tag[64][16];
@@ -1764,7 +1726,6 @@ void mrg_xml_render (Mrg *mrg,
 
 //  mrg_list_free (&ctx->geo_cache); /* XXX: no point in doing that here */
   mrg_string_free (style, 1);
-#endif
 }
 
 void mrg_xml_renderf (Mrg *mrg,

@@ -802,9 +802,7 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
   {
     float val =mrg_parse_px_y (mrg, value, NULL);
     s->line_width = val;
-#if MRG_CAIRO
     cairo_set_line_width (mrg_cr (mrg), s->line_width);
-#endif
   }
 
   else if (!strcmp (name, "background-color"))
@@ -869,12 +867,10 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
         s->text_decoration ^= (s->text_decoration & MRG_BOLD);
         s->font_weight = MRG_FONT_WEIGHT_NORMAL;
       }
-#if MRG_CAIRO
       cairo_select_font_face (mrg_cr (mrg),
           s->font_family,
           s->font_style,
           s->font_weight);
-#endif
     }
   else if (!strcmp (name, "white-space"))
     {
@@ -946,23 +942,19 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       {
         s->font_style = MRG_FONT_STYLE_NORMAL;
       }
-#if MRG_CAIRO
       cairo_select_font_face (mrg_cr (mrg),
           s->font_family,
           s->font_style,
           s->font_weight);
-#endif
     }
   else if (!strcmp (name, "font-family"))
     {
       strncpy (s->font_family, value, 63);
       s->font_family[63]=0;
-#if MRG_CAIRO
       cairo_select_font_face (mrg_cr (mrg),
           s->font_family,
           s->font_style,
           s->font_weight);
-#endif
     }
   else if (!strcmp (name, "fill-rule"))
     {
@@ -973,12 +965,10 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       else
         s->fill_rule = MRG_FILL_RULE_EVEN_ODD;
 
-#if MRG_CAIRO
       if (s->fill_rule == MRG_FILL_RULE_EVEN_ODD)
         cairo_set_fill_rule (mrg_cr (mrg), CAIRO_FILL_RULE_EVEN_ODD);
       else
         cairo_set_fill_rule (mrg_cr (mrg), CAIRO_FILL_RULE_WINDING);
-#endif
     }
   else if (!strcmp (name, "stroke-linejoin"))
     {
@@ -990,9 +980,7 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
         s->stroke_linejoin = MRG_LINE_JOIN_BEVEL;
       else
         s->stroke_linejoin = MRG_LINE_JOIN_MITER;
-#if MRG_CAIRO
       cairo_set_line_join (mrg_cr (mrg), s->stroke_linejoin);
-#endif
     }
   else if (!strcmp (name, "stroke-linecap"))
     {
@@ -1004,21 +992,17 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
         s->stroke_linecap = MRG_LINE_CAP_SQUARE;
       else
         s->stroke_linecap = MRG_LINE_CAP_BUTT;
-#if MRG_CAIRO
       cairo_set_line_cap (mrg_cr (mrg), s->stroke_linecap);
-#endif
     }
   else if (!strcmp (name, "font-family"))
     {
       strncpy (s->font_family, value, 63);
       s->font_family[63]=0;
 
-#if MRG_CAIRO
       cairo_select_font_face (mrg_cr (mrg),
           s->font_family,
           s->font_style,
           s->font_weight);
-#endif
     }
   else if (!strcmp (name, "vertical-align"))
     {
@@ -1218,12 +1202,10 @@ static void mrg_css_handle_property_pass2 (Mrg *mrg, const char *name,
     s->right = mrg_parse_px_x (mrg, value, NULL);
     if (width == 0)
     {
-#if MRG_CAIRO
       MrgGeoCache *geo = _mrg_get_cache (&mrg->html, s->id_ptr);
       if (geo->gen)
         width = geo->width;
       else
-#endif
       {
         width = 8 * s->font_size;
         mrg_queue_draw (mrg, NULL);
@@ -1239,12 +1221,10 @@ static void mrg_css_handle_property_pass2 (Mrg *mrg, const char *name,
 
     if (height == 0)
     {
-#if MRG_CAIRO
       MrgGeoCache *geo = _mrg_get_cache (&mrg->html, s->id_ptr);
       if (geo->gen)
         height = geo->height;
       else
-#endif
       {
         height = 2 * s->font_size;
         mrg_queue_draw (mrg, NULL);

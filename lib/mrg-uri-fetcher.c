@@ -305,10 +305,8 @@ typedef struct {
 } UriDispatch;
 
 #include <sys/utsname.h>
-#if MRG_CAIRO
 #include <cairo.h>
 #include <pixman.h>
-#endif
 #if MRG_SDL
 #include <SDL.h>
 #endif
@@ -335,10 +333,8 @@ about_version_cb (const char *referer,
 
   mrg_string_append_printf (str, "<dl>");
   mrg_string_append_printf (str, "<dt>Kernel: </dt><dd>%s %s %s</dd>", uname_info.sysname, uname_info.machine, uname_info.release);
-#if MRG_CAIRO
   mrg_string_append_printf (str, "<dt>Cairo: </dt><dd>%i.%i.%i</dd>", CAIRO_VERSION_MAJOR, CAIRO_VERSION_MINOR, CAIRO_VERSION_MICRO);
   mrg_string_append_printf (str, "<dt>Pixman: </dt><dd>%i.%i.%i</dd>", PIXMAN_VERSION_MAJOR, PIXMAN_VERSION_MINOR, PIXMAN_VERSION_MICRO);
-#endif
 
 #if MRG_GTK
   mrg_string_append_printf (str, "<dt>Gtk: </dt><dd>%i.%i.%i</dd>", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
