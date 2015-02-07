@@ -18,6 +18,8 @@ function (mrg, data)
     mrg:quit();
     return 0;
   end)
+
+
   mrg:print("quit")
   mrg:text_listen_done()
 

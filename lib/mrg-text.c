@@ -400,6 +400,7 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
                 mrg->text_listen_cb[no],
                 mrg->text_listen_data1[no],
                 mrg->text_listen_data2[no]);
+    cairo_new_path (cr);
     cairo_restore (cr);
   }
 
