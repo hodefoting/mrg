@@ -13,11 +13,6 @@ function (mrg, data)
   mrg:set_xy(0, mrg:em()*1.2);
   mrg:print_xml("<div style='color:red'>luajit + mrg</div> \n")
 
-  cr:new_path()
-  cr:set_source_rgb(0,0,0)
-  cr:arc (x, y, 20, 0, 3.14151*2)
-  cr:stroke ()
-
   mrg:set_xy(0, mrg:em() * 4)
   mrg:text_listen(Mrg.PRESS, function(event,d1,d2)
     mrg:quit();
@@ -37,6 +32,13 @@ function (mrg, data)
 
   mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
 
+  -- draw a circle for mouse cursor
+  cr:new_path()
+  cr:set_source_rgb(0,0,0)
+  cr:arc (x, y, 20, 0, 3.14151*2)
+  cr:stroke_preserve ()
+  cr:set_source_rgba(1,1,1,0.5)
+  cr:fill ()
 
 end)
 mrg:main()
