@@ -40,15 +40,19 @@ void ui (Mrg *mrg, void *data) {
 
  cairo_arc (cr, 200, 150, 50, 0, M_PI*2);
  cairo_set_source_rgb (cr, 0,1,0);
+ mrg_listen (mrg, MRG_PRESS, set_color_cb, "green", NULL);
  cairo_fill (cr);
 
- mrg_listen (mrg, MRG_PRESS, 200-50, 150-50, 100, 100, set_color_cb, "green", NULL);
  
  cairo_arc (cr, 300, 150, 50, 0, M_PI*2);
  cairo_set_source_rgb (cr, 0,0,1);
+ mrg_listen (mrg, MRG_PRESS, set_color_cb, "blue", NULL);
  cairo_fill (cr);
 
- mrg_listen (mrg, MRG_PRESS, 300-50, 150-50,100,100, set_color_cb, "blue", NULL);
+ cairo_rectangle (cr, 50, 250-10, 400, 25);
+ mrg_listen (mrg, MRG_DRAG, zoom_cb, &zoom, NULL);
+ cairo_set_source_rgb (cr, 0, 0.4, 0);
+ cairo_fill (cr);
 
  cairo_set_source_rgb (cr, 0, 0, 0);
  cairo_rectangle (cr, 50, 250, 400, 5);
@@ -57,8 +61,6 @@ void ui (Mrg *mrg, void *data) {
  cairo_rectangle (cr, 50 + 200*zoom, 250-10, 5, 25);
  cairo_fill (cr);
 
- mrg_listen (mrg, MRG_DRAG, 50, 250-10, 400, 25,
-    zoom_cb, &zoom, NULL);
 }
 
 int main () {

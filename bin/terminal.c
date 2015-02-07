@@ -953,7 +953,7 @@ static void render_ui (Mrg *mrg, void *data)
   }
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_listen (mrg, MRG_KEY_DOWN, 0,0, 0,0, event_handler, NULL, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, event_handler, NULL, NULL);
 }
 
 void

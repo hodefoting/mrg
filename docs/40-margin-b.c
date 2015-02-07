@@ -25,10 +25,8 @@ void ui (Mrg *mrg, void *data) {
   cairo_line_to (cr, x, mrg_height (mrg));
   cairo_stroke (cr);
 
-  mrg_listen (mrg, MRG_DRAG,
-              x-10, 0,
-                20, mrg_height (mrg),
-              drag_cb, NULL, NULL);
+  cairo_rectangle (cr, x-10, 0, 20, mrg_height (mrg));
+  mrg_listen (mrg, MRG_DRAG, drag_cb, NULL, NULL);
 }
 
 int main () {

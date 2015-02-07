@@ -234,12 +234,17 @@ static void gui (Mrg *mrg, void *data)
     state->started = 1;
   }
 
-  mrg_listen (mrg, MRG_DRAG, 0,0,mrg_width(mrg), mrg_height(mrg), drag_pos, pos, NULL);
+  cairo_t *cr = mrg_cr (mrg);
+  cairo_save (cr);
+  cairo_new_path (cr);
+  cairo_rectangle (cr, 0, 0, mrg_width (mrg), mrg_height (mrg));
+  mrg_listen (mrg, MRG_DRAG, drag_pos, pos, NULL);
+  cairo_new_path (cr);
+  cairo_restore (cr);
+
   mrg_start (mrg, "editor", NULL);
 
-#if MRG_CAIRO
   cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
-#endif
   mrg_set_edge_left (mrg, 10);
 
   mrg_print (mrg, "\n");
@@ -263,16 +268,15 @@ static void gui (Mrg *mrg, void *data)
     }
     else
       move_y = 0;
-
-    //fprintf (stderr, "%f %f\n", x, y);
   }
+  mrg_queue_draw (mrg, NULL);
 
   /* turn on syntax highlighting of fragments output */
-  mrg_syntax_hl_start (mrg);
+  //mrg_syntax_hl_start (mrg);
 
   mrg_print (mrg, state->data);
 
-  mrg_syntax_hl_stop (mrg);
+  //mrg_syntax_hl_stop (mrg);
   /* turn off syntax highlighting of fragments output */
 
   mrg_end (mrg);

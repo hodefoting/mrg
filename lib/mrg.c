@@ -411,7 +411,7 @@ void mrg_prepare (Mrg *mrg)
     cairo_restore (cr);
   }
 
-  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, _mrg_bindings_key_down, NULL, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, _mrg_bindings_key_down, NULL, NULL);
 
   if (mrg->edited && mrg->text_edit_blocked <= 0)
     mrg_text_edit_bindings (mrg);
@@ -719,13 +719,13 @@ void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
   cairo_set_source_surface (cr, surface, 0, 0);
   cairo_paint (cr);
   cairo_surface_destroy (surface);
-  
-  mrg_listen (mrg2, MRG_PRESS, 0, 0, mrg_width (mrg), mrg_height (mrg),
-              mrg_mrg_press, mrg, NULL);
-  mrg_listen (mrg2, MRG_MOTION, 0, 0, mrg_width (mrg), mrg_height (mrg),
-              mrg_mrg_motion, mrg, NULL);
-  mrg_listen (mrg2, MRG_RELEASE, 0, 0, mrg_width (mrg), mrg_height (mrg),
-              mrg_mrg_release, mrg, NULL);
+
+  cairo_new_path (cr);
+  cairo_rectangle (cr, 0, 0, mrg_width (mrg), mrg_height (mrg));
+
+  mrg_listen (mrg2, MRG_PRESS,   mrg_mrg_press, mrg, NULL);
+  mrg_listen (mrg2, MRG_MOTION,  mrg_mrg_motion, mrg, NULL);
+  mrg_listen (mrg2, MRG_RELEASE, mrg_mrg_release, mrg, NULL);
 
   cairo_restore (cr);
 }

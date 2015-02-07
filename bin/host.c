@@ -384,12 +384,10 @@ int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
   Host *host = host_;
   if (host->focused)
   {
-    fprintf (stderr, "Aaa\n");
     mmm_add_event (host->focused->mmm, event->key_name);
   }
   else
   {
-    fprintf (stderr, "Bbb\n");
   }
   return 0;
 }
@@ -531,7 +529,6 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
 
       if (pixels)
       {
-#if MRG_CAIRO
         surface = cairo_image_surface_create_for_data ((void*)pixels, CAIRO_FORMAT_ARGB32, width, height, rowstride);
         cairo_save (cr);
         cairo_translate (cr, x, y);
@@ -550,19 +547,21 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
         else
           cairo_paint_with_alpha (cr, 0.5);
         cairo_surface_destroy (surface);
-#endif
         mmm_read_done (client->mmm);
 
-        mrg_listen (mrg, MRG_PRESS, 0, 0, width, height,
-                         mrg_client_press, client, host);
-        mrg_listen (mrg, MRG_MOTION, 0, 0, width, height,
-                         mrg_client_motion, client, NULL);
-        mrg_listen (mrg, MRG_RELEASE, 0, 0, width, height,
-                         mrg_client_release, client, NULL);
+        cairo_save (cr);
+        cairo_new_path (cr);
+        cairo_rectangle (cr, 0, 0, width, height);
 
-#if MRG_CAIRO
+        mrg_listen (mrg, MRG_PRESS,
+                         mrg_client_press, client, host);
+        mrg_listen (mrg, MRG_MOTION,
+                         mrg_client_motion, client, NULL);
+        mrg_listen (mrg, MRG_RELEASE, 
+                         mrg_client_release, client, NULL);
         cairo_restore (cr);
-#endif
+
+        cairo_restore (cr);
       }
       else
       {
@@ -574,8 +573,13 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
       if (!host_fixed_pos)
       {
   start_title (mrg, x - 3, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT);
-  mrg_listen (mrg, MRG_DRAG_MOTION, x, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT,
-      titlebar_drag, client, host);
+
+  cairo_save (cr);
+  cairo_new_path (cr);
+  cairo_rectangle (cr, x, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT);
+  cairo_restore (cr);
+
+  mrg_listen (mrg, MRG_DRAG_MOTION, titlebar_drag, client, host);
 
   mrg_start (mrg, "close", NULL);
   mrg_text_listen (mrg, MRG_PRESS, kill_client, client, NULL);
@@ -604,18 +608,14 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
   if (cwidth)
   {
     /* resize box/handle */
-#if MRG_CAIRO
     cairo_set_source_rgba (cr, 1,1,1, 0.5);
+    cairo_new_path (cr);
     cairo_rectangle (cr, x + cwidth - TITLE_BAR_HEIGHT, y + cheight - TITLE_BAR_HEIGHT, TITLE_BAR_HEIGHT, TITLE_BAR_HEIGHT);
-#endif
-    mrg_listen (mrg, MRG_DRAG_MOTION, x + cwidth - TITLE_BAR_HEIGHT, y + cheight - TITLE_BAR_HEIGHT, TITLE_BAR_HEIGHT, TITLE_BAR_HEIGHT,
-        resize_drag, client, host);
-#if MRG_CAIRO
+    mrg_listen (mrg, MRG_DRAG_MOTION, resize_drag, client, host);
     cairo_fill_preserve (cr);
     cairo_set_source_rgba (cr, 0,0,0, 0.5);
     cairo_set_line_width (cr, 1.0);
     cairo_stroke (cr);
-#endif
   }
 }
 
@@ -723,7 +723,7 @@ static void render_ui (Mrg *mrg, void *data)
 
   mrg_end (mrg);
   mrg_add_binding (mrg, "F10", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, host_key_down_cb, host, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, host, NULL);
 }
 
 static void init_env (Host *host, const char *path)

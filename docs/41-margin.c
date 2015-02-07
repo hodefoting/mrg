@@ -42,10 +42,11 @@ void ui (Mrg *mrg, void *data) {
   cairo_line_to (cr, x, mrg_height (mrg));
   cairo_stroke (cr);
 
+  cairo_rectangle (cr, x-10, 0,
+                20, mrg_height (mrg));
   mrg_listen (mrg, MRG_DRAG,
-              x-10, 0,
-                20, mrg_height (mrg),
               drag_right_cb, NULL, NULL);
+  cairo_new_path (cr);
 
   x = margin_left;
 
@@ -53,10 +54,11 @@ void ui (Mrg *mrg, void *data) {
   cairo_line_to (cr, x, mrg_height (mrg));
   cairo_stroke (cr);
 
+  cairo_rectangle (cr, x-10, 0,
+                20, mrg_height (mrg));
   mrg_listen (mrg, MRG_DRAG,
-              x-10, 0,
-                20, mrg_height (mrg),
               drag_left_cb, NULL, NULL);
+  cairo_new_path (cr);
 
   y = margin_top;
 
@@ -64,9 +66,8 @@ void ui (Mrg *mrg, void *data) {
   cairo_line_to (cr, mrg_width (mrg), y);
   cairo_stroke (cr);
 
+  cairo_rectangle (cr, 0, y-10, mrg_width (mrg),20);
   mrg_listen (mrg, MRG_DRAG,
-              0,y-10,
-              mrg_width (mrg),20,
               drag_top_cb, NULL, NULL);
 
   mrg_printf_xml (mrg, "%s", xml);

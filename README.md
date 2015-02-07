@@ -72,7 +72,22 @@ the mrg binary.
 $ mrg edit <textfile>
 
 Launches the editor on the text file.
-      
+
+Luajit ffi
+==========
+
+An experimental luajit binding covers the full microraptor API making it
+possible to use in addition with existing cairo luajit bindings a platform for
+developing ui applications in lua.
+
+Microraptor and GTK
+===================
+
+Microraptor can use GTK as a backend or microraptor can be used in GTK+
+applications, when used in gtk applications in widgets it is better to rely on
+native mainloop integration with g_timeout and g_idle instead of using the
+ones provided by microraptor gui.
+
 An immediate mode UI compromise
 ===============================
      

@@ -52,7 +52,8 @@ static void render_ui (Mrg *mrg, void *data)
 {
   mrg_print (mrg, "drag this window around");
 
-  mrg_listen (mrg, MRG_DRAG, 0,0,mrg_width(mrg), mrg_height(mrg), drag_pos, NULL, NULL);
+  cairo_rectangle (mrg_cr (mrg), 0,0,mrg_width(mrg),mrg_height(mrg));
+  mrg_listen (mrg, MRG_DRAG, drag_pos, NULL, NULL);
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }

@@ -299,7 +299,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
                       const char *string,
                       int utf8_len)
 {
-#if MRG_CAIRO
   double new_x, old_x;
   char *temp_string = NULL;
   cairo_t *cr = mrg_cr (mrg);
@@ -392,21 +391,22 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
   {
     float em = mrg_em (mrg);
     int no = mrg->text_listen_count-1;
+    cairo_save (cr);
+    cairo_new_path (cr);
+    cairo_rectangle (cr,
+        old_x, y - em, new_x - old_x + 1, em * mrg->state->style.line_height);
     mrg_listen (mrg,
                 mrg->text_listen_types[no],
-                old_x, y - em, new_x - old_x + 1, em * mrg->state->style.line_height,
                 mrg->text_listen_cb[no],
                 mrg->text_listen_data1[no],
                 mrg->text_listen_data2[no]);
+    cairo_restore (cr);
   }
 
   if (temp_string)
     free (temp_string);
 
   return new_x - old_x;
-#else
-  return 0;
-#endif
 }
 
 float mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length);
@@ -972,6 +972,11 @@ void  mrg_text_listen_full (Mrg *mrg, MrgType types,
 {
 
   int no = mrg->text_listen_count;
+  if (cb == NULL)
+  {
+    mrg_text_listen_done (mrg);
+    return;
+  }
 
   mrg->text_listen_types[no] = types;
   mrg->text_listen_cb[no] = cb;

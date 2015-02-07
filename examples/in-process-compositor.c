@@ -81,9 +81,7 @@ static void render_ui (Mrg *mrg, void *data)
     mrg_render_to_mrg (client->mrg, mrg, client->x, client->y);
 
     cairo_rectangle (cr, client->x, client->y - 20, mrg_width (client->mrg), 20);
-    mrg_listen (mrg, MRG_DRAG_MOTION,
-        client->x, client->y - 20, mrg_width (client->mrg), 20,
-        client_drag, client, NULL);
+    mrg_listen (mrg, MRG_DRAG_MOTION, client_drag, client, NULL);
     cairo_stroke (cr);
 
   }

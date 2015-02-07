@@ -109,25 +109,33 @@ void mrg_add_binding_full (Mrg *mrg,
  * mrg_listen:
  *
  * @types: an or'ed list of types of events to listen for in callback.
+ * @cb: a callback of type void (mrgevent, data1, data2)
+ * @data1: one data pointer
+ * @data2: a second data pointer
  *
- *
+ * listens for events in the boundingbox of the current path, 
  */
 void mrg_listen      (Mrg     *mrg,
                       MrgType  types,
-                      float   x,
-                      float   y,
-                      float   width,
-                      float   height,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2);
 
+
+/**
+ * mrg_listen_full:
+ *
+ * @types: an or'ed list of types of events to listen for in callback.
+ * @cb: a callback of type void (mrgevent, data1, data2)
+ * @data1: one data pointer
+ * @data2: a second data pointer
+ * @finalize: a finalize / destroy_notify that also gets passed the userdatas
+ * @finalize_data: extra data for finalize
+ *
+ * listens for events in the boundingbox of the current path, 
+ */
 void mrg_listen_full (Mrg     *mrg,
                       MrgType  types,
-                      float   x,
-                      float   y,
-                      float   width,
-                      float   height,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2,

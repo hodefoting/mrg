@@ -128,7 +128,10 @@ static void render_ui (Mrg *mrg, void *data)
   char *contents = NULL;
   long  length;
 
-  mrg_listen (mrg, MRG_DRAG, 0,0,mrg_width(mrg), mrg_height(mrg), drag_pos, scroll, NULL);
+  cairo_save (mrg_cr (mrg));
+  cairo_rectangle (mrg_cr (mrg), 0,0, mrg_width(mrg), mrg_height(mrg));
+  mrg_listen (mrg, MRG_DRAG, drag_pos, scroll, NULL);
+  cairo_restore (mrg_cr (mrg));
 
 #if MRG_CAIRO
   cairo_save (mrg_cr (mrg));

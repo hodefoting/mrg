@@ -133,20 +133,12 @@ int mrg_print_xml (Mrg *mrg, const char *string);
 
 void mrg_listen      (Mrg     *mrg,
                       MrgType  types,
-                      float   x,
-                      float   y,
-                      float   width,
-                      float   height,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2);
 
 void mrg_listen_full (Mrg     *mrg,
                       MrgType  types,
-                      float   x,
-                      float   y,
-                      float   width,
-                      float   height,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2,
@@ -574,7 +566,7 @@ ffi.metatype('Mrg', {__index = {
     cb_fun = ffi.cast ("MrgCb", cb)
     return C.mrg_text_listen_full (mrg, types, cb_fun, data1, data2, notify_fun, NULL)
   end,
-  listen           = function (mrg, types, x, y, w, h, cb, data1, data2)
+  listen           = function (mrg, types, cb, data1, data2)
     -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
     local notify_cb = function (data1, data2, finalize_data)
@@ -584,7 +576,7 @@ ffi.metatype('Mrg', {__index = {
     end
     notify_fun = ffi.cast ("MrgCb", notify_cb)
     cb_fun = ffi.cast ("MrgCb", cb)
-    return C.mrg_listen_full (mrg, types, x, y, w, h, cb_fun, data1, data2, notify_fun, NULL)
+    return C.mrg_listen_full (mrg, types, cb_fun, data1, data2, notify_fun, NULL)
   end,
   print            = function (...) C.mrg_print(...) end,
   print_xml        = function (...) C.mrg_print_xml(...) end,

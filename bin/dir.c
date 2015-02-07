@@ -527,16 +527,20 @@ static void gui (Mrg *mrg, void *data)
 {
   State *state = data;
   state->mrg = mrg;
+  cairo_t *cr = mrg_cr (mrg);
 
   resolve_renderer (state);
 
   if (!state->sub_state)
-    mrg_listen (mrg, MRG_DRAG, 0,0, mrg_width(mrg), mrg_height(mrg), vertical_pan, pos, NULL);
+  {
+    cairo_save (cr);
+    cairo_rectangle (cr, 0,0, mrg_width (mrg), mrg_height (mrg));
+    mrg_listen (mrg, MRG_DRAG, vertical_pan, pos, NULL);
+    cairo_restore (cr);
+  }
 
-#if MRG_CAIRO
-  cairo_save (mrg_cr (mrg));
-  cairo_translate (mrg_cr (mrg), pos[0], pos[1]);
-#endif
+  cairo_save (cr);
+  cairo_translate (cr, pos[0], pos[1]);
 
   if (state->sub_state)
   {
@@ -563,12 +567,10 @@ static void gui (Mrg *mrg, void *data)
     _mrg_unblock_edit (mrg);
   }
 
-#if MRG_CAIRO
-  cairo_restore (mrg_cr (mrg));
-#endif
+  cairo_restore (cr);
 
   host_render (mrg, state->host);
-  mrg_listen (mrg, MRG_KEY_DOWN, 0,0,0,0, host_key_down_cb, state->host, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, state->host, NULL);
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
   mrg_add_binding (mrg, "F2", NULL, NULL, eeek, state);

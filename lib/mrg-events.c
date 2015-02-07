@@ -127,26 +127,17 @@ void _mrg_item_unref (MrgItem *mrgitem)
 
 void mrg_listen (Mrg     *mrg,
                  MrgType  types,
-                 float    x,
-                 float    y,
-                 float    width,
-                 float    height,
                  MrgCb    cb,
                  void*    data1,
                  void*    data2)
 {
   if (types == MRG_DRAG_MOTION)
     types = MRG_DRAG_MOTION | MRG_DRAG_PRESS;
-  return mrg_listen_full (mrg, types, x, y, width, height, cb, data1, data2,
-                          NULL, NULL);
+  return mrg_listen_full (mrg, types, cb, data1, data2, NULL, NULL);
 }
 
 void mrg_listen_full (Mrg     *mrg,
                       MrgType  types,
-                      float   x,
-                      float   y,
-                      float   width,
-                      float   height,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2,
@@ -154,10 +145,31 @@ void mrg_listen_full (Mrg     *mrg,
                                          void *finalize_data),
                       void    *finalize_data)
 {
+  float x, y, width, height;
+
   if (!mrg->frozen)
   {
     MrgItem *item;
     cairo_t *cr = mrg_cr (mrg);
+
+    /* generate bounding box of what to listen for - from current cairo path */
+    if (types & MRG_KEY)
+    {
+      x = 0;
+      y = 0;
+      width = 0;
+      height = 0;
+    }
+    else
+    {double ex1,ey1,ex2,ey2; 
+     //cairo_path_t * path = cairo_copy_path (cr);
+     cairo_path_extents (cr, &ex1, &ey1, &ex2, &ey2);
+     x = ex1;
+     y = ey1;
+     width = ex2 - ex1;
+     height = ey2 - ey1;
+     //cairo_path_destroy (path);
+    }
 
     /* early bail for listeners outside screen  */
     {

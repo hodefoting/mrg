@@ -20,9 +20,8 @@ static void ui (Mrg *mrg, void *data) {
   {
     cairo_arc (cr, coord[i][0], coord[i][1],
                0.025, 0, 2 * 3.1415);
+    mrg_listen (mrg, MRG_DRAG, drag_cb, &coord[i][0], NULL);
     cairo_fill (cr);
-    mrg_listen (mrg, MRG_DRAG, coord[i][0] - .025, coord[i][1] - .025,
-                     .05, .05, drag_cb, &coord[i][0], NULL);
   }
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }
