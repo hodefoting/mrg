@@ -85,13 +85,13 @@ typedef struct MrgBinding {
 typedef struct MrgItem {
   cairo_matrix_t  inv_matrix;  /* for event coordinate transforms */
 
-  cairo_path_t   *path;  
-
-  /* circles, as well as poly-lines/beziers could be added.. */
+  /* bounding box */
   float          x0;
   float          y0;
   float          x1;
   float          y1;
+
+  cairo_path_t   *path;  
 
   MrgType   types; /* all cb's ored together */
   MrgItemCb cb[MRG_MAX_CBS];

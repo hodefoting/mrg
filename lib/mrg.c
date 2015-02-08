@@ -294,26 +294,26 @@ cairo_t *mrg_cr (Mrg *mrg)
     return mrg->backend->mrg_cr (mrg);
   else
   {
-  unsigned char *pixels = NULL;
-  cairo_t *cr;
-  cairo_surface_t *surface;
-  int rowstride = 0;
-  int width, height;
+    unsigned char *pixels = NULL;
+    cairo_t *cr;
+    cairo_surface_t *surface;
+    int rowstride = 0;
+    int width, height;
 
-  if (mrg->cr)
-    return mrg->cr;
+    if (mrg->cr)
+      return mrg->cr;
 
-  width = mrg->width;
-  height = mrg->height;
+    width = mrg->width;
+    height = mrg->height;
 
-  pixels = mrg_get_pixels (mrg, &rowstride);
-  assert (pixels);
-  surface = cairo_image_surface_create_for_data (
-      pixels, CAIRO_FORMAT_ARGB32, width, height, rowstride);
-  cr = cairo_create (surface);
-  cairo_surface_destroy (surface);
-  mrg->cr = cr;
-  return cr;
+    pixels = mrg_get_pixels (mrg, &rowstride);
+    assert (pixels);
+    surface = cairo_image_surface_create_for_data (
+        pixels, CAIRO_FORMAT_ARGB32, width, height, rowstride);
+    cr = cairo_create (surface);
+    cairo_surface_destroy (surface);
+    mrg->cr = cr;
+    return cr;
   }
 }
 

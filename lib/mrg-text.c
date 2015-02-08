@@ -971,7 +971,6 @@ void  mrg_text_listen_full (Mrg *mrg, MrgType types,
                       void   (*finalize)(void *listen_data, void *listen_data2, void *finalize_data),
                       void    *finalize_data)
 {
-
   int no = mrg->text_listen_count;
   if (cb == NULL)
   {
@@ -985,7 +984,6 @@ void  mrg_text_listen_full (Mrg *mrg, MrgType types,
   mrg->text_listen_data2[no] = data2;
   mrg->text_listen_finalize[no] = finalize;
   mrg->text_listen_finalize_data[no] = finalize_data;
-
   mrg->text_listen_count++;
   mrg->text_listen_active = 1;
 }

@@ -1,7 +1,10 @@
-MicroRaptor Gui
+microraptor gui
 ===============
 
-Immediate UI framework with cairo.
+Immediate UI framework with cairo. Also an attempt at a minimal usable
+graphical user environment built from this, including: a shell/host for client
+programs, a terminal emulator, file browser and text editor written using the
+library.
 
 Features:
   cairos drawing/transformation API
@@ -10,8 +13,7 @@ Features:
   Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
   SDL/GTK/framebuffer/terminal backends.
 
-
-MicroRaptor Gui is a C API for creating user interfaces, it can be used as an
+microraptor gui is a C API for creating user interfaces, it can be used as an
 application writing environment or as an interactive canvas for part of a
 larger interface.
 

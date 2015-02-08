@@ -44,6 +44,33 @@ void mrg_clear (Mrg *mrg)
   _mrg_clear_text_closures (mrg);
 }
 
+static void restore_path (cairo_t *cr, cairo_path_t *path)
+{
+  int i;
+  cairo_path_data_t *data;
+  cairo_new_path (cr);
+  for (i = 0; i <path->num_data; i += path->data[i].header.length)
+  {
+    data = &path->data[i];
+    switch (data->header.type) {
+      case CAIRO_PATH_MOVE_TO:
+        cairo_move_to (cr, data[1].point.x, data[1].point.y);
+        break;
+      case CAIRO_PATH_LINE_TO:
+        cairo_line_to (cr, data[1].point.x, data[1].point.y);
+        break;
+      case CAIRO_PATH_CURVE_TO:
+        cairo_curve_to (cr, data[1].point.x, data[1].point.y,
+                            data[2].point.x, data[2].point.y,
+                            data[3].point.x, data[3].point.y);
+        break;
+      case CAIRO_PATH_CLOSE_PATH:
+        cairo_close_path (cr);
+        break;
+    }
+  }
+}
+
 MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgList *a;
@@ -72,9 +99,25 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
     cairo_matrix_transform_point (&item->inv_matrix, &u, &v);
 
     if (u >= item->x0 && v >= item->y0 &&
-        u <  item->x1 && v <  item->y1 &&
+        u <  item->x1 && v <  item->y1 && 
         item->types & type)
-      return item;
+    {
+      if (item->path)
+      {
+        cairo_t *cr = mrg_cr (mrg);
+        restore_path (cr, item->path);
+        if (cairo_in_fill (cr, u, v))
+        {
+          cairo_new_path (cr);
+          return item;
+        }
+        cairo_new_path (cr);
+      }
+      else
+      {
+        return item;
+      }
+    }
   }
   return NULL;
 }
@@ -85,8 +128,7 @@ static int rectangle_equal (MrgItem *a, MrgItem *b)
          a->y0 == b->y0 &&
          a->x1 == b->x1 &&
          a->y1 == b->y1 
-         && !memcmp (&a->inv_matrix, &b->inv_matrix, sizeof (a->inv_matrix))
-         ;
+         && !memcmp (&a->inv_matrix, &b->inv_matrix, sizeof (a->inv_matrix));
 }
 
 void _mrg_item_ref (MrgItem *mrgitem)
@@ -97,6 +139,7 @@ void _mrg_item_ref (MrgItem *mrgitem)
   }
   mrgitem->ref_count++;
 }
+
 void _mrg_item_unref (MrgItem *mrgitem)
 {
   if (mrgitem->ref_count <= 0)
@@ -115,6 +158,10 @@ void _mrg_item_unref (MrgItem *mrgitem)
           mrgitem->cb[i].finalize (mrgitem->cb[i].data1, mrgitem->cb[i].data2,
                                    mrgitem->cb[i].finalize_data);
       }
+    }
+    if (mrgitem->path)
+    {
+      cairo_path_destroy (mrgitem->path);
     }
     free (mrgitem);
   }
@@ -162,13 +209,11 @@ void mrg_listen_full (Mrg     *mrg,
     }
     else
     {double ex1,ey1,ex2,ey2; 
-     //cairo_path_t * path = cairo_copy_path (cr);
      cairo_path_extents (cr, &ex1, &ey1, &ex2, &ey2);
      x = ex1;
      y = ey1;
      width = ex2 - ex1;
      height = ey2 - ey1;
-     //cairo_path_destroy (path);
     }
 
     /* early bail for listeners outside screen  */
@@ -201,17 +246,22 @@ void mrg_listen_full (Mrg     *mrg,
     item->cb[0].finalize_data = finalize_data;
     item->cb_count = 1;
     item->types = types;
+    item->path = cairo_copy_path (cr);
     cairo_get_matrix (cr, &item->inv_matrix);
     cairo_matrix_invert (&item->inv_matrix);
 
-    if (mrg->items)
+    if (mrg->items && 0)
     {
       MrgList *l;
       for (l = mrg->items; l; l = l->next)
       {
         MrgItem *item2 = l->data;
 
-        /* reuse previous rectangles, when they are exactly the same */
+        /* reuse previous rectangles, when they are exactly the same 
+         * XXX: adapt to deal with paths as well,,.
+         *
+         * or stop doing this?
+         * */
         if (rectangle_equal (item, item2))
         {
           /* found an item, copy over cb data  */
@@ -219,6 +269,7 @@ void mrg_listen_full (Mrg     *mrg,
           free (item);
           item2->cb_count++;
           item2->types |= types;
+          /* increment ref_count? */
           return;
         }
       }

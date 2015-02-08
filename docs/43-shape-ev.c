@@ -42,7 +42,6 @@ void ui (Mrg *mrg, void *data) {
  cairo_set_source_rgb (cr, 0,1,0);
  mrg_listen (mrg, MRG_PRESS, set_color_cb, "green", NULL);
  cairo_fill (cr);
-
  
  cairo_arc (cr, 300, 150, 50, 0, M_PI*2);
  cairo_set_source_rgb (cr, 0,0,1);
@@ -60,7 +59,6 @@ void ui (Mrg *mrg, void *data) {
 
  cairo_rectangle (cr, 50 + 200*zoom, 250-10, 5, 25);
  cairo_fill (cr);
-
 }
 
 int main () {
