@@ -163,6 +163,7 @@ Mrg *mrg_new (int width, int height, const char *backend)
   }
   if (mrg)
     mrg_style_defaults (mrg);
+  mrg->edited_str = mrg_string_new ("");
   return mrg;
 }
 
@@ -170,6 +171,7 @@ void mrg_destroy (Mrg *mrg)
 {
   if (mrg->backend->mrg_destroy)
     mrg->backend->mrg_destroy (mrg);
+  mrg_string_free (mrg->edited_str, 1);
   free (mrg);
 }
 
@@ -380,6 +382,8 @@ void mrg_prepare (Mrg *mrg)
 
   frame_start = _mrg_ticks ();
 
+  mrg_string_set (mrg->edited_str, "");
+  mrg->got_edit = 0;
   mrg_clear (mrg);
   mrg->in_paint ++;
 
@@ -413,8 +417,6 @@ void mrg_prepare (Mrg *mrg)
 
   mrg_listen (mrg, MRG_KEY_DOWN, _mrg_bindings_key_down, NULL, NULL);
 
-  if (mrg->edited && mrg->text_edit_blocked <= 0)
-    mrg_text_edit_bindings (mrg);
 
 #if 0
   else
@@ -424,6 +426,12 @@ void mrg_prepare (Mrg *mrg)
 
 void mrg_flush  (Mrg *mrg)
 {
+
+  if (mrg->got_edit && mrg->text_edit_blocked <= 0)
+  {
+    mrg_text_edit_bindings (mrg);
+  }
+
   //_mrg_debug_overlays (mrg);
   mrg_end (mrg);
 

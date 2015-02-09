@@ -43,7 +43,8 @@ typedef struct _MrgStyle     MrgStyle;
 typedef struct _MrgRectangle MrgRectangle;
 
 typedef void (*MrgDestroyNotify) (void *data);
-typedef void (*UiRenderFun)(Mrg *mrg, void *ui_data);
+typedef void (*MrgNewText)       (const char *new_text, void *data);
+typedef void (*UiRenderFun)      (Mrg *mrg, void *ui_data);
 
 Mrg        *mrg_new           (int width, int height, const char *backend);
 void        mrg_destroy       (Mrg *mrg);

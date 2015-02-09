@@ -341,10 +341,17 @@ struct _Mrg {
   char *title;
 
   /** text editing state follows **/
-  char    **edited;
-  int       text_edit_blocked;
-  void    (*update_string) (Mrg *mrg, char **string_log, const char *new_string, void *user_data);
-  void     *update_string_user_data;
+  int       text_edited;
+  int       got_edit;
+  MrgString *edited_str;
+
+  int              text_edit_blocked;
+  MrgNewText       update_string;
+  void            *update_string_user_data;
+
+  MrgDestroyNotify update_string_destroy_notify;
+  void            *update_string_destroy_data;
+
   int       cursor_pos; 
   float     e_x;
   float     e_y;

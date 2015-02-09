@@ -23,6 +23,17 @@ void  mrg_printf          (Mrg *mrg, const char *format, ...);
 void  mrg_print_xml       (Mrg *mrg, char *xml);
 void  mrg_printf_xml      (Mrg *mrg, const char *format, ...);
 
+void  mrg_edit_start       (Mrg *mrg,
+                            MrgNewText  update_string,
+                            void *user_data);
+void mrg_edit_start_full (Mrg *mrg,
+                           MrgNewText  update_string,
+                           void *user_data,
+                           MrgDestroyNotify destroy,
+                           void *destroy_data);
+
+void  mrg_edit_end (Mrg *mrg);
+
 /* text layout handling */
 float mrg_em              (Mrg *mrg);
 void  mrg_set_em          (Mrg *mrg, float em);
@@ -51,14 +62,6 @@ float mrg_draw_string      (Mrg *mrg, MrgStyle *style,
                             float x, float y,
                             const char *string,
                             int utf8_len);
-
-
-void mrg_edit_string       (Mrg *mrg, char **string,
-                            void (*update_string)(Mrg *mrg,
-                            char **string_loc,
-                            const char *new_string,
-                            void  *user_data),
-                            void *user_data);
 
 int mrg_get_cursor_pos  (Mrg *mrg);
 void mrg_set_cursor_pos (Mrg *mrg, int pos);

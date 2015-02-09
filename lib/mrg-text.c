@@ -610,7 +610,7 @@ static void _mrg_spaces (Mrg *mrg, int count)
       {\
          if (print) { if (gotspace)\
              _mrg_spaces (mrg, 1);\
-         if (cursor_start == pos -1 && cursor_start>0 && (*mrg->edited) == data)\
+         if (cursor_start == pos -1 && cursor_start>0 && mrg->text_edited)\
            {\
              mrg_start (mrg, ".cursor", NULL);\
              _mrg_spaces (mrg, 1);\
@@ -630,7 +630,7 @@ static void _mrg_spaces (Mrg *mrg, int count)
       {\
          if (print) {if (gotspace)\
              _mrg_spaces (mrg, 1);\
-         if (cursor_start == *pos -1 && cursor_start>0 && (*mrg->edited) == data)\
+         if (cursor_start == *pos -1 && cursor_start>0 && mrg->text_edited)\
            {\
              mrg_start (mrg, ".cursor", NULL);\
              _mrg_spaces (mrg, 1);\
@@ -685,7 +685,7 @@ static void emit_word (Mrg *mrg,
       { 
         if ((skip_lines<=0)) 
           { 
-            if (cursor_start == *pos-1 && cursor_start>=0 && mrg->edited && (*mrg->edited) == data)
+            if (cursor_start == *pos-1 && cursor_start>=0 && mrg->text_edited)
             { 
               if (print) { 
                mrg_start (mrg, ".cursor", NULL);
@@ -720,7 +720,7 @@ static void emit_word (Mrg *mrg,
           }
       } 
     if ((skip_lines<=0)) {
-      if (print){if (cursor_start >= *pos && *pos + len > cursor_start && mrg->edited && (*mrg->edited) == data)
+      if (print){if (cursor_start >= *pos && *pos + len > cursor_start && mrg->text_edited)
         { 
 #if 0  // XXX: there is a bug in mrg_addstr it doesn't respect the length argument 
           mrg->x += mrg_addstr (mrg, mrg->x, mrg->y, word, cursor_start - *pos);
@@ -789,7 +789,7 @@ static int mrg_print_wrap (Mrg        *mrg,
   if (retx)
     *retx = -1;
 
-  if (mrg->edited && *mrg->edited == data && print)
+  if (mrg->text_edited && print)
     {
       mrg->e_x = mrg->x;
       mrg->e_y = mrg->y;
@@ -829,7 +829,7 @@ static int mrg_print_wrap (Mrg        *mrg,
         case ' ':
           if (wl == 0)
             {
-              if (cursor_start == pos-1 && cursor_start>=0 && mrg->edited && (*mrg->edited) == data)
+              if (cursor_start == pos-1 && cursor_start>=0 && mrg->text_edited)
                 {
                   if (print)
                   {
@@ -889,7 +889,7 @@ static int mrg_print_wrap (Mrg        *mrg,
                  rety, &pos, &wraps, &wl, c, gotspace);
     }
    /* cursor at end */
-   if (cursor_start == pos && cursor_start>=0 && mrg->edited && (*mrg->edited) == data)
+   if (cursor_start == pos && cursor_start>=0 && mrg->text_edited)
     {
       if (print)
       {
@@ -945,6 +945,9 @@ int mrg_print (Mrg *mrg, const char *string)
   mrg->x = ceil (mrg->x / em) * em;
   mrg->y = ceil (mrg->y / em) * em;
 #endif
+
+  if (mrg->text_edited)
+    mrg_string_append_str (mrg->edited_str, string);
 
   if (mrg->state->style.display == MRG_DISPLAY_HIDDEN)
     return 0;
@@ -1010,7 +1013,7 @@ static int cmd_home (MrgEvent *event, void *data1, void *data2)
 static int cmd_end (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
-  mrg->cursor_pos = mrg_utf8_strlen (*mrg->edited);
+  mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str);
   mrg_queue_draw (mrg, NULL);
   return 1;
 }
@@ -1019,8 +1022,8 @@ static int cmd_backspace (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
   char *new;
-  const char *rest = mrg_utf8_skip (*mrg->edited, mrg->cursor_pos);
-  const char *mark = mrg_utf8_skip (*mrg->edited, mrg->cursor_pos-1);
+  const char *rest = mrg_utf8_skip (mrg->edited_str->str, mrg->cursor_pos);
+  const char *mark = mrg_utf8_skip (mrg->edited_str->str, mrg->cursor_pos-1);
 
   if (mrg->cursor_pos <= 0)
     {
@@ -1028,11 +1031,11 @@ static int cmd_backspace (MrgEvent *event, void *data1, void *data2)
     }
   else
     {
-      new = malloc (strlen (*mrg->edited) + 1);
-      memcpy (new, *mrg->edited, ((mark - *mrg->edited)));
-      memcpy (new + ((mark - *mrg->edited)), rest, strlen (rest));
-      new [strlen (*mrg->edited)-(rest-mark)] = 0;
-      mrg->update_string (mrg, mrg->edited, new, mrg->update_string_user_data);
+      new = malloc (strlen (mrg->edited_str->str) + 1);
+      memcpy (new, mrg->edited_str->str, ((mark - mrg->edited_str->str)));
+      memcpy (new + ((mark - mrg->edited_str->str)), rest, strlen (rest));
+      new [strlen (mrg->edited_str->str)-(rest-mark)] = 0;
+      mrg->update_string (new, mrg->update_string_user_data);
       free (new);
       mrg->cursor_pos--;
     }
@@ -1044,15 +1047,15 @@ static int cmd_delete (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
   char *new;
-  const char *rest = mrg_utf8_skip (*mrg->edited, mrg->cursor_pos+1);
-  const char *mark = mrg_utf8_skip (*mrg->edited, mrg->cursor_pos);
+  const char *rest = mrg_utf8_skip (mrg->edited_str->str, mrg->cursor_pos+1);
+  const char *mark = mrg_utf8_skip (mrg->edited_str->str, mrg->cursor_pos);
 
-  new = malloc (strlen (*mrg->edited) + 1);
-  memcpy (new, *mrg->edited, ((mark - *mrg->edited)));
-  memcpy (new + ((mark - *mrg->edited)), rest, strlen (rest));
-  new [strlen (*mrg->edited)-(rest-mark)] = 0;
+  new = malloc (strlen (mrg->edited_str->str) + 1);
+  memcpy (new, mrg->edited_str->str, ((mark - mrg->edited_str->str)));
+  memcpy (new + ((mark - mrg->edited_str->str)), rest, strlen (rest));
+  new [strlen (mrg->edited_str->str)-(rest-mark)] = 0;
 
-  mrg->update_string (mrg, mrg->edited, new, mrg->update_string_user_data);
+  mrg->update_string (new, mrg->update_string_user_data);
   free (new);
   mrg_queue_draw (mrg, NULL);
   return 1;
@@ -1069,7 +1072,7 @@ static int cmd_up (MrgEvent *event, void *data1, void *data2)
   mrg_set_edge_right (mrg, e_e + mrg->state->style.padding_right);
 
   mrg_set_xy (mrg, e_x, e_y);
-  mrg_print_get_xy (mrg, *mrg->edited, mrg->cursor_pos, &cx, &cy);
+  mrg_print_get_xy (mrg, mrg->edited_str->str, mrg->cursor_pos, &cx, &cy);
 
   {
     int no;
@@ -1081,7 +1084,7 @@ static int cmd_up (MrgEvent *event, void *data1, void *data2)
       float x, y;
       float attempt_score = 0.0;
       mrg_set_xy (mrg, e_x, e_y);
-      mrg_print_get_xy (mrg, *mrg->edited, no, &x, &y);
+      mrg_print_get_xy (mrg, mrg->edited_str->str, no, &x, &y);
 
       if (y < cy && best_y == cy)
         best_y = y;
@@ -1125,27 +1128,27 @@ static int cmd_down (MrgEvent *event, void *data1, void *data2)
   float e_x, e_y, e_s, e_e, e_em;
   float cx, cy;
 
-  if (!mrg->edited || !(*mrg->edited))
+  if (!mrg->text_edited)
     return 0;
  
   mrg_get_edit_state (mrg, &e_x, &e_y, &e_s, &e_e, &e_em);
   mrg_set_edge_left (mrg, e_s - mrg->state->style.padding_left);
   mrg_set_edge_right (mrg, e_e + mrg->state->style.padding_right);
   mrg_set_xy (mrg, e_x, e_y);
-  mrg_print_get_xy (mrg, *mrg->edited, mrg->cursor_pos, &cx, &cy);
+  mrg_print_get_xy (mrg, mrg->edited_str->str, mrg->cursor_pos, &cx, &cy);
 
   {
     int no;
     int best = mrg->cursor_pos;
     float best_score = 10000000000.0;
     float best_y = cy;
-    int strl = mrg_utf8_strlen (*mrg->edited);
+    int strl = mrg_utf8_strlen (mrg->edited_str->str);
     for (no = mrg->cursor_pos + 1; no < mrg->cursor_pos + 256 && no < strl; no++)
     {
       float x, y;
       float attempt_score = 0.0;
       mrg_set_xy (mrg, e_x, e_y);
-      mrg_print_get_xy (mrg, *mrg->edited, no, &x, &y);
+      mrg_print_get_xy (mrg, mrg->edited_str->str, no, &x, &y);
 
       if (y > cy && best_y == cy)
         best_y = y;
@@ -1166,8 +1169,8 @@ static int cmd_down (MrgEvent *event, void *data1, void *data2)
     mrg->cursor_pos = best;
   }
 
-  if (mrg->cursor_pos >= mrg_utf8_strlen (*mrg->edited))
-    mrg->cursor_pos = mrg_utf8_strlen (*mrg->edited) - 1;
+  if (mrg->cursor_pos >= mrg_utf8_strlen (mrg->edited_str->str))
+    mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str) - 1;
   mrg_queue_draw (mrg, NULL);
   return 1;
 }
@@ -1202,8 +1205,15 @@ static int cmd_right (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
   mrg->cursor_pos++;
-  if (mrg->cursor_pos > mrg_utf8_strlen (*mrg->edited))
-    mrg->cursor_pos = mrg_utf8_strlen (*mrg->edited);
+
+  /* should mrg have captured the text printed in-between to build its idea
+   * of what is being edited, thus being able to do its own internal cursor
+   * positioning with that cache?
+   */
+
+  if (mrg->cursor_pos > mrg_utf8_strlen (mrg->edited_str->str))
+    mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str);
+
   mrg_queue_draw (mrg, NULL);
   return 1;
 }
@@ -1212,15 +1222,20 @@ static void add_utf8 (Mrg *mrg, const char *string)
 {
   char *new;
   const char *rest;
-  rest = mrg_utf8_skip (*mrg->edited, mrg->cursor_pos);
+  /* XXX: this is the code the should be turned into a callback/event
+   * to digest for the user of the framework, with a reasonable default
+   * for using it from C with a string
+   */
 
-  new = malloc (strlen (*mrg->edited) + strlen (string) + 1);
-  memcpy (new, *mrg->edited, (rest-*mrg->edited));
-  memcpy (new + (rest-*mrg->edited), string,  strlen (string));
-  memcpy (new + (rest-*mrg->edited) + strlen (string),
+  rest = mrg_utf8_skip (mrg->edited_str->str, mrg->cursor_pos);
+
+  new = malloc (strlen (mrg->edited_str->str) + strlen (string) + 1);
+  memcpy (new, mrg->edited_str->str, (rest-mrg->edited_str->str));
+  memcpy (new + (rest-mrg->edited_str->str), string,  strlen (string));
+  memcpy (new + (rest-mrg->edited_str->str) + strlen (string),
           rest, strlen (rest));
-  new [strlen (string) + strlen (*mrg->edited)] = 0;
-  mrg->update_string (mrg, mrg->edited, new, mrg->update_string_user_data);
+  new [strlen (string) + strlen (mrg->edited_str->str)] = 0;
+  mrg->update_string (new, mrg->update_string_user_data);
   free (new);
   mrg_queue_draw (mrg, NULL);
   mrg->cursor_pos++;
@@ -1257,27 +1272,30 @@ static int cmd_return (MrgEvent *event, void *data1, void *data2)
 
 static int cmd_escape (MrgEvent *event, void *data, void *data2)
 {
+#if 0
   mrg_edit_string (event->mrg, NULL, NULL, NULL);
+#endif
   return 0;
 }
 
 void mrg_text_edit_bindings (Mrg *mrg)
 {
-  mrg_add_binding (mrg, "escape",    NULL, "Stop editing", cmd_escape,      NULL);
-  mrg_add_binding (mrg, "return",    NULL, "insert newline", cmd_return,    NULL);
+  mrg_add_binding (mrg, "escape",    NULL, "Stop editing",        cmd_escape,      NULL);
+  mrg_add_binding (mrg, "return",    NULL, "insert newline",      cmd_return,    NULL);
   mrg_add_binding (mrg, "home",      NULL, "Go to start of text", cmd_home, NULL);
-  mrg_add_binding (mrg, "end",       NULL, "Go to end of text", cmd_end,    NULL);
-  mrg_add_binding (mrg, "left",      NULL, "Move cursor left", cmd_left,    NULL);
-  mrg_add_binding (mrg, "right",     NULL, "Move cursor right", cmd_right,  NULL);
-  mrg_add_binding (mrg, "up",        NULL, "Move cursor up", cmd_up,        NULL);
-  mrg_add_binding (mrg, "down",      NULL, "Move cursor down", cmd_down,    NULL);
-  mrg_add_binding (mrg, "page-up",   NULL, "Move cursor up", cmd_page_up,     NULL);
-  mrg_add_binding (mrg, "page-down", NULL, "Move cursor down", cmd_page_down, NULL);
+  mrg_add_binding (mrg, "end",       NULL, "Go to end of text",   cmd_end,    NULL);
+  mrg_add_binding (mrg, "left",      NULL, "Move cursor left",    cmd_left,    NULL);
+  mrg_add_binding (mrg, "right",     NULL, "Move cursor right",   cmd_right,  NULL);
+  mrg_add_binding (mrg, "up",        NULL, "Move cursor up",      cmd_up,        NULL);
+  mrg_add_binding (mrg, "down",      NULL, "Move cursor down",    cmd_down,    NULL);
+  mrg_add_binding (mrg, "page-up",   NULL, "Move cursor up",      cmd_page_up,     NULL);
+  mrg_add_binding (mrg, "page-down", NULL, "Move cursor down",    cmd_page_down, NULL);
   mrg_add_binding (mrg, "backspace", NULL, "Remove character left of cursor", cmd_backspace, NULL);
   mrg_add_binding (mrg, "delete",    NULL, "Remove selected character", cmd_delete, NULL);
   mrg_add_binding (mrg, "unhandled", NULL, "Insert if key name is one char", cmd_unhandled, NULL);
 }
 
+#if 0
 void mrg_edit_string (Mrg *mrg, char **string,
                       void (*update_string)(Mrg *mrg,
                         char **string_loc,
@@ -1296,6 +1314,7 @@ void mrg_edit_string (Mrg *mrg, char **string,
     mrg->cursor_pos = 0;
   mrg_queue_draw (mrg, NULL);
 }
+#endif
 
 void
 mrg_printf (Mrg *mrg, const char *format, ...)
@@ -1327,3 +1346,34 @@ void _mrg_unblock_edit (Mrg *mrg)
 {
   mrg->text_edit_blocked = 0;
 }
+
+void mrg_edit_start_full (Mrg *mrg,
+                          MrgNewText  update_string,
+                          void *user_data,
+                          MrgDestroyNotify destroy,
+                          void *destroy_data)
+{
+  if (mrg->update_string_destroy_notify)
+  {
+    mrg->update_string_destroy_notify (mrg->update_string_destroy_data);
+  }
+  mrg->got_edit = 1;
+  mrg->text_edited = 1;
+  mrg->update_string = update_string;
+  mrg->update_string_user_data = user_data;
+  mrg->update_string_destroy_notify = destroy;
+  mrg->update_string_destroy_data = destroy_data;
+}
+
+void  mrg_edit_start       (Mrg *mrg,
+                            MrgNewText  update_string,
+                            void *user_data)
+{
+  return mrg_edit_start_full (mrg, update_string, user_data, NULL, NULL);
+}
+
+void  mrg_edit_end (Mrg *mrg)
+{
+  mrg->text_edited = 0;
+}
+

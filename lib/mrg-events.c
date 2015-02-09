@@ -250,7 +250,7 @@ void mrg_listen_full (Mrg     *mrg,
     cairo_get_matrix (cr, &item->inv_matrix);
     cairo_matrix_invert (&item->inv_matrix);
 
-    if (mrg->items && 0)
+    if (mrg->items)
     {
       MrgList *l;
       for (l = mrg->items; l; l = l->next)

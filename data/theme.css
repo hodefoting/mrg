@@ -65,7 +65,12 @@ entry size { float: right; }
 
 .cursor { border-bottom: 4px solid red; background: #bbbbbb; }
 
-editor { font-family: Monospace; font-size: 35px;}
+editor { font-family: Monospace;
+
+  /* font-size: 35px;    used for presentations */
+
+  font-size: 15px;
+}
 
 #compiler_output { position: fixed; top: 0; color: red;
                    font-weight: bold;

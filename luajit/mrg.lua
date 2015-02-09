@@ -44,7 +44,9 @@ typedef void(*MrgDestroyNotify) (void     *data);
 typedef int(*MrgTimeoutCb) (Mrg *mrg, void  *data);
 typedef int(*MrgIdleCb)    (Mrg *mrg, void  *data);
 
+typedef void (*MrgNewText) (const char *new_text, void *data);
 typedef void (*UiRenderFun)(Mrg *mrg, void *ui_data);
+
 
 void  mrg_destroy       (Mrg *mrg);
 
@@ -510,6 +512,28 @@ float  mrg_line_height (Mrg *mrg);
 /* XXX: doesnt feel like it belongs here */
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
 
+
+void mrg_edit_start (Mrg *mrg,
+                     MrgNewText update_string,
+                     void *user_data);
+
+void mrg_edit_start_full (Mrg *mrg,
+                           MrgNewText update_string,
+                           void *user_data,
+                           MrgDestroyNotify destroy,
+                           void *destroy_data);
+void  mrg_edit_end (Mrg *mrg);
+
+void  mrg_set_edge_left   (Mrg *mrg, float edge);
+void  mrg_set_edge_top    (Mrg *mrg, float edge);
+void  mrg_set_edge_right  (Mrg *mrg, float edge);
+void  mrg_set_edge_bottom (Mrg *mrg, float edge);
+float mrg_edge_left       (Mrg *mrg);
+float mrg_edge_top        (Mrg *mrg);
+float mrg_edge_right      (Mrg *mrg);
+float mrg_edge_bottom     (Mrg *mrg);
+
+
 ]]
 
 function M.new(width,height, backend) return C.mrg_new(width, height, backend) end
@@ -532,6 +556,29 @@ ffi.metatype('Mrg', {__index = {
   set_style        = function (...) C.mrg_set_style(...) end,
   css_add          = function (...) C.mrg_css_add(...) end,
   set_em           = function (...) C.mrg_set_em(...) end,
+
+  edit_start = function (mrg, cb, data)
+    -- manually cast and destroy resources held by lua/C binding
+    local notify_fun, cb_fun;
+    local notify_cb = function (finalize_data)
+      cb_fun:free();
+      notify_fun:free();
+      return 0;
+    end
+    notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
+    cb_fun = ffi.cast ("MrgNewText", cb)
+    return C.mrg_edit_start_full (mrg, cb_fun, data, notify_fun, NULL)
+  end,
+
+  edit_end = function (...) C.mrg_edit_end (...) end,
+  set_edge_top     = function (...) C.mrg_set_edge_top(...) end,
+  edge_top         = function (...) return C.mrg_get_edge_top(...) end,
+  set_edge_bottom     = function (...) C.mrg_set_edge_bottom(...) end,
+  edge_bottom         = function (...) return C.mrg_get_edge_bottom(...) end,
+  set_edge_left     = function (...) C.mrg_set_edge_left(...) end,
+  edge_left         = function (...) return C.mrg_get_edge_left(...) end,
+  set_edge_right     = function (...) C.mrg_set_edge_right(...) end,
+  edge_right         = function (...) return C.mrg_get_edge_right(...) end,
   set_rem          = function (...) C.mrg_set_rem(...) end,
   main             = function (...) C.mrg_main(...) end,
   start            = function (mrg, cssid) C.mrg_start(mrg, cssid, NULL) end,

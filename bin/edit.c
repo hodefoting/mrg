@@ -154,9 +154,9 @@ static int run_cb (MrgEvent *event, void *data1, void *data2)
   return 1;
 }
 
-static void update_string (Mrg *mrg, char **string_loc, const char *new_string,
-                           void *user_data)
+static void update_string (const char *new_string, void *user_data)
 {
+  char **string_loc = user_data;
   free (*string_loc);
   *string_loc = strdup (new_string);
 }
@@ -208,7 +208,6 @@ static void gui (Mrg *mrg, void *data)
   }
 
   state->mrg = mrg;
-  mrg_edit_string (mrg, &state->data, update_string, NULL);
 
   if (!state->started)
   {
@@ -230,7 +229,6 @@ static void gui (Mrg *mrg, void *data)
     {
       pos[1] = 0.0;
     }
-
     state->started = 1;
   }
 
@@ -269,14 +267,13 @@ static void gui (Mrg *mrg, void *data)
     else
       move_y = 0;
   }
-  mrg_queue_draw (mrg, NULL);
 
   /* turn on syntax highlighting of fragments output */
-  //mrg_syntax_hl_start (mrg);
-
+  mrg_syntax_hl_start (mrg);
+  mrg_edit_start (mrg, update_string, &state->data);
   mrg_print (mrg, state->data);
-
-  //mrg_syntax_hl_stop (mrg);
+  mrg_edit_end (mrg);
+  mrg_syntax_hl_stop (mrg);
   /* turn off syntax highlighting of fragments output */
 
   mrg_end (mrg);
@@ -347,7 +344,7 @@ State *edit_state_new (const char *path)
 
 void edit_state_destroy (State *state)
 {
-  mrg_edit_string (state->mrg, NULL, NULL, NULL);
+  //mrg_edit_string (state->mrg, NULL, NULL, NULL);
   if (state->path)
     free (state->path);
   if (state->data)
