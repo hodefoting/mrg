@@ -91,7 +91,8 @@ typedef struct MrgItem {
   float          x1;
   float          y1;
 
-  cairo_path_t   *path;  
+  cairo_path_t   *path;
+  uint32_t        path_hash;
 
   MrgType   types; /* all cb's ored together */
   MrgItemCb cb[MRG_MAX_CBS];

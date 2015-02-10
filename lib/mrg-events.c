@@ -71,6 +71,53 @@ static void restore_path (cairo_t *cr, cairo_path_t *path)
   }
 }
 
+
+/* using bigger primes would be a good idea, this falls apart due to rounding
+ * when zoomed in close
+ */
+static uint32_t path_hash (cairo_path_t *path)
+{
+  int i;
+  uint32_t ret = 0;
+  cairo_path_data_t *data;
+  for (i = 0; i <path->num_data; i += path->data[i].header.length)
+  {
+    data = &path->data[i];
+    switch (data->header.type) {
+      case CAIRO_PATH_MOVE_TO:
+        ret *= 7;
+        ret += data[1].point.x;
+        ret *= 13;
+        ret += data[1].point.y;
+        break;
+      case CAIRO_PATH_LINE_TO:
+        ret *= 21;
+        ret += data[1].point.x;
+        ret *= 101;
+        ret += data[1].point.y;
+        break;
+      case CAIRO_PATH_CURVE_TO:
+        ret *= 11;
+        ret += data[1].point.x;
+        ret *= 23;
+        ret += data[1].point.y;
+        ret *= 107;
+        ret += data[2].point.x;
+        ret *= 79;
+        ret += data[2].point.y;
+        ret *= 3;
+        ret += data[3].point.x;
+        ret *= 5;
+        ret += data[3].point.y;
+        break;
+      case CAIRO_PATH_CLOSE_PATH:
+        ret *= 51;
+        break;
+    }
+  }
+  return ret;
+}
+
 MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgList *a;
@@ -120,15 +167,6 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
     }
   }
   return NULL;
-}
-
-static int rectangle_equal (MrgItem *a, MrgItem *b)
-{
-  return a->x0 == b->x0 &&
-         a->y0 == b->y0 &&
-         a->x1 == b->x1 &&
-         a->y1 == b->y1 
-         && !memcmp (&a->inv_matrix, &b->inv_matrix, sizeof (a->inv_matrix));
 }
 
 void _mrg_item_ref (MrgItem *mrgitem)
@@ -247,6 +285,7 @@ void mrg_listen_full (Mrg     *mrg,
     item->cb_count = 1;
     item->types = types;
     item->path = cairo_copy_path (cr);
+    item->path_hash = path_hash (item->path);
     cairo_get_matrix (cr, &item->inv_matrix);
     cairo_matrix_invert (&item->inv_matrix);
 
@@ -262,7 +301,7 @@ void mrg_listen_full (Mrg     *mrg,
          *
          * or stop doing this?
          * */
-        if (rectangle_equal (item, item2))
+        if (item->path_hash == item2->path_hash)
         {
           /* found an item, copy over cb data  */
           item2->cb[item2->cb_count] = item->cb[0];
@@ -330,7 +369,7 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgItem *current = _mrg_detect (mrg, x, y, MRG_ANY);
 
-  if (mrg->prev == NULL || current == NULL || !rectangle_equal (current, mrg->prev))
+  if (mrg->prev == NULL || current == NULL || !(current->path_hash == mrg->prev->path_hash))
   {
     int focus_radius = 2;
     if (current)
