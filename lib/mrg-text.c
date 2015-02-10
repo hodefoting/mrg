@@ -1127,9 +1127,6 @@ static int cmd_down (MrgEvent *event, void *data1, void *data2)
   Mrg *mrg = event->mrg;
   float e_x, e_y, e_s, e_e, e_em;
   float cx, cy;
-
-  if (!mrg->text_edited)
-    return 0;
  
   mrg_get_edit_state (mrg, &e_x, &e_y, &e_s, &e_e, &e_em);
   mrg_set_edge_left (mrg, e_s - mrg->state->style.padding_left);
