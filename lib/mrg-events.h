@@ -54,9 +54,23 @@ struct _MrgRectangle {
   int height;
 };
 
+typedef enum _MrgModifierState MrgModifierState;
+
+enum _MrgModifierState
+{
+  MRG_MODIFIER_STATE_SHIFT   = (1<<0),
+  MRG_MODIFIER_STATE_CONTROL = (1<<1),
+  MRG_MODIFIER_STATE_ALT     = (1<<2),
+  MRG_MODIFIER_STATE_BUTTON1 = (1<<3),
+  MRG_MODIFIER_STATE_BUTTON2 = (1<<4),
+  MRG_MODIFIER_STATE_BUTTON3 = (1<<5)
+};
+
 struct _MrgEvent {
   MrgType  type;
   Mrg     *mrg;
+
+  MrgModifierState state;
 
   int      device_no; /* 0 = left mouse button / virtual focus */
                       /* 1 = middle mouse button */
@@ -66,7 +80,7 @@ struct _MrgEvent {
   float   device_x; /* untransformed x/y coordinates  */
   float   device_y;
 
-  /* coordinates; and deltas for motion events in user-coordinates: */
+  /* coordinates; and deltas for motion/drag events in user-coordinates: */
   float   x;
   float   y;
   float   start_x; /* start-coordinates (press) event for drag */

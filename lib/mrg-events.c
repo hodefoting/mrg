@@ -352,6 +352,7 @@ _mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, f
   }
 
   event = &transformed_event;
+  event->state = mrg->modifier_state;
 
   for (i = item->cb_count-1; i >= 0; i--)
   {
@@ -420,9 +421,23 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
 
   if (mrg->pointer_down[device_no] == 1)
   {
-    fprintf (stderr, "device %i already doen\n", device_no);
+    fprintf (stderr, "device %i already down\n", device_no);
   }
   mrg->pointer_down[device_no] = 1;
+  switch (device_no)
+  {
+    case 1:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON1;
+      break;
+    case 2:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON2;
+      break;
+    case 3:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON3;
+      break;
+    default:
+      break;
+  }
 
   if (mrg_item && (mrg_item->types & MRG_DRAG))
   {
@@ -467,6 +482,24 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   mrg->drag_event.mrg = mrg;
   mrg->drag_event.y = y;
   mrg->drag_event.device_no = device_no;
+
+  switch (device_no)
+  {
+    case 1:
+      if (mrg->modifier_state & MRG_MODIFIER_STATE_BUTTON1)
+        mrg->modifier_state -= MRG_MODIFIER_STATE_BUTTON1;
+      break;
+    case 2:
+      if (mrg->modifier_state & MRG_MODIFIER_STATE_BUTTON2)
+        mrg->modifier_state -= MRG_MODIFIER_STATE_BUTTON2;
+      break;
+    case 3:
+      if (mrg->modifier_state & MRG_MODIFIER_STATE_BUTTON3)
+        mrg->modifier_state -= MRG_MODIFIER_STATE_BUTTON3;
+      break;
+    default:
+      break;
+  }
 
   mrg_queue_draw (mrg, NULL); /* in case of style change */
 
@@ -581,6 +614,7 @@ int mrg_key_press (Mrg *mrg, unsigned int keyval,
     {
       if (item->cb[i].types & (MRG_KEY_DOWN))
       {
+        mrg->drag_event.state = mrg->modifier_state;
         if (item->cb[i].cb (&mrg->drag_event, item->cb[i].data1, item->cb[i].data2))
           return 1;
       }

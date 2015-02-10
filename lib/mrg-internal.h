@@ -314,6 +314,8 @@ struct _Mrg {
   MrgRectangle   dirty;
 
   MrgState      *state;
+  MrgModifierState modifier_state;
+
   MrgList       *geo_cache;
   void          *eeek2;  /* something sometimes goes too deep! */
   void          *eeek1;  /* XXX something sometimes goes too deep in state */
