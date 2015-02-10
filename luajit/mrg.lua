@@ -693,5 +693,6 @@ ffi.metatype('MrgRectangle', {__index = { }})
   M.DRAG_MOTION = C.MRG_DRAG_MOTION;
   M.DRAG_PRESS = C.MRG_DRAG_PRESS;
   M.DRAG_RELEASE = C.MRG_DRAG_RELEASE;
+  M.DRAG = C.MRG_DRAG;
 
 return M
