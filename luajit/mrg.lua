@@ -536,8 +536,11 @@ float mrg_edge_bottom     (Mrg *mrg);
 
 ]]
 
-function M.new(width,height, backend) return C.mrg_new(width, height, backend) end
-
+function M.new(width,height, backend)
+  return ffi.gc(
+           C.mrg_new(width, height, backend),
+           C.mrg_destroy)
+end
 
 ffi.metatype('Mrg', {__index = {
   -- maybe we should add a _full version to this as well, then all callback
