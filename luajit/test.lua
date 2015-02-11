@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 
 local Mrg = require('mrg')
-local mrg = Mrg.new(512,384,"gtk");
+local mrg = Mrg.new(512,384);
 local x = 0.1;
 local y = 0.1;
 
