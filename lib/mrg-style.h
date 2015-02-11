@@ -283,6 +283,8 @@ struct _MrgStyle {
   float             margin_bottom;
 
   void             *id_ptr;
+
+  char              syntax_highlight[9];
 };
 
 /**

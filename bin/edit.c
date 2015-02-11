@@ -268,13 +268,10 @@ static void gui (Mrg *mrg, void *data)
       move_y = 0;
   }
 
-  /* turn on syntax highlighting of fragments output */
-  mrg_syntax_hl_start (mrg);
+  mrg_set_style (mrg, "syntax-highlight: C");
   mrg_edit_start (mrg, update_string, &state->data);
   mrg_print (mrg, state->data);
   mrg_edit_end (mrg);
-  mrg_syntax_hl_stop (mrg);
-  /* turn off syntax highlighting of fragments output */
 
   mrg_end (mrg);
 

@@ -136,17 +136,6 @@ enum {
 };
 
 static int state = MRG_HL_NEUTRAL;
-static int mrg_syntax_hl = 0;
-void mrg_syntax_hl_start (Mrg *mrg)
-{
-  mrg_syntax_hl = 1;
-  state = MRG_HL_NEUTRAL;
-}
-
-void mrg_syntax_hl_stop (Mrg *mrg)
-{
-  mrg_syntax_hl = 0;
-}
 
 static void mrg_hl_token (cairo_t *cr, const char *word)
 {
@@ -236,7 +225,6 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
     case MRG_HL_LINECOMMENT:
         cairo_set_source_rgb (cr, 0.4, 0.4, 1);
       break;
-
   }
 
   cairo_show_text (cr, word);
@@ -245,11 +233,6 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
 /* hook syntax highlighter in here..  */
 void mrg_hl_text (cairo_t *cr, const char *text)
 {
-  if (!mrg_syntax_hl)
-  {
-    cairo_show_text (cr, text);
-    return;
-  }
   int i;
   MrgString *word = mrg_string_new ("");
   for (i = 0; i < text[i]; i++)
@@ -290,7 +273,6 @@ void mrg_hl_text (cairo_t *cr, const char *text)
     mrg_hl_token (cr, word->str);
 
   mrg_string_free (word, 1);
-  //cairo_show_text (cr, text);
 }
 
 /* x and y in cairo user units ; returns x advance in user units  */
@@ -378,11 +360,14 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
     /* when syntax highlighting,.. should do it as a coloring
      * directly here..
      */
-#if 0
-    cairo_show_text (cr, string);
-#else
-    mrg_hl_text (cr, string);
-#endif
+
+    if (style->syntax_highlight[0] == 0)
+      cairo_show_text (cr, string);
+    else if (!strcmp (style->syntax_highlight, "C"))
+      mrg_hl_text (cr, string);
+    else 
+      cairo_show_text (cr, string);
+
     cairo_get_current_point (cr, &new_x, NULL);
 
   }

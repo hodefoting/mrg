@@ -19,7 +19,6 @@ function (mrg, data)
     return 0;
   end)
 
-
   mrg:print("quit")
   mrg:text_listen_done()
 

@@ -956,6 +956,11 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
           s->font_style,
           s->font_weight);
     }
+  else if (!strcmp (name, "syntax-highlight"))
+    {
+      strncpy (s->syntax_highlight, value, 8);
+      s->syntax_highlight[8]=0;
+    }
   else if (!strcmp (name, "fill-rule"))
     {
       if (!strcmp (value, "evenodd"))
