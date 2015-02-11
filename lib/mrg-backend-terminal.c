@@ -393,7 +393,7 @@ static int mrg_nct_consume_events (Mrg *mrg)
         if (!strcmp (event, "esc"))
           mrg_key_press (mrg, 0, "escape");
         else if (!strcmp (event, "space"))
-          mrg_key_press (mrg, 0, " ");
+          mrg_key_press (mrg, 0, "space");
         else if (!strcmp (event, "enter"))
           mrg_key_press (mrg, 0, "\n");
         else if (!strcmp (event, "return"))

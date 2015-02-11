@@ -123,6 +123,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     case GDK_KEY_BackSpace: name = "backspace"; break;
     case GDK_KEY_Delete:    name = "delete";    break;
     case GDK_KEY_Insert:    name = "insert";    break;
+    case GDK_KEY_space:     name = "space";     break;
     case GDK_KEY_F1:        name = "F1";        break;
     case GDK_KEY_F2:        name = "F2";        break;
     case GDK_KEY_F3:        name = "F3";        break;

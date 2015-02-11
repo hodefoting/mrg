@@ -135,75 +135,75 @@ enum {
   MRG_HL_COMMENT_STAR = 7,
 };
 
-static int state = MRG_HL_NEUTRAL;
+static int hl_state_c = MRG_HL_NEUTRAL;
 
 static void mrg_hl_token (cairo_t *cr, const char *word)
 {
-  switch (state)
+  switch (hl_state_c)
   {
     case MRG_HL_NEUTRAL:
       if (!strcmp (word, "\""))
       {
-        state = MRG_HL_STRING;
+        hl_state_c = MRG_HL_STRING;
       }
       else if (!strcmp (word, "/"))
       {
-        state = MRG_HL_SLASH;
+        hl_state_c = MRG_HL_SLASH;
       }
       break;
     case MRG_HL_SLASH:
       if (!strcmp (word, "/"))
       {
-        state = MRG_HL_LINECOMMENT;
+        hl_state_c = MRG_HL_LINECOMMENT;
       } else if (!strcmp (word, "*"))
       {
-        state = MRG_HL_COMMENT;
+        hl_state_c = MRG_HL_COMMENT;
       } else
       {
-        state = MRG_HL_NEUTRAL;
+        hl_state_c = MRG_HL_NEUTRAL;
       }
       break;
     case MRG_HL_LINECOMMENT:
       if (!strcmp (word, "\n"))
       {
-        state = MRG_HL_NEUTRAL;
+        hl_state_c = MRG_HL_NEUTRAL;
       }
       break;
     case MRG_HL_COMMENT:
       if (!strcmp (word, "*"))
       {
-        state = MRG_HL_COMMENT_STAR;
+        hl_state_c = MRG_HL_COMMENT_STAR;
       }
       break;
     case MRG_HL_COMMENT_STAR:
       if (!strcmp (word, "/"))
       {
-        state = MRG_HL_NEUTRAL;
+        hl_state_c = MRG_HL_NEUTRAL;
       }
       else
       {
-        state = MRG_HL_COMMENT;
+        hl_state_c = MRG_HL_COMMENT;
       }
       break;
     case MRG_HL_STRING:
       if (!strcmp (word, "\""))
       {
-        state = MRG_HL_NEXT_NEUTRAL;
+        hl_state_c = MRG_HL_NEXT_NEUTRAL;
       }
       else if (!strcmp (word, "\\"))
       {
-        state = MRG_HL_STRING_ESC;
+        hl_state_c = MRG_HL_STRING_ESC;
       }
       break;
     case MRG_HL_STRING_ESC:
-      state = MRG_HL_STRING;
+      hl_state_c = MRG_HL_STRING;
       break;
     case MRG_HL_NEXT_NEUTRAL:
-      state = MRG_HL_NEUTRAL;
+      hl_state_c = MRG_HL_NEUTRAL;
       break;
   }
 
-  switch (state)
+  switch (hl_state_c)
   {
     case MRG_HL_NEUTRAL:
       if (is_a_number (word))
@@ -952,6 +952,7 @@ void _mrg_text_init (Mrg *mrg)
 {
   mrg->state->style.line_height = 1.0;
   mrg->state->style.print_symbols = 0;
+  hl_state_c = MRG_HL_NEUTRAL;
 }
 
 void  mrg_text_listen_full (Mrg *mrg, MrgType types,
