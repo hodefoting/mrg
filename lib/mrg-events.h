@@ -87,8 +87,8 @@ struct _MrgEvent {
   float   start_y;
   float   prev_x;  /* previous events coordinates */
   float   prev_y;
-  float   delta_x; /* x - prev_x */
-  float   delta_y; /* y - prev_y */
+  float   delta_x; /* x - prev_x, redundant - but often useful */
+  float   delta_y; /* y - prev_y, redundant - ..  */
 
   /* only valid for key-events */
   unsigned int unicode;
@@ -134,8 +134,6 @@ void mrg_listen      (Mrg     *mrg,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2);
-
-
 /**
  * mrg_listen_full:
  *

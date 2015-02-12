@@ -85,29 +85,29 @@ static uint32_t path_hash (cairo_path_t *path)
     data = &path->data[i];
     switch (data->header.type) {
       case CAIRO_PATH_MOVE_TO:
-        ret *= 7;
+        ret *= 17;
         ret += data[1].point.x;
-        ret *= 13;
+        ret *= 113;
         ret += data[1].point.y;
         break;
       case CAIRO_PATH_LINE_TO:
-        ret *= 21;
+        ret *= 121;
         ret += data[1].point.x;
-        ret *= 101;
+        ret *= 1021;
         ret += data[1].point.y;
         break;
       case CAIRO_PATH_CURVE_TO:
-        ret *= 11;
+        ret *= 3111;
         ret += data[1].point.x;
         ret *= 23;
         ret += data[1].point.y;
         ret *= 107;
         ret += data[2].point.x;
-        ret *= 79;
+        ret *= 739;
         ret += data[2].point.y;
         ret *= 3;
         ret += data[3].point.x;
-        ret *= 5;
+        ret *= 51;
         ret += data[3].point.y;
         break;
       case CAIRO_PATH_CLOSE_PATH:
@@ -142,7 +142,6 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
     double u, v;
     u = x;
     v = y;
-
     cairo_matrix_transform_point (&item->inv_matrix, &u, &v);
 
     if (u >= item->x0 && v >= item->y0 &&
@@ -370,7 +369,7 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgItem *current = _mrg_detect (mrg, x, y, MRG_ANY);
 
-  if (mrg->prev == NULL || current == NULL || !(current->path_hash == mrg->prev->path_hash))
+  if (mrg->prev == NULL || current == NULL || (current->path_hash != mrg->prev->path_hash))
   {
     int focus_radius = 2;
     if (current)
@@ -564,7 +563,8 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
   }
 
   /* XXX: too brutal; should use enter/leave events */
-  //mrg_queue_draw (mrg, NULL);
+  mrg_queue_draw (mrg, NULL); /* XXX: not really needed for all backends,
+                                      needs more tinkering */
 
   if (mrg_item)
   {
@@ -649,8 +649,8 @@ void _mrg_debug_overlays (Mrg *mrg)
   cairo_t *cr = mrg_cr (mrg);
   cairo_save (cr);
 
-  cairo_set_line_width (cr, 1);
-  cairo_set_source_rgba (cr, 1,0.5,0.5,0.5);
+  cairo_set_line_width (cr, 2);
+  cairo_set_source_rgba (cr, 0,0,0.8,0.5);
   for (a = mrg->items; a; a = a->next)
   {
     double current_x = mrg_pointer_x (mrg);
@@ -660,16 +660,16 @@ void _mrg_debug_overlays (Mrg *mrg)
 
     cairo_matrix_transform_point (&matrix, &current_x, &current_y);
 
-#if 1
     if (current_x >= item->x0 && current_x < item->x1 &&
         current_y >= item->y0 && current_y < item->y1)
-#endif
     {
       cairo_matrix_invert (&matrix);
       cairo_set_matrix (cr, &matrix);
+      restore_path (cr, item->path);
+/*
       cairo_rectangle (cr, item->x0, item->y0,
                        (item->x1-item->x0),
-                       (item->y1-item->y0));
+                       (item->y1-item->y0));*/
       cairo_stroke (cr);
     }
   }
