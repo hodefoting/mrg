@@ -1281,9 +1281,10 @@ void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
                      void *link_data,
-                     char *html)
+                     char *html_)
 {
-  MrgXml *xmltok      = xmltok_buf_new (html);
+  char *html;
+  MrgXml *xmltok;
   MrgHtml *ctx        = &mrg->html;
   char tag[64][16];
   int pos             = 0;
@@ -1294,6 +1295,10 @@ void mrg_xml_render (Mrg *mrg,
   int tagpos          = 0;
   MrgString *style = mrg_string_new ("");
   int whitespaces = 0;
+
+  html = malloc (strlen (html_) + 3);
+  sprintf (html, "%s ", html_);
+  xmltok = xmltok_buf_new (html);
 
   _mrg_set_wrap_edge_vfuncs (mrg, wrap_edge_left, wrap_edge_right, ctx);
   _mrg_set_post_nl (mrg, _mrg_draw_background_increment, ctx);
@@ -1726,6 +1731,7 @@ void mrg_xml_render (Mrg *mrg,
 
 //  mrg_list_free (&ctx->geo_cache); /* XXX: no point in doing that here */
   mrg_string_free (style, 1);
+  free (html);
 }
 
 void mrg_xml_renderf (Mrg *mrg,
