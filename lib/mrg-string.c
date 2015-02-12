@@ -46,6 +46,7 @@ MrgString *mrg_string_new (const char *initial)
     mrg_string_append_str (string, initial);
   return string;
 }
+
 void mrg_string_clear (MrgString *string)
 {
   string->length = 0;

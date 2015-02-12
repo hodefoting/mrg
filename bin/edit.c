@@ -363,7 +363,8 @@ int edit_main (int argc, char **argv)
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);
     state = edit_state_new (tmp);
   }
-  mrg = mrg_new (480, 640, NULL);
+  //mrg = mrg_new (480, 640, NULL);
+  mrg = mrg_new (-1, -1, NULL);
   mrg_set_ui (mrg, state->ui, state);
   mrg_main (mrg);
   edit_state_destroy (state);

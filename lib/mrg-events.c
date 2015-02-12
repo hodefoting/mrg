@@ -563,6 +563,7 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
   }
 
   /* XXX: too brutal; should use enter/leave events */
+  if (getenv ("MRG_FAST") == NULL)
   mrg_queue_draw (mrg, NULL); /* XXX: not really needed for all backends,
                                       needs more tinkering */
 
