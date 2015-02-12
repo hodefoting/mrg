@@ -319,6 +319,9 @@ static void gui (Mrg *mrg, void *data)
     state->compile_timeout = mrg_add_timeout (mrg, 500, 
       background_task, state);
   }
+
+  if (move_y)
+    mrg_queue_draw (mrg ,NULL);
 }
 
 State *edit_state_new (const char *path)
