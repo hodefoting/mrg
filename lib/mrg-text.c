@@ -376,6 +376,12 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
   {
     float em = mrg_em (mrg);
     int no = mrg->text_listen_count-1;
+    double x, y;
+
+    cairo_get_current_point (cr, &x, &y);
+
+    //fprintf (stderr, "[%s %f (%f)]\n", string, old_x, new_x-old_x+1);
+
     cairo_save (cr);
     cairo_new_path (cr);
     cairo_rectangle (cr,
@@ -387,6 +393,7 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
                 mrg->text_listen_data2[no]);
     cairo_new_path (cr);
     cairo_restore (cr);
+    cairo_move_to (cr, x, y);
   }
 
   if (temp_string)
@@ -1226,6 +1233,12 @@ static void add_utf8 (Mrg *mrg, const char *string)
 
 static int cmd_unhandled (MrgEvent *event, void *data1, void *data2)
 {
+  if (!strcmp (event->key_name, "space"))
+  {
+    add_utf8 (event->mrg, " ");
+    return 1;
+  }
+
   if (mrg_utf8_strlen (event->key_name) != 1)
     return 0;
 
