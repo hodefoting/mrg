@@ -130,7 +130,14 @@ int mrg_add_timeout_full (Mrg *mrg, int ms, MrgTimeoutCb idle_cb, void *idle_dat
                        void (*destroy_notify)(void *destroy_data),    void *destroy_data);
 
 
+void  mrg_set_line_spacing (Mrg *mrg, float line_spacing);
+float mrg_line_spacing     (Mrg *mrg); 
+
 int mrg_print (Mrg *mrg, const char *string);
+
+int   mrg_print_get_xy     (Mrg *mrg, const char *str, int no, float *x, float *y);
+
+
 int mrg_print_xml (Mrg *mrg, const char *string);
 
 void mrg_listen      (Mrg     *mrg,
@@ -526,6 +533,8 @@ float  mrg_line_height (Mrg *mrg);
 /* XXX: doesnt feel like it belongs here */
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
 
+int mrg_get_cursor_pos  (Mrg *mrg);
+void mrg_set_cursor_pos (Mrg *mrg, int pos);
 
 void mrg_edit_start (Mrg *mrg,
                      MrgNewText update_string,
@@ -642,6 +651,14 @@ ffi.metatype('Mrg', {__index = {
     cb_fun = ffi.cast ("MrgCb", cb)
     return C.mrg_listen_full (mrg, types, cb_fun, data1, data2, notify_fun, NULL)
   end,
+  print_get_xy     = function (mrg, str, no) 
+                         local rx = ffi.new'float[1]'
+                         local ry = ffi.new'float[1]'
+                         C.mrg_print_get_xy(mrg, str, no, rx, ry)
+                         return rx[0], ry[0]
+                       end,
+  get_cursor_pos   = function (...) return C.mrg_get_cursor_pos(...) end,
+  set_cursor_pos   = function (...) C.mrg_set_cursor_pos(...) end,
   print            = function (...) C.mrg_print(...) end,
   print_xml        = function (...) C.mrg_print_xml(...) end,
   cr               = function (...) return C.mrg_cr (...) end,
