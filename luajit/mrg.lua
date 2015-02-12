@@ -592,7 +592,10 @@ ffi.metatype('Mrg', {__index = {
       return 0;
     end
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
-    cb_fun = ffi.cast ("MrgNewText", cb)
+    local wrap_cb = function(new_text,data)
+      cb(ffi.string(new_text),data)
+    end
+    cb_fun = ffi.cast ("MrgNewText", wrap_cb)
     return C.mrg_edit_start_full (mrg, cb_fun, data, notify_fun, NULL)
   end,
 

@@ -4,19 +4,13 @@ local document = [[Microraptor editor, a small text editor written with luajit f
 
 Usage: mrg-edit.lua <file to edit>
 Keybindings: ctrl-s save ctrl-q quit
-
 ]]
 
--- self hosted editing suddenly seems soon feasible, then crash only
--- lua based ui states can be experimented with, perhaps it is feasible
--- to drop gcc from the graphical environment, and make the graphical
--- environment be entirely lua based?
-
-local Math = require('math')
+local math   = require('math')
 local string = require('string')
-local Mrg = require('mrg')
-local mrg = Mrg.new(80 * 12, 40 * 18);
-local io = require('io')
+local io     = require('io')
+local Mrg    = require('mrg')
+local mrg    = Mrg.new(80 * 12, 40 * 18);
 
 local path = 'microraptor-lua-editor'
 
@@ -26,23 +20,9 @@ if (#arg >= 1) then
   document = io.read("*all")
 end
 
-function note_to_hz(no)
-  local hz = 55/4
-  local twelfth_root_of_two = 1.0594630943592952645
-  for step = 1, no do
-    hz = hz * twelfth_root_of_two;
-  end
-  return hz
-end
-
-local parameters = {}
-local ffi=require 'ffi'
-
-function update_document(document)
-end
-
+-- automatic cursor centeric with pan handling
 local vert_pan = 0
-local move_y = 0
+local move_y = 0  
 
 mrg:set_ui(
 function (mrg, data)
@@ -79,30 +59,32 @@ function (mrg, data)
 
   mrg:print('\n')
   mrg:edit_start(
-  function(new_text,foo)
-    document = ffi.string(new_text)
-    update_document (document)
-    return 0;
-  end)
+    function(new_text)
+      document = new_text 
+      return 0;
+    end)
   mrg:set_style('background:transparent;syntax-highlight:C')
   mrg:print(document)
-  mrg:edit_end() -- or should it just be the next print statement?
+  mrg:edit_end() -- or should edit_start just apply to the next print statement?
 
-  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
+  mrg:add_binding("control-q", NULL, NULL,
+    function ()
+      mrg:quit()
+      return 0
+    end)
+
   mrg:add_binding("control-s", NULL, NULL, 
-     function (foo)
-       io.output(path)
-       io.write(document)
-       return 0
-     end
-  )
+    function ()
+      io.output(path)
+      io.write(document)
+      return 0
+    end)
 
   if move_y ~= 0 then
     mrg:queue_draw(nil)
   end
 end)
 
-update_document(document)
 mrg:set_title(path)
 mrg:set_cursor_pos(0)
 mrg:main()
