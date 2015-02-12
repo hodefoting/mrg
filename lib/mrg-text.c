@@ -382,7 +382,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
 
     //fprintf (stderr, "[%s %f (%f)]\n", string, old_x, new_x-old_x+1);
 
-    cairo_save (cr);
     cairo_new_path (cr);
     cairo_rectangle (cr,
         old_x, y - em, new_x - old_x + 1, em * mrg->state->style.line_height);
@@ -392,7 +391,6 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
                 mrg->text_listen_data1[no],
                 mrg->text_listen_data2[no]);
     cairo_new_path (cr);
-    cairo_restore (cr);
     cairo_move_to (cr, x, y);
   }
 
