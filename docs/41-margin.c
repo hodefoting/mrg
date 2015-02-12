@@ -69,6 +69,7 @@ void ui (Mrg *mrg, void *data) {
   cairo_rectangle (cr, 0, y-10, mrg_width (mrg),20);
   mrg_listen (mrg, MRG_DRAG,
               drag_top_cb, NULL, NULL);
+  cairo_new_path (cr);
 
   mrg_printf_xml (mrg, "%s", xml);
 }
