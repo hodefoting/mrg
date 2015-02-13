@@ -89,7 +89,7 @@ static float _mrg_text_shift (Mrg *mrg)
 const char * hl_punctuation[] =
 {";", ",", "(", ")", "{", "}", NULL};
 const char * hl_operators [] =
-{"-", "+", "=", "*", "/", "return", "<", ">", 
+{"-", "+", "=", "*", "/", "return", "<", ">", ":",
  "if", "else", "break", "case", NULL};
 const char * hl_types[] =
 {"int", "cairo_t", "Mrg", "float", "double",
@@ -113,7 +113,7 @@ static int is_a_number (const char *word)
   int i;
   for (i = 0; word[i]; i++)
   {
-    if (word[i] < '0' || word[i] > '9')
+    if ((word[i] < '0' || word[i] > '9') && word[i] != '.')
       yep = 0;
   }
   return yep;
@@ -129,10 +129,12 @@ enum {
   MRG_HL_NEXT_NEUTRAL = 1,
   MRG_HL_STRING       = 2,
   MRG_HL_STRING_ESC   = 3,
-  MRG_HL_SLASH        = 4,
-  MRG_HL_LINECOMMENT  = 5,
-  MRG_HL_COMMENT      = 6,
-  MRG_HL_COMMENT_STAR = 7,
+  MRG_HL_QSTRING      = 4,
+  MRG_HL_QSTRING_ESC  = 5,
+  MRG_HL_SLASH        = 6,
+  MRG_HL_LINECOMMENT  = 7,
+  MRG_HL_COMMENT      = 8,
+  MRG_HL_COMMENT_STAR = 9,
 };
 
 static int hl_state_c = MRG_HL_NEUTRAL;
@@ -145,6 +147,10 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
       if (!strcmp (word, "\""))
       {
         hl_state_c = MRG_HL_STRING;
+      }
+      else if (!strcmp (word, "'"))
+      {
+        hl_state_c = MRG_HL_QSTRING;
       }
       else if (!strcmp (word, "/"))
       {
@@ -166,7 +172,7 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
     case MRG_HL_LINECOMMENT:
       if (!strcmp (word, "\n"))
       {
-        hl_state_c = MRG_HL_NEUTRAL;
+        hl_state_c = MRG_HL_NEXT_NEUTRAL;
       }
       break;
     case MRG_HL_COMMENT:
@@ -198,6 +204,19 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
     case MRG_HL_STRING_ESC:
       hl_state_c = MRG_HL_STRING;
       break;
+    case MRG_HL_QSTRING:
+      if (!strcmp (word, "'"))
+      {
+        hl_state_c = MRG_HL_NEXT_NEUTRAL;
+      }
+      else if (!strcmp (word, "\\"))
+      {
+        hl_state_c = MRG_HL_QSTRING_ESC;
+      }
+      break;
+    case MRG_HL_QSTRING_ESC:
+      hl_state_c = MRG_HL_QSTRING;
+      break;
     case MRG_HL_NEXT_NEUTRAL:
       hl_state_c = MRG_HL_NEUTRAL;
       break;
@@ -218,6 +237,7 @@ static void mrg_hl_token (cairo_t *cr, const char *word)
         cairo_set_source_rgb (cr, 0, 0, 0);
       break;
     case MRG_HL_STRING:
+    case MRG_HL_QSTRING:
         cairo_set_source_rgb (cr, 1, 0, 0.5);
       break;
     case MRG_HL_COMMENT:
@@ -241,10 +261,13 @@ void mrg_hl_text (cairo_t *cr, const char *text)
     {
       case ';':
       case '-':
+      case '\'':
       case '>':
       case '<':
       case '=':
       case '+':
+      case ' ':
+      case ':':
       case '"':
       case '*':
       case '/':
@@ -953,11 +976,17 @@ int mrg_print (Mrg *mrg, const char *string)
   return ret;
 }
 
+void _mrg_text_prepare (Mrg *mrg)
+{
+  hl_state_c = MRG_HL_NEUTRAL;
+}
+
 void _mrg_text_init (Mrg *mrg)
 {
+  // XXX: this should be done in a prepre,.. not an init?
+  //
   mrg->state->style.line_height = 1.0;
   mrg->state->style.print_symbols = 0;
-  hl_state_c = MRG_HL_NEUTRAL;
 }
 
 void  mrg_text_listen_full (Mrg *mrg, MrgType types,

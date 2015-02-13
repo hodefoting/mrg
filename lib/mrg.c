@@ -374,6 +374,8 @@ void _mrg_idle_iteration (Mrg *mrg)
   }
 }
 
+void _mrg_text_prepare (Mrg *mrg);
+
 void mrg_prepare (Mrg *mrg)
 {
 
@@ -386,6 +388,8 @@ void mrg_prepare (Mrg *mrg)
   mrg->got_edit = 0;
   mrg_clear (mrg);
   mrg->in_paint ++;
+
+  _mrg_text_prepare (mrg);
 
   mrg_style_defaults (mrg);
 
@@ -640,6 +644,10 @@ X (edge_bottom)
 
 #undef X
 
+/* setting edge top has the additional side effect of doing cursor
+ * positioning
+ *
+ */
 void  mrg_set_edge_top (Mrg *mrg, float val)
 {
   mrg->state->edge_top = val;
