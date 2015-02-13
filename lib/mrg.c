@@ -426,14 +426,15 @@ void mrg_prepare (Mrg *mrg)
 
 void mrg_flush  (Mrg *mrg)
 {
+  cairo_new_path (mrg_cr (mrg));
+
+  //_mrg_debug_overlays (mrg);
+  mrg_end (mrg);
 
   if (mrg->got_edit && mrg->text_edit_blocked <= 0)
   {
     mrg_text_edit_bindings (mrg);
   }
-
-  //_mrg_debug_overlays (mrg);
-  mrg_end (mrg);
 
   cairo_restore (mrg_cr (mrg));
 
@@ -470,7 +471,8 @@ int  mrg_is_terminal (Mrg *mrg)
   return mrg->glyphs != NULL;
 }
 
-static void mrg_parse_style_id (Mrg *mrg, const char *style_id,
+static void mrg_parse_style_id (Mrg          *mrg,
+                                const char   *style_id,
                                 MrgStyleNode *node)
 {
   const char *p;
@@ -734,6 +736,7 @@ void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
   mrg_listen (mrg2, MRG_PRESS,   mrg_mrg_press, mrg, NULL);
   mrg_listen (mrg2, MRG_MOTION,  mrg_mrg_motion, mrg, NULL);
   mrg_listen (mrg2, MRG_RELEASE, mrg_mrg_release, mrg, NULL);
+  cairo_new_path (cr);
 
   cairo_restore (cr);
 }
