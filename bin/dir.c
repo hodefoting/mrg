@@ -388,6 +388,8 @@ static void ui_xhtml (Mrg *mrg, void *data)
   mrg_stylesheet_clear (mrg);
   file_get_contents (state->path, &contents, &length);
 
+  mrg_print (mrg, ".\n");
+
   if (contents)
   {
     mrg_xml_render (mrg, tmp->str, NULL, NULL, contents);
@@ -570,6 +572,7 @@ static void gui (Mrg *mrg, void *data)
   cairo_restore (cr);
 
   host_render (mrg, state->host);
+
   mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, state->host, NULL);
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
