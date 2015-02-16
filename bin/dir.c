@@ -610,6 +610,7 @@ int dir_main (int argc, char **argv)
   mrg_set_ui (mrg, gui, state);
   mrg_main (mrg);
 
+  host_destroy (state->host);
   free (state->path);
   free (state);
 
