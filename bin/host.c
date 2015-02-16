@@ -757,18 +757,9 @@ static int host_idle_check (Mrg *mrg, void *data)
     {
       if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
       {
-        if (width)
-        {
-          MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
-          mrg_queue_draw (mrg, &rect);
-        }
-        else
-        {
-          MrgRectangle rect = {mmm_get_x (client->mmm), mmm_get_y (client->mmm),
-                               mmm_get_width (client->mmm), mmm_get_height (client->mmm)};
-          mrg_queue_draw (mrg, &rect);
-          fprintf (stderr, "dead code in mrg?\n");
-        }
+        MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
+        assert (width);
+        mrg_queue_draw (mrg, &rect);
       }
 
     while (mmm_has_message (client->mmm))
@@ -818,7 +809,7 @@ int host_main (int argc, char **argv)
   //  mrg = mrg_new (640, 480, NULL);
   //else
   mrg = mrg_new (-1, -1, NULL);
-  host = host_new (mrg, "/tmp/mmm");
+  host = host_new (mrg, "/tmp/mrg");
 
   mrg_set_ui (mrg, render_ui, host);
 

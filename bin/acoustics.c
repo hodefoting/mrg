@@ -328,7 +328,7 @@ static void init_env (Acoustics *acoustics)
   char buf[512];
   if (acoustics->fbdir)
     return;
-  acoustics->fbdir = "/tmp/mmm";
+  acoustics->fbdir = "/tmp/mrg";
   acoustics->fbdir = getenv ("MMM_PATH");
   sprintf (buf, "mkdir %s &> /dev/null", acoustics->fbdir);
   system (buf);
@@ -346,7 +346,7 @@ void acoustics_destroy (Acoustics *acoustics)
   free (acoustics);
 }
 
-int idle_check (Mrg *mrg, void *data)
+static int acoustics_idle_check (Mrg *mrg, void *data)
 {
   Acoustics *acoustics = data;
   MrgList *l;
@@ -481,7 +481,7 @@ int acoustics_main (int argc, char **argv)
   mrg_set_ui (mrg, render_ui, acoustics);
 
   init_env (acoustics);
-  mrg_add_idle (mrg, idle_check, acoustics);
+  mrg_add_idle (mrg, acoustics_idle_check, acoustics);
   mrg_main (mrg);
   mrg_destroy (mrg);
 
