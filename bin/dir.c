@@ -33,7 +33,7 @@ todo: permit clicking path bar
 #include <signal.h>
 #include "mrg.h"
 #include "mrg-string.h"
-#include "host.h"
+#include "mrg-host.h"
 
 static int vertical_pan (MrgEvent *e, void *data1, void *data2)
 {
@@ -562,7 +562,7 @@ static void gui (Mrg *mrg, void *data)
       state->ui (mrg, data);
   }
 
-  if (mrg_host_client_has_focus (state->host))
+  if (mrg_host_get_focused (state->host))
   {
     _mrg_block_edit (mrg);
   }
@@ -586,7 +586,7 @@ static void gui (Mrg *mrg, void *data)
       }
       else
       {
-        mrg_host_render_client (state->host, l->data,  mrg_width (mrg) - 512 - 3, 3);
+        mrg_client_render_sloppy (l->data,  mrg_width (mrg) - 512 - 3, 3);
       }
     }
   }
