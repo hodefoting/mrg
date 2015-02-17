@@ -314,7 +314,7 @@ static void gui (Mrg *mrg, void *data)
   mrg_printf_xml (mrg, "<div id='compiler_output'>%s</div> ",
                   state->compiler_output->str);
 
-  if (!state->compile_timeout)
+  if (!state->compile_timeout && 0)
   {
     state->compile_timeout = mrg_add_timeout (mrg, 500, 
       background_task, state);
@@ -366,8 +366,8 @@ int edit_main (int argc, char **argv)
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);
     state = edit_state_new (tmp);
   }
-  //mrg = mrg_new (480, 640, NULL);
-  mrg = mrg_new (-1, -1, NULL);
+  mrg = mrg_new (480, 640, NULL);
+  //mrg = mrg_new (-1, -1, NULL);
   mrg_set_ui (mrg, state->ui, state);
   mrg_main (mrg);
   edit_state_destroy (state);

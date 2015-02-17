@@ -51,30 +51,28 @@
 
 static const char *css =  " document {background-color:#111;} ";
 
-typedef struct _Client Client;
-typedef struct _Host   Host;
-
-struct _Client
+struct _MrgClient
 {
   /******************/
 
-  long  pid;        /* magic hack, -1 means in-process */
+  long  pid;        /* magic hack, -1 means in-process,
+                       (isn't mmm vs mrg the same?) */
   char *filename;
   Mmm  *mmm;
-  
+  Mrg  *mrg;
+
   /******************/
 
-  Mrg         *mrg;
-  float        int_x;
-  float        int_y;
+  float  int_x;
+  float  int_y;
 
-  int  premax_x;
-  int  premax_y;
-  int  premax_width;
-  int  premax_height;
+  int    premax_x;
+  int    premax_y;
+  int    premax_width;
+  int    premax_height;
 };
 
-const char *client_get_title (Client *client)
+const char *client_get_title (MrgClient *client)
 {
   if (client->pid == -1)
     return mrg_get_title (client->mrg);
@@ -83,17 +81,17 @@ const char *client_get_title (Client *client)
 
 #define TITLE_BAR_HEIGHT 16
 
-struct _Host
+struct _MrgHost
 {
   Mrg     *mrg;
   char    *fbdir;
   MrgList *clients;
-  Client  *focused;
+  MrgClient  *focused;
 };
 
-Host *host;
+MrgHost *host;
 
-int host_client_has_focus (Host *host)
+int mrg_host_client_has_focus (MrgHost *host)
 {
   return host->focused != NULL;
 }
@@ -106,7 +104,7 @@ static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 }
 #endif
 
-static void window_raise (Host *host, Client *focused)
+static void window_raise (MrgHost *host, MrgClient *focused)
 {
   if (!focused)
     return;
@@ -117,7 +115,7 @@ static void window_raise (Host *host, Client *focused)
 
 static int titlebar_drag (MrgEvent *e, void *client_, void *host_)
 {
-  Client *client = client_;
+  MrgClient *client = client_;
 
   if (e->type == MRG_DRAG_PRESS)
   {
@@ -143,7 +141,7 @@ static int titlebar_drag (MrgEvent *e, void *client_, void *host_)
 
 static int resize_drag (MrgEvent *e, void *client_, void *host_)
 {
-  Client *client = client_;
+  MrgClient *client = client_;
 
   if (e->type == MRG_DRAG_PRESS)
   {
@@ -183,14 +181,12 @@ static int resize_drag (MrgEvent *e, void *client_, void *host_)
 
 static int pos = 10;
 
-int host_fixed_pos = 0;
-
-static void validate_client (Host *host, const char *client_name)
+static void validate_client (MrgHost *host, const char *client_name)
 {
   MrgList *l;
   for (l = host->clients; l; l = l->next)
   {
-    Client *client = l->data;
+    MrgClient *client = l->data;
     if (client->filename && 
         !strcmp (client->filename, client_name))
     {
@@ -199,7 +195,7 @@ static void validate_client (Host *host, const char *client_name)
   }
 
   {
-    Client *client = calloc (sizeof (Client), 1);
+    MrgClient *client = calloc (sizeof (MrgClient), 1);
 
     char tmp[256];
     sprintf (tmp, "%s/%s", host->fbdir, client_name);
@@ -219,30 +215,22 @@ static void validate_client (Host *host, const char *client_name)
       if (mmm_get_x (client->mmm) == 0 &&
           mmm_get_y (client->mmm) == 0)
       {
-        if (host_fixed_pos)
-        {
-          mmm_set_x (client->mmm, mrg_width (host->mrg) - 512 - 3);
-          mmm_set_y (client->mmm, 3);
-        }
-        else
-        {
-          mmm_set_x (client->mmm, pos);
-          mmm_set_y (client->mmm, 30+pos);
+         mmm_set_x (client->mmm, pos);
+         mmm_set_y (client->mmm, 30+pos);
 
-          pos += 12;
-        }
+         pos += 12;
       }
     }
     mrg_list_append (&host->clients, client);
   }
 }
 
-void add_client_mrg (Host        *host,
-                     Mrg         *mrg,
-                     float        x,
-                     float        y)
+void host_add_client_mrg (MrgHost        *host,
+                          Mrg         *mrg,
+                          float        x,
+                          float        y)
 {
-  Client *client = calloc (sizeof (Client), 1);
+  MrgClient *client = calloc (sizeof (MrgClient), 1);
   client->mmm = NULL;
   client->pid = -1;
   client->int_x = x;
@@ -252,7 +240,7 @@ void add_client_mrg (Host        *host,
   mrg_list_append (&host->clients, client);
 }
 
-void add_int_client (Host        *host,
+void add_int_client (MrgHost      *host,
                      UiRenderFun  ui,
                      void        *ui_data,
                      float        x,
@@ -262,7 +250,7 @@ void add_int_client (Host        *host,
 {
   Mrg *mrg = mrg_new (width, height, "mem");
   mrg_set_ui (mrg, ui, ui_data);
-  return add_client_mrg (host, mrg, x, y);
+  return host_add_client_mrg (host, mrg, x, y);
 }
 
 #include <sys/stat.h>
@@ -282,13 +270,13 @@ static int pid_is_alive (long pid)
   return 1;
 }
 
-static void host_monitor_dir (Host *host)
+void mrg_host_monitor_dir (MrgHost *host)
 {
   MrgList *l;
 again:
   for (l = host->clients; l; l = l->next)
   {
-    Client *client = l->data;
+    MrgClient *client = l->data;
     if (!pid_is_alive (client->pid))
     {
       char tmp[256];
@@ -322,10 +310,15 @@ again:
   closedir (dir);
 }
 
+MrgList *mrg_host_clients (MrgHost *host)
+{
+  return host->clients;
+}
+
 static int mrg_client_press (MrgEvent *event, void *client_, void *host_)
 {
-  Host *host = host_;
-  Client *client = client_;
+  MrgHost *host = host_;
+  MrgClient *client = client_;
   Mmm *mmm = client->mmm;
 
   char buf[256];
@@ -340,7 +333,7 @@ static int mrg_client_press (MrgEvent *event, void *client_, void *host_)
 
 static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 {
-  Client *client = client_;
+  MrgClient *client = client_;
   Mmm    *mmm    = client->mmm;
 
   char buf[256];
@@ -354,7 +347,7 @@ static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 
 static int mrg_client_release (MrgEvent *event, void *client_, void *host_)
 {
-  Client *client = client_;
+  MrgClient *client = client_;
   Mmm *mmm = client->mmm;
   char buf[256];
   sprintf (buf, "mouse-release %f %f", event->x, event->y);
@@ -364,7 +357,7 @@ static int mrg_client_release (MrgEvent *event, void *client_, void *host_)
 
 static int show_cal = 0;
 
-static int time_pressed(MrgEvent *event, void *mmm, void *data2)
+static int time_pressed (MrgEvent *event, void *mmm, void *data2)
 {
   show_cal = !show_cal;
   mrg_queue_draw (event->mrg, NULL);
@@ -373,16 +366,22 @@ static int time_pressed(MrgEvent *event, void *mmm, void *data2)
 
 void terminal_main(int argc, char **argv);
 
-static int applications_pressed (MrgEvent *event, void *mmm, void *data2)
+static int launch_terminal (MrgEvent *event, void *mmm, void *data2)
 {
   system("mrg-terminal &");
   return 0;
 }
 
+static int launch_browser (MrgEvent *event, void *mmm, void *data2)
+{
+  system("mrg browser mrg:index.html &");
+  return 0;
+}
+
 int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
 {
-  Host *host = host_;
-  if (host->focused)
+  MrgHost *host = host_;
+  if (host->focused && host->focused->mmm)
   {
     mmm_add_event (host->focused->mmm, event->key_name);
   }
@@ -397,7 +396,7 @@ int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
 
 static int kill_client (MrgEvent *event, void *client_, void *data2)
 {
-  Client *client = client_;
+  MrgClient *client = client_;
   if (client->pid != -1)
     kill (client->pid, 9);
   return 0;
@@ -405,8 +404,8 @@ static int kill_client (MrgEvent *event, void *client_, void *data2)
 
 static int maximize_client (MrgEvent *event, void *client_, void *host_)
 {
-  Client *client = client_;
-  Host *host = host_;
+  MrgClient *client = client_;
+  MrgHost *host = host_;
 
   window_raise (host, client);
 
@@ -441,75 +440,36 @@ static int maximize_client (MrgEvent *event, void *client_, void *host_)
 #include <stdio.h>
 #include <time.h>
 
-static void start_client (Mrg *mrg, int x, int y, int width, int height, int focused)
+void       mrg_host_set_focused      (MrgHost *host, MrgClient *client)
 {
-  char buf[1024];                                        // icky -2s to circumwent css box-model
-  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1-TITLE_BAR_HEIGHT, width, height + TITLE_BAR_HEIGHT);
-
-  // XXX: use start_with_stylef this is what its there for 
-  mrg_start_with_style (mrg, focused?"client.focused":"client", NULL, buf);
-}
-static void start_title (Mrg *mrg, int x, int y, int width, int height)
-{
-  char buf[1024];                                        // icky -2s to circumwent css box-model
-  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x+2, y-1, width-1, height);
-  mrg_start_with_style (mrg, "title", NULL, buf);
+  host->focused = client;
 }
 
-void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
+MrgClient *mrg_host_get_focused      (MrgHost *host)
+{
+  return host->focused;
+}
+
+void mrg_host_render_client (MrgHost *host, MrgClient *client, float x, float y)
 {
   Mrg *mrg = host->mrg;
-#if MRG_CAIRO
+  float ptr_x = mrg_pointer_x (mrg);
+  float ptr_y = mrg_pointer_y (mrg);
   cairo_t *cr = mrg_cr (mrg);
   cairo_surface_t *surface;
-#endif
-  int width, height, rowstride;
+  const unsigned char *pixels;
+  int count = 0;
 
   if (client->pid == getpid ())
     return;
 
-  int cwidth, cheight;
-  int skip_draw = 0;
-
-  const unsigned char *pixels;
-  
-  int x, y;
-  int count = 0;
-
-  pixels = NULL;
-
-  if (client->pid == -1)
-  {
-    x = client->int_x;
-    y = client->int_y;
-    width = cwidth = mrg_width (client->mrg);
-    height = cheight = mrg_height (client->mrg);
-  }
-  else
-  {
-    x = mmm_get_x (client->mmm);
-    y = mmm_get_y (client->mmm);
-    mmm_host_get_size (client->mmm, &cwidth, &cheight);
-  }
-
-  if (x > mrg->dirty.x + mrg->dirty.width ||
-      y > mrg->dirty.y + mrg->dirty.height ||
-      x + cwidth < mrg->dirty.x ||
-      y + cheight < mrg->dirty.y)
-  {
-    //    return; /* bailing earlier is better */
-    skip_draw = 1;
-  }
-  else
-  {
     if (client->pid == -1)
     {
-      if (!host_fixed_pos)
-      start_client (mrg, x, y, width, height, host->focused == client);
       mrg_render_to_mrg (client->mrg, mrg, x, y);
     }
     else
     {
+      int width, height, rowstride;
       do
       {
         pixels = mmm_get_buffer_read (client->mmm, &width, &height, &rowstride);
@@ -521,11 +481,11 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
       if (ptr_x >= x && ptr_x < x + width &&
           ptr_y >= y - TITLE_BAR_HEIGHT && ptr_y < y + height)
       {
+        /* doing this focus on render, makes the sloppy focus and click to
+         * focus interact in strange ways..
+         */
         host->focused = client;
       }
-
-      if (!host_fixed_pos)
-      start_client (mrg, x, y, width, height, host->focused == client);
 
       if (pixels)
       {
@@ -533,19 +493,13 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
         cairo_save (cr);
         cairo_translate (cr, x, y);
 
-        if (host_fixed_pos)
-        {
-          cairo_rectangle (cr, 0, 0, width, height);
-          cairo_set_source_rgb (cr, 0,0,0);
-          cairo_set_line_width (cr, 2.0);
-          cairo_stroke (cr);
-        }
-
         cairo_set_source_surface (cr, surface, 0, 0);
-        if (host->focused == client || !host_fixed_pos)
+
+        if (host->focused == client)
           cairo_paint (cr);
         else
           cairo_paint_with_alpha (cr, 0.5);
+
         cairo_surface_destroy (surface);
         mmm_read_done (client->mmm);
 
@@ -565,13 +519,140 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
       }
       else
       {
+        fprintf (stderr, "didn't get pixels\n");
         // not drawing anything.
       }
     }
+}
+
+void mrg_host_register_events (MrgHost *host)
+{
+  Mrg *mrg = host->mrg;
+  mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, host, NULL);
+}
+
+static void init_env (MrgHost *host, const char *path)
+{
+  char buf[512];
+  if (host->fbdir)
+    return;
+  host->fbdir = strdup (path);
+  setenv ("MMM_PATH", host->fbdir, 1);
+  sprintf (buf, "mkdir %s &> /dev/null", host->fbdir);
+  system (buf);
+}
+
+void mrg_host_destroy (MrgHost *host)
+{
+  free (host);
+}
+
+static int host_idle_check (Mrg *mrg, void *data)
+{
+  MrgHost *host = data;
+  MrgList *l;
+  
+  for (l = host->clients; l; l = l->next)
+  {
+    MrgClient *client = l->data;
+
+    int x, y, width, height;
+    if (client->pid != -1)
+    {
+      if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
+      {
+        MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
+        assert (width);
+        mrg_queue_draw (mrg, &rect);
+      }
+
+      while (mmm_has_message (client->mmm))
+      {
+        fprintf (stderr, "%p: %s\n", client->mmm, mmm_get_message (client->mmm));
+      }
+    }
+    else
+    {
+      // XXX
+    }
+  }
+  return 1;
+}
+
+MrgHost *mrg_host_new (Mrg *mrg, const char *path)
+{
+  MrgHost *host = calloc (sizeof (MrgHost), 1);
+  if (!path)
+    path = "/tmp/mrg";
+  init_env (host, path);
+  host->mrg = mrg;
+  mrg_add_idle (mrg, host_idle_check, host);
+  return host;
+}
+
+
+
+static void start_client (Mrg *mrg, int x, int y, int width, int height, int focused)
+{
+  char buf[1024];                                        // icky -2s to circumwent css box-model
+  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1-TITLE_BAR_HEIGHT, width, height + TITLE_BAR_HEIGHT);
+
+  // XXX: use start_with_stylef this is what its there for 
+  mrg_start_with_style (mrg, focused?"client.focused":"client", NULL, buf);
+}
+static void start_title (Mrg *mrg, int x, int y, int width, int height)
+{
+  char buf[1024];                                        // icky -2s to circumwent css box-model
+  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x+2, y-1, width-1, height);
+  mrg_start_with_style (mrg, "title", NULL, buf);
+}
+
+static void render_client (MrgHost *host, MrgClient *client, float ptr_x, float ptr_y)
+{
+  Mrg *mrg = host->mrg;
+#if MRG_CAIRO
+  cairo_t *cr = mrg_cr (mrg);
+#endif
+  int width, height;
+
+  if (client->pid == getpid ())
+    return;
+
+  int cwidth, cheight;
+  int skip_draw = 0;
+
+  int x, y;
+
+  if (client->pid == -1)
+  {
+    x = client->int_x;
+    y = client->int_y;
+    width = cwidth = mrg_width (client->mrg);
+    height = cheight = mrg_height (client->mrg);
+  }
+  else
+  {
+    x = mmm_get_x (client->mmm);
+    y = mmm_get_y (client->mmm);
+    mmm_host_get_size (client->mmm, &cwidth, &cheight);
+    width = cwidth;
+    height = cheight;
   }
 
-      if (!host_fixed_pos)
-      {
+  if (x > mrg->dirty.x + mrg->dirty.width ||
+      y > mrg->dirty.y + mrg->dirty.height ||
+      x + cwidth < mrg->dirty.x ||
+      y + cheight < mrg->dirty.y)
+  {
+    //    return; /* bailing earlier is better */
+    skip_draw = 1;
+  }
+  else
+  {
+    start_client (mrg, x, y, width, height, host->focused == client);
+    mrg_host_render_client (host, client, x, y);
+  }
+
   start_title (mrg, x - 3, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT);
 
   cairo_save (cr);
@@ -603,7 +684,6 @@ void render_client (Host *host, Client *client, float ptr_x, float ptr_y)
     mrg_end (mrg);
   }
   mrg_end (mrg);
-      }
 
   if (cwidth)
   {
@@ -647,45 +727,26 @@ static void draw_calendar (Mrg *mrg)
   mrg_end (mrg);
 }
 
-void host_render (Mrg *mrg, Host *host)
+void mrg_host_render (Mrg *mrg, MrgHost *host)
 {
   MrgList *l;
   float ptr_x = mrg_pointer_x (mrg);
   float ptr_y = mrg_pointer_y (mrg);
 
-  host_monitor_dir (host);
+  mrg_host_monitor_dir (host);
   host->focused = NULL;
 
-  if (host_fixed_pos)
-  {
-    for (l = host->clients; l; l = l->next)
-    {
-      Client *client = l->data;
-      if (l->next)
-      {
-        if (client->pid != -1)
-        {
-          kill (client->pid, 9);
-          client->pid = -2;
-        }
-      }
-      else
-      {
-        render_client (host, client, ptr_x, ptr_y);
-      }
-    }
-  }
-  else
   for (l = host->clients; l; l = l->next)
   {
-    Client *client = l->data;
+    MrgClient *client = l->data;
     render_client (host, client, ptr_x, ptr_y);
   }
+  mrg_host_register_events (host);
 }
 
 static void render_ui (Mrg *mrg, void *data)
 {
-  Host *host = data;
+  MrgHost *host = data;
 
   mrg_start (mrg, "host", NULL);
 
@@ -707,14 +768,19 @@ static void render_ui (Mrg *mrg, void *data)
   mrg_end (mrg);
 
   mrg_start (mrg, "applications", NULL);
-  mrg_text_listen (mrg, MRG_PRESS, applications_pressed, NULL, NULL);
-  mrg_printf(mrg, "$");
+  mrg_text_listen (mrg, MRG_PRESS, launch_terminal, NULL, NULL);
+  mrg_printf(mrg, " $  ");
   mrg_text_listen_done (mrg);
-  mrg_end (mrg);
+
+  mrg_text_listen (mrg, MRG_PRESS, launch_browser, NULL, NULL);
+  mrg_printf(mrg, " @ ");
+  mrg_text_listen_done (mrg);
 
   mrg_end (mrg);
 
-  host_render (mrg, host);
+  mrg_end (mrg);
+
+  mrg_host_render (mrg, host);
 
   if (show_cal)
   {
@@ -723,78 +789,20 @@ static void render_ui (Mrg *mrg, void *data)
 
   mrg_end (mrg);
   mrg_add_binding (mrg, "F10", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, host, NULL);
+
 }
 
-static void init_env (Host *host, const char *path)
-{
-  char buf[512];
-  if (host->fbdir)
-    return;
-  host->fbdir = strdup (path);
-  setenv ("MMM_PATH", host->fbdir, 1);
-  sprintf (buf, "mkdir %s &> /dev/null", host->fbdir);
-  system (buf);
-}
-
-
-void host_destroy (Host *host)
-{
-  free (host);
-}
-
-static int host_idle_check (Mrg *mrg, void *data)
-{
-  Host *host = data;
-  MrgList *l;
-  
-  for (l = host->clients; l; l = l->next)
-  {
-    Client *client = l->data;
-
-    int x, y, width, height;
-    if (client->pid != -1)
-    {
-      if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
-      {
-        MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
-        assert (width);
-        mrg_queue_draw (mrg, &rect);
-      }
-
-    while (mmm_has_message (client->mmm))
-    {
-      fprintf (stderr, "%p: %s\n", client->mmm, mmm_get_message (client->mmm));
-    }
-
-    }
-    else
-    {
-      // XXX
-    }
-  }
-  return 1;
-}
-
-Host *host_new (Mrg *mrg, const char *path)
-{
-  Host *host = calloc (sizeof (Host), 1);
-  init_env (host, path);
-  host->mrg = mrg;
-  mrg_add_idle (mrg, host_idle_check, host);
-  return host;
-}
 
 static void tasklist_ui (Mrg *mrg, void *data)
 {
-  Host *host = data;
+  MrgHost *host = data;
   MrgList *l;
 
   mrg_start (mrg, "tasklist", NULL);
 
   for (l = host->clients; l; l = l->next)
   {
-    Client *client = l->data;
+    MrgClient *client = l->data;
     mrg_printf (mrg, "%s\n", client_get_title (client));
   }
 
@@ -809,7 +817,7 @@ int host_main (int argc, char **argv)
   //  mrg = mrg_new (640, 480, NULL);
   //else
   mrg = mrg_new (-1, -1, NULL);
-  host = host_new (mrg, "/tmp/mrg");
+  host = mrg_host_new (mrg, "/tmp/mrg");
 
   mrg_set_ui (mrg, render_ui, host);
 
@@ -822,6 +830,21 @@ int host_main (int argc, char **argv)
   mrg_main (mrg);
   mrg_destroy (mrg);
 
-  host_destroy (host);
+  mrg_host_destroy (host);
   return 0;
+}
+
+int       mrg_client_get_pid (MrgClient *client)
+{
+  return client->pid;
+}
+
+void mrg_client_kill (MrgClient *client)
+{
+  if (client->pid > 0)
+    {
+      kill (client->pid, 9);
+      client->pid = -2;
+    }
+
 }

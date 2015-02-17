@@ -29,6 +29,8 @@ todo: permit clicking path bar
 #include <sys/time.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <sys/types.h>
+#include <signal.h>
 #include "mrg.h"
 #include "mrg-string.h"
 #include "host.h"
@@ -54,13 +56,13 @@ typedef struct _State State;
 
 struct _State
 {
-  UiCb   ui;   /* XXX: must be first child, due to editor aliasing of struct */
-  Mrg   *mrg;
-  char  *path;
+  UiCb      ui;   /* XXX: must be first child, due to editor aliasing of struct */
+  Mrg      *mrg;
+  char     *path;
 
-  char  *cached_path;
-  State *sub_state; /* cached */
-  Host  *host;
+  char     *cached_path;
+  State    *sub_state; /* cached */
+  MrgHost  *host;
 };
 
 State *edit_state_new (const char *path);
@@ -560,7 +562,7 @@ static void gui (Mrg *mrg, void *data)
       state->ui (mrg, data);
   }
 
-  if (host_client_has_focus (state->host))
+  if (mrg_host_client_has_focus (state->host))
   {
     _mrg_block_edit (mrg);
   }
@@ -571,9 +573,25 @@ static void gui (Mrg *mrg, void *data)
 
   cairo_restore (cr);
 
-  host_render (mrg, state->host);
-
-  mrg_listen (mrg, MRG_KEY_DOWN, host_key_down_cb, state->host, NULL);
+  mrg_host_monitor_dir (state->host);
+  mrg_host_set_focused (state->host, NULL);
+  {
+    MrgList *l, *clients;
+    clients = mrg_host_clients (state->host);
+    for (l = clients; l; l = l->next)
+    {
+      if (l->next)
+      {
+        mrg_client_kill (l->data);
+      }
+      else
+      {
+        mrg_host_render_client (state->host, l->data,  mrg_width (mrg) - 512 - 3, 3);
+      }
+    }
+  }
+  if (mrg_host_get_focused (state->host))
+    mrg_host_register_events (state->host);
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
   mrg_add_binding (mrg, "F2", NULL, NULL, eeek, state);
@@ -583,9 +601,8 @@ static void gui (Mrg *mrg, void *data)
 
   mrg_add_binding (mrg, "control-right", NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control-left", NULL, NULL, go_prev_cb, state);
-}
 
-extern int host_fixed_pos;
+}
 
 int dir_main (int argc, char **argv)
 {
@@ -602,15 +619,13 @@ int dir_main (int argc, char **argv)
   {
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);
     state->path = strdup (tmp);
-    state->host = host_new (mrg, "/tmp/foo");
+    state->host = mrg_host_new (mrg, "/tmp/foo");
   }
-  
-  host_fixed_pos = 1;
 
   mrg_set_ui (mrg, gui, state);
   mrg_main (mrg);
 
-  host_destroy (state->host);
+  mrg_host_destroy (state->host);
   free (state->path);
   free (state);
 
