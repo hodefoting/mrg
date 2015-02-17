@@ -78,9 +78,9 @@ Launches the editor on the text file.
 Luajit ffi
 ==========
 
-An experimental luajit binding covers the full microraptor API making it
-possible to use in addition with existing cairo luajit bindings a platform for
-developing ui applications in lua.
+All of the mrg C API maps easily to lua when using luajit ffi, binds easily
+with luajit ffi. See the luajit dir for an example, that also bundles the
+needed cairo bindings.
 
 Microraptor and GTK
 ===================
