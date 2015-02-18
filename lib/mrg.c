@@ -936,4 +936,19 @@ void _mrg_log (Mrg        *mrg,
   free (buffer);
 }
 
+
+
 #endif
+
+
+int mrg_in_dirty_rect (Mrg *mrg,
+                        int x, int y,
+                        int width, int height)
+{
+   if (x > mrg->dirty.x + mrg->dirty.width ||
+       y > mrg->dirty.y + mrg->dirty.height ||
+       x + width < mrg->dirty.x ||
+       y + height < mrg->dirty.y)
+     return 0;
+   return 1;
+}

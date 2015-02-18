@@ -24,6 +24,9 @@ int mrg_quit_cb (MrgEvent *event, void *data1, void *data2);
 void mrg_cairo_set_source_color (cairo_t *cr, MrgColor *color);
 
 void mrg_color_set (MrgColor *color, float red, float green, float blue, float alpha);
+int mrg_in_dirty_rect (Mrg *mrg,
+                        int x, int y,
+                        int width, int height);
 
 #define EM(value)           (value*mrg_em(mrg))
 #define PERCENT_X(value)    (value*mrg_width(mrg))
