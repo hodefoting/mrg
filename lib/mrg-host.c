@@ -244,10 +244,10 @@ static void validate_client (MrgHost *host, const char *client_name)
   }
 }
 
-void host_add_client_mrg (MrgHost        *host,
-                          Mrg         *mrg,
-                          float        x,
-                          float        y)
+void mrg_host_add_client_mrg (MrgHost *host,
+                              Mrg     *mrg,
+                              float    x,
+                              float    y)
 {
   MrgClient *client = calloc (sizeof (MrgClient), 1);
   client->mmm = NULL;
@@ -260,21 +260,11 @@ void host_add_client_mrg (MrgHost        *host,
   mrg_list_append (&host->clients, client);
 }
 
-#include <sys/stat.h>
-#include <errno.h>
-
 static int pid_is_alive (long pid)
 {
-  char path[256];
-  struct stat sts;
   if (pid == -1)
-    return 1; /* pid of -1 belongs to host */
-
-  sprintf (path, "/proc/%li", pid);
-  if (stat(path, &sts) == -1 && errno == ENOENT) {
-    return 0;
-  }
-  return 1;
+    return 1;
+  return kill (pid, 0) == 0;
 }
 
 void mrg_host_monitor_dir (MrgHost *host)
@@ -360,7 +350,7 @@ static int mrg_client_release (MrgEvent *event, void *client_, void *host_)
   return 0;
 }
 
-int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
+static int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
 {
   MrgHost *host = host_;
   if (host->focused && host->focused->mmm)

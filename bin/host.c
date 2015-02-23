@@ -303,7 +303,7 @@ int host_main (int argc, char **argv)
     Mrg *mrg = mrg_new (300, 300, "mem");
     mrg_set_ui (mrg, tasklist_ui, host);
     mrg_set_title (mrg, "tasklist");
-    host_add_client_mrg (host, mrg, 40, 40);
+    mrg_host_add_client_mrg (host, mrg, 40, 40);
   }
 
   mrg_main (mrg);
