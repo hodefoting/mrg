@@ -7,11 +7,52 @@ local C = ffi.load('mrg')
 local M = setmetatable({C=C},{__index = C})
 
 ffi.cdef[[
+
+typedef struct _MrgList MrgList;
+
+struct _MrgList {
+  void *data;
+  MrgList *next;
+  void (*freefunc)(void *data, void *freefunc_data);
+  void *freefunc_data;
+}
+;
+void mrg_list_prepend_full (MrgList **list, void *data,
+    void (*freefunc)(void *data, void *freefunc_data),
+    void *freefunc_data);
+
+int mrg_list_length (MrgList *list);
+
+void mrg_list_prepend (MrgList **list, void *data);
+
+void mrg_list_append_full (MrgList **list, void *data,
+    void (*freefunc)(void *data, void *freefunc_data),
+    void *freefunc_data);
+
+void mrg_list_append (MrgList **list, void *data);
+
+void mrg_list_remove (MrgList **list, void *data);
+
+void mrg_list_free (MrgList **list);
+
+MrgList *mrg_list_nth (MrgList *list, int no);
+
+MrgList *mrg_list_find (MrgList *list, void *data);
+
+void mrg_list_sort (MrgList **list, 
+    int(*compare)(const void *a, const void *b, void *userdata),
+    void *userdata);
+
+void
+mrg_list_insert_sorted (MrgList **list, void *data,
+                       int(*compare)(const void *a, const void *b, void *userdata),
+                       void *userdata);
+
 typedef struct _Mrg Mrg;
-typedef struct _MrgColor MrgColor;
-typedef struct _MrgStyle MrgStyle;
+typedef struct _MrgColor     MrgColor;
+typedef struct _MrgStyle     MrgStyle;
 typedef struct _MrgRectangle MrgRectangle;
-typedef struct _MrgEvent MrgEvent;
+typedef struct _MrgEvent     MrgEvent;
 
 enum _MrgType {
   MRG_PRESS          = 1 << 0,
@@ -557,6 +598,40 @@ float mrg_edge_right      (Mrg *mrg);
 float mrg_edge_bottom     (Mrg *mrg);
 
 
+
+typedef struct _MrgHost   MrgHost;
+typedef struct _MrgClient MrgClient;
+
+void       mrg_host_add_client_mrg   (MrgHost     *host,
+                                      Mrg         *mrg,
+                                      float        x,
+                                      float        y);
+MrgHost   *mrg_host_new              (Mrg *mrg, const char *path);
+void       mrg_host_destroy          (MrgHost *host);
+void       mrg_host_set_focused      (MrgHost *host, MrgClient *client);
+MrgClient *mrg_host_get_focused      (MrgHost *host);
+void       mrg_host_monitor_dir      (MrgHost *host);
+void       mrg_host_register_events  (MrgHost *host);
+MrgList   *mrg_host_clients          (MrgHost *host);
+
+void       mrg_client_render_sloppy  (MrgClient *client, float x, float y);
+int        mrg_client_get_pid        (MrgClient *client);
+void       mrg_client_kill           (MrgClient *client);
+void       mrg_client_raise_top      (MrgClient *client);
+void       mrg_client_render         (MrgClient *client, Mrg *mrg, float x, float y);
+void       mrg_client_maximize       (MrgClient *client);
+float      mrg_client_get_x          (MrgClient *client);
+float      mrg_client_get_y          (MrgClient *client);
+void       mrg_client_set_x          (MrgClient *client, float x);
+void       mrg_client_set_y          (MrgClient *client, float y);
+void       mrg_client_get_size       (MrgClient *client, int *width, int *height);
+void       mrg_client_set_size       (MrgClient *client, int width,  int height);
+const char *mrg_client_get_title     (MrgClient *client);
+void        host_add_client_mrg      (MrgHost     *host,
+                                      Mrg         *mrg,
+                                      float        x,
+                                      float        y);
+
 ]]
 
 function M.new(width,height, backend)
@@ -627,8 +702,6 @@ ffi.metatype('Mrg', {__index = {
     return C.mrg_add_binding_full (mrg, key, action,label,cb_fun, cb_data, notify_fun, NULL)
   end,
 
-  -- XXX text_listen currently leaks/is broken wrt destroy notify
-  
   text_listen      = function (mrg, types, cb, data1, data2)
     -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
@@ -643,7 +716,6 @@ ffi.metatype('Mrg', {__index = {
     return C.mrg_text_listen_full (mrg, types, cb_fun, data1, data2, notify_fun, NULL)
   end,
   listen           = function (mrg, types, cb, data1, data2)
-    -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
     local notify_cb = function (data1, data2, finalize_data)
       cb_fun:free();
@@ -669,6 +741,7 @@ ffi.metatype('Mrg', {__index = {
   height           = function (...) return C.mrg_height (...) end,
   x                = function (...) return C.mrg_x (...) end,
   y                = function (...) return C.mrg_y (...) end,
+  xy               = function (mrg) return mrg:x(), mrg:y() end,
   em               = function (...) return C.mrg_em (...) end,
   rem              = function (...) return C.mrg_rem (...) end,
   set_xy           = function (...) C.mrg_set_xy (...) end,
@@ -679,7 +752,6 @@ ffi.metatype('Mrg', {__index = {
   set_font_size    = function (...) C.mrg_set_font_size (...) end,
 
   add_idle = function (mrg, ms, cb, data1)
-    -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
     local notify_cb = function (a,b)
       cb_fun:free();
@@ -692,7 +764,6 @@ ffi.metatype('Mrg', {__index = {
   end,
 
   add_timeout = function (mrg, ms, cb, data1)
-    -- manually cast and destroy resources held by lua/C binding
     local notify_fun, cb_fun;
     local notify_cb = function (a,b)
       cb_fun:free();
@@ -702,6 +773,10 @@ ffi.metatype('Mrg', {__index = {
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     cb_fun = ffi.cast ("MrgTimeoutCb", cb)
     return C.mrg_add_timeout_full (mrg, ms, cb_fun, data1, notify_fun, NULL)
+  end,
+
+  host_new = function (...) 
+             return C.mrg_host_new(...)
   end,
 
   remove_idle      = function (...) return C.mrg_remove_idle (...) end,
@@ -718,6 +793,48 @@ ffi.metatype('MrgEvent',     {__index = { }})
 ffi.metatype('MrgColor',     {__index = { }})
 ffi.metatype('MrgStyle',     {__index = { }})
 ffi.metatype('MrgRectangle', {__index = { }})
+ffi.metatype('MrgList',      {__index = { }})
+ffi.metatype('MrgHost',      {__index = {
+  set_focused     = function (...) C.mrg_host_set_focused (...) end,
+  focused         = function (...) return C.mrg_host_get_focused (...) end,
+  monitor_dir     = function (...) C.mrg_host_monitor_dir (...) end,
+  register_events = function (...) C.mrg_host_register_events (...) end,
+  clients         = function (...) 
+    local ret = {}
+    local iter = C.mrg_host_clients (...)
+    while iter ~= NULL do
+      local client 
+      ret[#ret+1] = ffi.cast("MrgClient*", iter.data)
+      iter = iter.next
+    end
+    return ret
+  end,
+
+  add_client_mrg  = function (...) C.mrg_host_add_client_mrg (...) end
+
+}})
+ffi.metatype('MrgClient',    {__index = {
+  render_sloppy = function (...) C.mrg_client_render_sloppy (...) end,
+  render        = function (...) C.mrg_client_render (...) end,
+  pid           = function (...) return C.mrg_client_get_pid (...) end,
+  kill          = function (...) C.mrg_client_kill (...) end,
+  raise_top     = function (...) C.mrg_client_raise_top (...) end,
+  maximize      = function (...) C.mrg_client_maximize (...) end,
+  title         = function (...) return C.mrg_client_get_title (...) end,
+  x             = function (...) return C.mrg_client_get_x (...) end,
+  y             = function (...) return C.mrg_client_get_y (...) end,
+  set_x         = function (...) C.mrg_client_set_x (...) end,
+  set_y         = function (...) C.mrg_client_set_y (...) end,
+  set_xy        = function (client, x, y) client:set_x(x) client:set_y(y) end,
+  xy            = function (client) return client:x(), client:y() end,
+  set_size      = function (...) C.mrg_client_set_size (...) end,
+  size          = function (client)
+    local rw = ffi.new'int[1]'
+    local rh = ffi.new'int[1]'
+    C.mrg_client_get_size (client, rw, rh)
+    return rw[0], rh[0]
+  end,
+ }})
 
   M.MOTION = C.MRG_MOTION;
   M.ENTER = C.MRG_ENTER;
