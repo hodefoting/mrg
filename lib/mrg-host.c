@@ -420,6 +420,7 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
       fprintf (stderr, "didn't get pixels\n");
     }
   }
+  cairo_new_path (cr);
 }
 
 void mrg_host_sloppy_focus (MrgHost *host, MrgClient *client, float x, float y)
