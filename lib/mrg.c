@@ -578,6 +578,24 @@ void mrg_start_with_style (Mrg        *mrg,
   _mrg_layout_pre (mrg, &mrg->html);
 }
 
+void
+mrg_start_with_stylef (Mrg *mrg, const char *style_id, void *id_ptr,
+                       const char *format, ...)
+{
+  va_list ap;
+  size_t needed;
+  char  *buffer;
+  va_start(ap, format);
+  needed = vsnprintf(NULL, 0, format, ap) + 1;
+  buffer = malloc(needed);
+  va_end (ap);
+  va_start(ap, format);
+  vsnprintf(buffer, needed, format, ap);
+  va_end (ap);
+  mrg_start_with_style (mrg, style_id, id_ptr, buffer);
+  free (buffer);
+}
+
 void mrg_start (Mrg *mrg, const char *style_id, void *id_ptr)
 {
   mrg_start_with_style (mrg, style_id, id_ptr, NULL);

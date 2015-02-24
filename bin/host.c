@@ -87,20 +87,6 @@ static int maximize_client (MrgEvent *event, void *client_, void *host_)
   return 0;
 }
 
-static void start_client (Mrg *mrg, int x, int y, int width, int height, int focused)
-{
-  char buf[1024];                                        // icky -2s to circumwent css box-model
-  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1-TITLE_BAR_HEIGHT, width, height + TITLE_BAR_HEIGHT);
-
-  mrg_start_with_style (mrg, focused?"client.focused":"client", NULL, buf);
-}
-static void start_title (Mrg *mrg, int x, int y, int width, int height)
-{
-  char buf[1024];                                        // icky -2s to circumwent css box-model
-  sprintf (buf, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x+2, y-1, width-1, height);
-  mrg_start_with_style (mrg, "title", NULL, buf);
-}
-
 static void render_client (Mrg *mrg, MrgHost *host, MrgClient *client)
 {
   cairo_t *cr = mrg_cr (mrg);
@@ -123,11 +109,12 @@ static void render_client (Mrg *mrg, MrgHost *host, MrgClient *client)
   }
   else
   {
-    start_client (mrg, x, y, width, height, mrg_host_get_focused (host) == client);
+    mrg_start_with_stylef (mrg, mrg_host_get_focused(host)==client?"client.focused":"client", NULL, 
+    "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1-TITLE_BAR_HEIGHT, width, height + TITLE_BAR_HEIGHT);
     mrg_client_render_sloppy (client, x, y);
   }
 
-  start_title (mrg, x - 3, y - TITLE_BAR_HEIGHT, width, TITLE_BAR_HEIGHT);
+  mrg_start_with_stylef (mrg, "title", NULL, "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1 - TITLE_BAR_HEIGHT, width-1, TITLE_BAR_HEIGHT);
 
   cairo_save (cr);
   cairo_new_path (cr);

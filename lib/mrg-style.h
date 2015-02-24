@@ -301,6 +301,8 @@ void mrg_start_with_style (Mrg        *mrg,
                            const char *style_id,
                            void       *id_ptr,
                            const char *style);
+void mrg_start_with_stylef (Mrg *mrg, const char *style_id, void *id_ptr,
+                       const char *format, ...);
 void mrg_end       (Mrg *mrg);
 
 
