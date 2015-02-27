@@ -94,3 +94,20 @@ void mrg_xml_renderf (Mrg *mrg,
 
 void _mrg_block_edit   (Mrg *mrg);
 void _mrg_unblock_edit (Mrg *mrg);
+
+
+typedef struct _MrgGlyph MrgGlyph;
+
+struct _MrgGlyph{
+  unsigned long index; /*  done this way, the remnants of layout; before feeding
+                        *  glyphs positions in cairo, similar to how pango would do
+                        *  can be reused for computing the caret nav efficiently.
+                        */
+  float x;
+  float y;
+  int   no;
+};
+
+#include "mrg-list.h"
+
+MrgList *mrg_print_get_coords (Mrg *mrg, const char *string);

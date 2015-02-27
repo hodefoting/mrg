@@ -34,12 +34,16 @@ enum _MrgType {
   MRG_DRAG_RELEASE   = 1 << 8,
   MRG_KEY_DOWN       = 1 << 9,
   MRG_KEY_UP         = 1 << 10,
+  MRG_PERSIST        = 1 << 11, /* client should store state - preparing
+                                 * for restart
+                                 */
 
   MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE),
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
-  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY), 
+  MRG_MISC     = (MRG_PERSIST),
+  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC), 
 };
 
 #define MRG_CLICK   MRG_PRESS   // SHOULD HAVE MORE LOGIC
@@ -92,7 +96,7 @@ struct _MrgEvent {
 
   /* only valid for key-events */
   unsigned int unicode;
-  const char *key_name; /* can be "up" "down" "a" "b" "ø" etc .. */
+  const char *key_name; /* can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */
 };
 
 typedef int (*MrgCb) (MrgEvent *event,

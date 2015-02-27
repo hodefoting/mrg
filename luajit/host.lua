@@ -1,9 +1,12 @@
 #!/usr/bin/env luajit
 
+-- a traditional window manager, titlebar-draggable, maximizable and resizable
+-- windows
+
 local os     = require 'os'
 local string = require 'string'
-local Mrg    =  require 'mrg'
-local mrg    =  Mrg.new(640, 480);
+local Mrg    = require 'mrg'
+local mrg    = Mrg.new(640, 480);
 local host   = mrg:host_new("/tmp/mrg")
 
 local css = "document {background-color:#111; }";

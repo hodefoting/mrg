@@ -503,7 +503,7 @@ float paint_span_bg (Mrg   *mrg, float x, float y,
 float
 mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length)
 {
-  float wwidth = measure_word_width (mrg, string);
+  float wwidth = measure_word_width (mrg, string); //XXX get rid of some computation here
   float left_pad;
   left_pad = paint_span_bg (mrg, x, y, wwidth);
 
@@ -516,6 +516,7 @@ mrg_addstr (Mrg *mrg, float x, float y, const char *string, int utf8_length)
         tx < -mrg->width * 2 ||
         ty < -mrg->height * 2)
     {
+      /* bailing early*/
     }
     else
     mrg_draw_string (mrg, &mrg->state->style, x + left_pad, y, string, utf8_length);
@@ -678,8 +679,6 @@ static void emit_word (Mrg *mrg,
                        int         max_lines,
                        int         skip_lines,
                        int         cursor_start,
-                       float     *retx,
-                       float     *rety,
                        int        *pos,
                        int        *wraps,
                        int        *wl,
@@ -825,8 +824,8 @@ static int mrg_print_wrap (Mrg        *mrg,
             {
               emit_word (mrg, print, data, word, 
                          max_lines, skip_lines,
-                         cursor_start, retx,
-                         rety, &pos, &wraps, &wl, c, gotspace);
+                         cursor_start,
+                         &pos, &wraps, &wl, c, gotspace);
             }
           pos++;
 
@@ -871,10 +870,11 @@ static int mrg_print_wrap (Mrg        *mrg,
             {
               emit_word (mrg, print, data, word, 
                          max_lines, skip_lines,
-                         cursor_start, retx,
-                         rety, &pos, &wraps, &wl, c, gotspace);
+                         cursor_start,
+                         &pos, &wraps, &wl, c, gotspace);
             }
           pos++;
+          
           if (retx && *retx < 0 && pos >= cursor_start)
             {
               float tailwidth;
@@ -898,8 +898,8 @@ static int mrg_print_wrap (Mrg        *mrg,
     {
       emit_word (mrg, print, data, word, 
                  max_lines, skip_lines,
-                 cursor_start, retx,
-                 rety, &pos, &wraps, &wl, c, gotspace);
+                 cursor_start,
+                 &pos, &wraps, &wl, c, gotspace);
     }
    /* cursor at end */
    if (cursor_start == pos && cursor_start>=0 && mrg->text_edited)
@@ -922,7 +922,8 @@ static int mrg_print_wrap (Mrg        *mrg,
   return wraps;
 }
 
-/* calling this for a full text is horribly slow */
+
+
 int mrg_print_get_xy (Mrg *mrg, const char *string, int no, float *x, float *y)
 {
   int ret;
@@ -944,6 +945,184 @@ int mrg_print_get_xy (Mrg *mrg, const char *string, int no, float *x, float *y)
   if (x) *x = mrg->x + no; // XXX: only correct for nct/monospace
 
   return 0;
+}
+
+static int mrg_print_wrap2 (Mrg        *mrg,
+                           int         print,
+                           const char *data, int length,
+                           int         max_lines,
+                           int         skip_lines,
+                           MrgList   **list)
+{
+  char word[400]="";
+  int wl = 0;
+  int c;
+  int wraps = 0;
+  int pos;
+  int gotspace = 0;
+  int cursor_start = -1;
+
+  MrgGlyph *g = calloc (sizeof (MrgGlyph), 1);
+  g->x = length;
+  g->y = 42;
+  g->index = 44;
+  g->no = 2;
+  mrg_list_append (list, g);
+
+  if (mrg->state->overflowed)
+  {
+    return 0;
+  }
+
+  pos = 0;
+
+  if (max_lines <= 0)
+    max_lines = 4096;
+
+  if (mrg->text_edited && print)
+    {
+      mrg->e_x = mrg->x;
+      mrg->e_y = mrg->y;
+      mrg->e_ws = mrg_edge_left(mrg);
+      mrg->e_we = mrg_edge_right(mrg);
+      mrg->e_em = mrg_em (mrg);
+
+      if (mrg->scaled_font)
+        cairo_scaled_font_destroy (mrg->scaled_font);
+      cairo_set_font_size (mrg_cr (mrg), mrg_style(mrg)->font_size);
+      mrg->scaled_font = cairo_get_scaled_font (mrg_cr (mrg));
+      cairo_scaled_font_reference (mrg->scaled_font);
+    }
+
+  for (c = 0 ; c < length && data[c] && ! mrg->state->overflowed; c++)
+    switch (data[c])
+      {
+        case '\n':
+          if (wl)
+            {
+              emit_word (mrg, print, data, word, 
+                         max_lines, skip_lines,
+                         cursor_start,
+                         &pos, &wraps, &wl, c, gotspace);
+            }
+          pos++;
+
+          if (mrg->state->style.print_symbols && print)
+          {
+            mrg_start (mrg, "dim", NULL);
+            mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, "¶", -1);\
+            mrg_end (mrg);
+          }
+          EMIT_NL();
+          gotspace = 0;
+          break;
+        case ' ':
+          if (wl == 0)
+            {
+              if (cursor_start == pos-1 && cursor_start>=0 && mrg->text_edited)
+                {
+                  if (print)
+                  {
+                    mrg_start (mrg, ".cursor", NULL);
+                    _mrg_spaces (mrg, 1);
+                    mrg_end (mrg);
+                  }
+                  else
+                    mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, " ", -1);
+                }
+              else
+                {
+                  if (mrg->state->style.print_symbols)
+                    {
+                      mrg_start (mrg, "dim", NULL);
+                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, "␣", -1);
+                      mrg_end (mrg);
+                    }
+                  else
+                    {
+                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, " ", -1);
+                    }
+                }
+            }
+          else
+            {
+              emit_word (mrg, print, data, word, 
+                         max_lines, skip_lines,
+                         cursor_start,
+                         &pos, &wraps, &wl, c, gotspace);
+            }
+          pos++;
+          
+#if 0
+          if (retx && *retx < 0 && pos >= cursor_start)
+            {
+              float tailwidth;
+              const char *rest = &word[mrg_utf8_strlen (word) - (pos-cursor_start)];
+              if (mrg_is_terminal (mrg))
+                tailwidth = (pos-cursor_start -1) * CPX / mrg->ddpx;
+              else
+                tailwidth = measure_word_width (mrg, rest);
+              *retx = mrg->x - tailwidth;
+              *rety = mrg->y;
+              return pos;
+            }
+#endif
+          gotspace = 1;
+          break;
+        default:
+          word[wl++]= data[c];
+          word[wl]  = '\0';
+          break;
+      }
+  if (wl) /* orphaned word for last line. */
+    {
+      emit_word (mrg, print, data, word, 
+                 max_lines, skip_lines,
+                 cursor_start, 
+                 &pos, &wraps, &wl, c, gotspace);
+    }
+   /* cursor at end */
+   if (cursor_start == pos && cursor_start>=0 && mrg->text_edited)
+    {
+      if (print)
+      {
+        mrg_start (mrg, ".cursor", NULL);
+        _mrg_spaces (mrg, 1);
+        mrg_end (mrg);
+      }
+      else
+        mrg->x += measure_word_width (mrg, " ");
+    }
+#if 0
+  if (retx && *retx < 0 && pos >= cursor_start)
+    {
+       *retx = mrg->x; 
+       *rety = mrg->y;
+      return pos;
+    }
+#endif
+  return wraps;
+}
+
+MrgList *mrg_print_get_coords (Mrg *mrg, const char *string)
+{
+  MrgList *ret = NULL;
+  if (!string)
+    return ret;
+
+  if (mrg_edge_left(mrg) != mrg_edge_right(mrg))
+    {
+      float ox, oy;
+      ox = mrg->x;
+      oy = mrg->y;
+      mrg_print_wrap2 (mrg, 0, string, strlen (string), mrg->state->max_lines,
+                       mrg->state->skip_lines, &ret);
+      mrg->x = ox;
+      mrg->y = oy;
+      return ret;
+    }
+
+  return ret;
 }
 
 #include <math.h>
