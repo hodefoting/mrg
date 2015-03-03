@@ -1,6 +1,7 @@
 #ifndef _MRG_HOST_H
 #define _MRG_HOST_H
 
+#include "mrg-list.h"
 
 typedef struct _MrgHost   MrgHost;
 typedef struct _MrgClient MrgClient;
