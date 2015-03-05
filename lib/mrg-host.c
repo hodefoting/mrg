@@ -28,9 +28,8 @@
  * how to determine that something is an mmm app?
  */
 
-#ifndef _DEFAULT_SOURCE
+#define _BSD_SOURCE
 #define _DEFAULT_SOURCE
-#endif
 
 #include <string.h>
 #include <stdio.h>
