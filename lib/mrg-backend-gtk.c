@@ -25,6 +25,8 @@ typedef struct MrgGtk {
   GtkWidget *eventbox;
   GtkWidget *drawingarea;
   GtkWidget *window;
+  int        xoffset;
+  int        yoffset;
 } MrgGtk;
 
 static void mrg_gtk_flush (Mrg *mrg)
@@ -35,29 +37,6 @@ static void mrg_gtk_flush (Mrg *mrg)
   }
 }
 Mrg *mrg_gtk_get_mrg (GtkWidget *widget);
-
-static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
-{
-  Mrg    *mrg = userdata;
-  MrgGtk *mrg_gtk = mrg->backend_data;
-
-  mrg->cr = cr;
-
-
-/*  if (_mrg_is_dirty (mrg)) */
-       /* the gtk backend leaves dirty region handling up to gtk */
-    {
-      mrg->width = gtk_widget_get_allocated_width (mrg_gtk->eventbox);
-      mrg->height = gtk_widget_get_allocated_height (mrg_gtk->eventbox);
-
-      mrg_ui_update (mrg);
-    }
-
-  if (_mrg_has_quit (mrg))
-    gtk_main_quit ();
-
-  return FALSE;
-}
 
 static void mrg_gtk_warp_pointer (Mrg *mrg, float x, float y)
 {
@@ -95,19 +74,30 @@ static cairo_t *mrg_gtk_cr (Mrg *mrg)
   return static_cr;
 }
 
-static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer mrg)
+static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
 {
-  return mrg_pointer_press (mrg, event->button.x, event->button.y, event->button.button);
+  Mrg    *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  return mrg_pointer_press (mrg, event->button.x + mrg_gtk->xoffset,
+				 event->button.y + mrg_gtk->yoffset,
+				 event->button.button);
 }
 
-static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpointer mrg)
+static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
 {
-  return mrg_pointer_release (mrg, event->button.x, event->button.y, event->button.button);
+  Mrg    *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  return mrg_pointer_release (mrg, event->button.x + mrg_gtk->xoffset,
+                                   event->button.y + mrg_gtk->yoffset,
+                                   event->button.button);
 }
 
-static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointer mrg)
+static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
 {
-  return mrg_pointer_motion (mrg, event->motion.x, event->motion.y, 
+  Mrg    *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  return mrg_pointer_motion (mrg, event->motion.x + mrg_gtk->xoffset,
+                                  event->motion.y + mrg_gtk->yoffset, 
       (event->motion.state&GDK_BUTTON1_MASK)?0:
       (event->motion.state&GDK_BUTTON2_MASK)?1:
       (event->motion.state&GDK_BUTTON3_MASK)?2:
@@ -185,6 +175,37 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
 
   return mrg_key_press (mrg, gdk_keyval_to_unicode (event->key.keyval), name);
 }
+
+static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
+{
+  Mrg    *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+
+  mrg->cr = cr;
+
+  {
+    cairo_matrix_t mat;
+    cairo_get_matrix (cr, &mat);
+
+    mrg_gtk->xoffset = mat.x0;
+    mrg_gtk->yoffset = mat.y0;
+  }
+
+/*  if (_mrg_is_dirty (mrg)) */
+       /* the gtk backend leaves dirty region handling up to gtk */
+    {
+      mrg->width = gtk_widget_get_allocated_width (mrg_gtk->eventbox);
+      mrg->height = gtk_widget_get_allocated_height (mrg_gtk->eventbox);
+
+      mrg_ui_update (mrg);
+    }
+
+  if (_mrg_has_quit (mrg))
+    gtk_main_quit ();
+
+  return FALSE;
+}
+
 
 static void mrg_gtk_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 {
