@@ -1401,11 +1401,12 @@ void mrg_xml_render (Mrg *mrg,
         mrg_string_clear (style);
         break;
       case t_att:
-        // XXX: use strncpy
-        strcpy (ctx->attribute[ctx->attributes], data);
+	if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
+        strncpy (ctx->attribute[ctx->attributes], data, MRG_XML_MAX_ATTRIBUTE_LEN-1);
         break;
       case t_val:
-        strcpy (ctx->value[ctx->attributes++], data);
+	if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
+        strncpy (ctx->value[ctx->attributes++], data, MRG_XML_MAX_VALUE_LEN-1);
         break;
       case t_endtag:
 
