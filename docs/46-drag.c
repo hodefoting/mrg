@@ -1,6 +1,6 @@
 #include "mrg.h"
 
-int drag_pos (MrgEvent *e, void *data1, void *data2) {
+void drag_pos (MrgEvent *e, void *data1, void *data2) {
   if (e->type == MRG_DRAG_MOTION)
   {
     float *pos = data1;
@@ -20,7 +20,6 @@ int drag_pos (MrgEvent *e, void *data1, void *data2) {
     *active = 0;
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 void render_ui (Mrg *mrg, void *data) {

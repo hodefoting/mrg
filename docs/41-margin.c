@@ -7,22 +7,19 @@ float margin_right = 40;
 float margin_left = 40;
 float margin_top = 40;
 
-int drag_right_cb (MrgEvent *event, void *data1, void *data2) { 
+void drag_right_cb (MrgEvent *event, void *data1, void *data2) { 
  margin_right -= event->delta_x;
  mrg_queue_draw (event->mrg, NULL);
- return 0;
 }
 
-int drag_left_cb (MrgEvent *event, void *data1, void *data2) { 
+void drag_left_cb (MrgEvent *event, void *data1, void *data2) { 
  margin_left += event->delta_x;
  mrg_queue_draw (event->mrg, NULL);
- return 0;
 }
 
-int drag_top_cb (MrgEvent *event, void *data1, void *data2) { 
+void drag_top_cb (MrgEvent *event, void *data1, void *data2) { 
  margin_top += event->delta_y;
  mrg_queue_draw (event->mrg, NULL);
- return 0;
 }
 
 void ui (Mrg *mrg, void *data) {

@@ -370,13 +370,14 @@ _mrg_emit_cb (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float x, f
   event = &transformed_event;
   event->state = mrg->modifier_state;
 
+  event->stop_propagate = 0;
   for (i = item->cb_count-1; i >= 0; i--)
   {
     if (item->cb[i].types & (type))
     {
-      int val = item->cb[i].cb (event, item->cb[i].data1, item->cb[i].data2);
-      if (val)
-        return val;
+      item->cb[i].cb (event, item->cb[i].data1, item->cb[i].data2);
+      if (event->stop_propagate)
+        return event->stop_propagate;
     }
   }
   return 0;
@@ -620,7 +621,6 @@ int mrg_key_press (Mrg *mrg, unsigned int keyval,
   /* XXX: there will also be a bug with more than 8 0,0,0,0 bindings
    * registered
    */
-
   if (item)
   {
     int i;
@@ -628,14 +628,17 @@ int mrg_key_press (Mrg *mrg, unsigned int keyval,
     mrg->drag_event.type = MRG_KEY_DOWN;
     mrg->drag_event.unicode = keyval; 
     mrg->drag_event.key_name = string;
+    mrg->drag_event.stop_propagate = 0;
+
 
     for (i = 0; i < item->cb_count; i++)
     {
       if (item->cb[i].types & (MRG_KEY_DOWN))
       {
         mrg->drag_event.state = mrg->modifier_state;
-        if (item->cb[i].cb (&mrg->drag_event, item->cb[i].data1, item->cb[i].data2))
-          return 1;
+        item->cb[i].cb (&mrg->drag_event, item->cb[i].data1, item->cb[i].data2);
+        if (mrg->drag_event.stop_propagate)
+          return mrg->drag_event.stop_propagate;
       }
     }
   }
@@ -695,3 +698,7 @@ void _mrg_debug_overlays (Mrg *mrg)
   cairo_restore (cr);
 }
 
+void mrg_event_stop_propagate (MrgEvent *event)
+{
+  event->stop_propagate = 1;
+}

@@ -27,7 +27,7 @@
 #include "mrg.h"
 #include "mrg-string.h"
 
-static int drag_pos (MrgEvent *e, void *data1, void *data2)
+static void drag_pos (MrgEvent *e, void *data1, void *data2)
 {
   if (e->type == MRG_DRAG_MOTION && e->device_no == 1)
   {
@@ -35,7 +35,6 @@ static int drag_pos (MrgEvent *e, void *data1, void *data2)
     pos[1] += e->delta_y;
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 typedef void (*UiCb) (Mrg *mrg, void *state);
@@ -106,7 +105,7 @@ file_set_contents (const char *path, const char *data, long length)
   fclose (fp);
 }
 
-static int compile_cb (MrgEvent *event, void *data1, void *data2)
+static void compile_cb (MrgEvent *event, void *data1, void *data2)
 {
   FILE *fp;
   State *state = data1;
@@ -115,7 +114,10 @@ static int compile_cb (MrgEvent *event, void *data1, void *data2)
   system ("rm -f /tmp/mrg-tmp");
 
   if (!strstr (state->path, ".c"))
-    return 1;
+  {
+    event->stop_propagate = 1;
+    return;
+  }
 
   file_set_contents ("/tmp/live.c", state->data, -1);
 
@@ -133,25 +135,25 @@ static int compile_cb (MrgEvent *event, void *data1, void *data2)
     mrg_string_append_str (state->compiler_output, "popen failed");
   }
   
-  return 1;
+  event->stop_propagate = 1;
 }
 
-static int save_cb (MrgEvent *event, void *data1, void *data2)
+static void save_cb (MrgEvent *event, void *data1, void *data2)
 {
   State *state = data1;
   file_set_contents (state->path, state->data, -1);
   fprintf (stderr, "saved\n");
-  return 1;
+  event->stop_propagate = 1;
 }
 
 #include <unistd.h>
 
-static int run_cb (MrgEvent *event, void *data1, void *data2)
+static void run_cb (MrgEvent *event, void *data1, void *data2)
 {
   compile_cb (event, data1, data2);
   system ("/tmp/mrg-tmp &");
   usleep (30000);
-  return 1;
+  event->stop_propagate = 1;
 }
 
 static void update_string (const char *new_string, void *user_data)

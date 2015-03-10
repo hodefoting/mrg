@@ -77,9 +77,9 @@ enum _MrgType {
 
 typedef enum _MrgType MrgType;
 
-typedef int (*MrgCb) (MrgEvent *event,
-                      void     *data,
-                      void     *data2);
+typedef void (*MrgCb) (MrgEvent *event,
+                       void     *data,
+                       void     *data2);
 
 typedef void(*MrgDestroyNotify) (void     *data);
 typedef int(*MrgTimeoutCb) (Mrg *mrg, void  *data);
@@ -245,6 +245,7 @@ struct _MrgEvent {
   /* only valid for key-events */
   unsigned int unicode;
   const char *key_name; /* can be "up" "down" "a" "b" "ø" etc .. */
+  int stop_propagate;
 };
 
 void  mrg_text_listen (Mrg *mrg, MrgType types,
@@ -666,7 +667,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (finalize_data)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     local wrap_cb = function(new_text,data)
@@ -697,7 +697,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (data1, data2,finalize_data)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     cb_fun = ffi.cast ("MrgCb", cb)
@@ -710,7 +709,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (data1, data2,finalize_data)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
 
     notify_fun = ffi.cast ("MrgCb", notify_cb)
@@ -722,7 +720,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (data1, data2, finalize_data)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
     notify_fun = ffi.cast ("MrgCb", notify_cb)
     cb_fun = ffi.cast ("MrgCb", cb)
@@ -758,7 +755,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (a,b)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     cb_fun = ffi.cast ("MrgIdleCb", cb)
@@ -770,7 +766,6 @@ ffi.metatype('Mrg', {__index = {
     local notify_cb = function (a,b)
       cb_fun:free();
       notify_fun:free();
-      return 0;
     end
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     cb_fun = ffi.cast ("MrgTimeoutCb", cb)

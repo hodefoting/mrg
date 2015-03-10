@@ -1,6 +1,6 @@
 #include "mrg.h"
 
-int drag_cb (MrgEvent *event, void *data1, void *data2);
+void drag_cb (MrgEvent *event, void *data1, void *data2);
 float coord[7][2] = {{0.1, 0.5}, {0.2, 0.25}, {0.8, 0.75}, {0.9, 0.5}};
 
 static void ui (Mrg *mrg, void *data) {
@@ -33,7 +33,7 @@ int main () {
   return 0;
 }
 
-int drag_cb (MrgEvent *event, void *data1, void *data2) {
+void drag_cb (MrgEvent *event, void *data1, void *data2) {
   if (event->type == MRG_DRAG_MOTION)
   {
     float *pos = data1;
@@ -41,5 +41,5 @@ int drag_cb (MrgEvent *event, void *data1, void *data2) {
     pos[1] += event->delta_y;
     mrg_queue_draw (event->mrg, NULL);
   }
-  return 1;
+  mrg_event_stop_propagate (event);
 }

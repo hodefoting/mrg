@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "mrg.h"
 
-static int drag_pos (MrgEvent *e, void *data1, void *data2)
+static void drag_pos (MrgEvent *e, void *data1, void *data2)
 {
   //static float start_x = 0;
   //static float start_y = 0;
@@ -45,7 +45,6 @@ static int drag_pos (MrgEvent *e, void *data1, void *data2)
     mrg_set_position (e->mrg, x, y);
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 static void render_ui (Mrg *mrg, void *data)

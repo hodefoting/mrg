@@ -1279,7 +1279,7 @@ again:
 
 void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
-                     int (*link_cb) (MrgEvent *event, void *href, void *link_data),
+                     void (*link_cb) (MrgEvent *event, void *href, void *link_data),
                      void *link_data,
                      char *html_)
 {
@@ -1737,7 +1737,7 @@ void mrg_xml_render (Mrg *mrg,
 
 void mrg_xml_renderf (Mrg *mrg,
                       char *uri_base,
-                      int (*link_cb) (MrgEvent *event, void *href, void *link_data),
+                      void (*link_cb) (MrgEvent *event, void *href, void *link_data),
                       void *link_data,
                       char *format,
                       ...)

@@ -109,16 +109,16 @@ function draw_piano(mrg, shape)
         lyd:note(100, note_to_hz(note), 1.0, 0.1)
       end
       mrg:queue_draw(NULL)
-      return true
+      event.stop_propagate = 1
     end)
     mrg:listen(Mrg.PRESS, function(event,a,b)
       lyd:note(100, note_to_hz(note), 1.0, 0.1)
-      return true
+      event.stop_propagate = 1
     end)
     mrg:listen(Mrg.LEAVE, function(event,a,b)
       entered[note] = false;
       mrg:queue_draw(NULL)
-      return true
+      event.stop_propagate = 1
     end)
 
     cr:set_source_rgba(1,1,1,1)
@@ -180,11 +180,9 @@ function draw_parameter_uis(mrg)
           (event.x - 1*em) / (mrg:width()-2*em) *
           (param.max_value-param.min_value) + param.min_value
         mrg:queue_draw(nil)
-        return 0
       end)
       mrg:listen(Mrg.ENTER + Mrg.LEAVE, function(event, data1, data2)
         mrg:queue_draw(nil)
-        return 0
       end)
 
       cr:save()
@@ -247,7 +245,6 @@ function (mrg, data)
   function(new_text,foo)
     instrument = ffi.string(new_text)
     update_instrument (instrument)
-    return 0;
   end)
   mrg:set_style('background:transparent;syntax-highlight:C')
   mrg:print(instrument)
@@ -257,7 +254,7 @@ function (mrg, data)
 
   -- draw_circle_cursor(mrg)
 
-  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
+  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() end)
 end)
 
 update_instrument(instrument)

@@ -40,10 +40,10 @@ typedef struct Compositor
 
 } Compositor;
 
-static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
+static void toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  return 1;
+  event->stop_propagate = 1;
 }
 
 static void render_client (Mrg *mrg, void *data)
@@ -51,7 +51,7 @@ static void render_client (Mrg *mrg, void *data)
   mrg_printf (mrg, "client %s", data);
 }
 
-static int client_drag (MrgEvent *e, void *client_, void *unused)
+static void client_drag (MrgEvent *e, void *client_, void *unused)
 {
   Client *client = client_;
 
@@ -61,8 +61,6 @@ static int client_drag (MrgEvent *e, void *client_, void *unused)
     client->y += e->delta_y;
     mrg_queue_draw (e->mrg, NULL);
   }
-
-  return 0;
 }
 
 static void render_ui (Mrg *mrg, void *data)
@@ -121,7 +119,7 @@ void add_client (Compositor *compositor,
   mrg_set_ui (client->mrg, client->render, client->render_data);
 }
 
-static int drag_pos (MrgEvent *e, void *data1, void *data2)
+static void drag_pos (MrgEvent *e, void *data1, void *data2)
 {
   if (e->type == MRG_DRAG_MOTION)
   {
@@ -142,7 +140,6 @@ static int drag_pos (MrgEvent *e, void *data1, void *data2)
     *active = 0;
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 static void drag_render_ui (Mrg *mrg, void *data)

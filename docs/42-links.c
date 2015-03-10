@@ -9,11 +9,10 @@ void make_big ();
 
 char *color = NULL;
 
-int link_cb (MrgEvent *event,
+void link_cb (MrgEvent *event,
      void *href, void *link_data) {
   if (color) free (color);
   color = strdup (href);
-  return 0;
 }
 
 void ui (Mrg *mrg, void *data) {

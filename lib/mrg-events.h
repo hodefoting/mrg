@@ -97,11 +97,13 @@ struct _MrgEvent {
   /* only valid for key-events */
   unsigned int unicode;
   const char *key_name; /* can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */
+
+  int stop_propagate; /* */
 };
 
-typedef int (*MrgCb) (MrgEvent *event,
-                      void     *data,
-                      void     *data2);
+typedef void (*MrgCb) (MrgEvent *event,
+                       void     *data,
+                       void     *data2);
 
 /* XXX: need full version for lua ffi */
 void mrg_add_binding (Mrg *mrg,
@@ -138,6 +140,9 @@ void mrg_listen      (Mrg     *mrg,
                       MrgCb    cb,
                       void    *data1,
                       void    *data2);
+
+void mrg_event_stop_propagate (MrgEvent *event);
+
 /**
  * mrg_listen_full:
  *

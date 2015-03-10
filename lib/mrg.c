@@ -322,7 +322,7 @@ cairo_t *mrg_cr (Mrg *mrg)
 static long  frame_start;
 static long  frame_end;
 
-int  _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2);
+void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2);
 void mrg_text_edit_bindings (Mrg *mrg);
 void mrg_focus_bindings (Mrg *mrg);
 
@@ -717,22 +717,19 @@ void  mrg_ui_update (Mrg *mrg)
   mrg_flush (mrg);
 }
 
-static int mrg_mrg_press (MrgEvent *event, void *mrg, void *data2)
+static void mrg_mrg_press (MrgEvent *event, void *mrg, void *data2)
 {
   mrg_pointer_press (mrg, event->x, event->y, event->device_no);
-  return 0;
 }
 
-static int mrg_mrg_motion (MrgEvent *event, void *mrg, void *data2)
+static void mrg_mrg_motion (MrgEvent *event, void *mrg, void *data2)
 {
   mrg_pointer_motion (mrg, event->x, event->y, event->device_no);
-  return 0;
 }
 
-static int mrg_mrg_release (MrgEvent *event, void *mrg, void *data2)
+static void mrg_mrg_release (MrgEvent *event, void *mrg, void *data2)
 {
   mrg_pointer_release (mrg, event->x, event->y, event->device_no);
-  return 0;
 }
 
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)

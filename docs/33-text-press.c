@@ -2,11 +2,10 @@
 void make_big ();
 
 int value = 11;
-int inc_cb (MrgEvent *event,
-           void *data1, void *data2) {
+void inc_cb (MrgEvent *event,
+             void *data1, void *data2) {
   value ++;
   mrg_queue_draw (event->mrg, NULL);
-  return 0;
 }
 
 void ui (Mrg *mrg, void *data) {

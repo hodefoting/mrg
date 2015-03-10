@@ -9,7 +9,7 @@
 
 static const char *css =  " document {background-color:#111;} ";
 
-static int titlebar_drag (MrgEvent *e, void *client_, void *host_)
+static void titlebar_drag (MrgEvent *e, void *client_, void *host_)
 {
   MrgClient *client = client_;
 
@@ -23,10 +23,9 @@ static int titlebar_drag (MrgEvent *e, void *client_, void *host_)
     mrg_client_set_y (client, mrg_client_get_y (client) + e->delta_y);
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
-static int resize_drag (MrgEvent *e, void *client_, void *host_)
+static void resize_drag (MrgEvent *e, void *client_, void *host_)
 {
   MrgClient *client = client_;
 
@@ -47,44 +46,38 @@ static int resize_drag (MrgEvent *e, void *client_, void *host_)
       mrg_queue_draw (e->mrg, NULL);
     }
   }
-  return 0;
 }
 
 static int show_cal = 0;
 
-static int time_pressed (MrgEvent *event, void *mmm, void *data2)
+static void time_pressed (MrgEvent *event, void *mmm, void *data2)
 {
   show_cal = !show_cal;
   mrg_queue_draw (event->mrg, NULL);
-  return 0;
 }
 
 void terminal_main(int argc, char **argv);
 
-static int launch_terminal (MrgEvent *event, void *mmm, void *data2)
+static void launch_terminal (MrgEvent *event, void *mmm, void *data2)
 {
   system("mrg-terminal &");
-  return 0;
 }
 
-static int launch_browser (MrgEvent *event, void *mmm, void *data2)
+static void launch_browser (MrgEvent *event, void *mmm, void *data2)
 {
   system("mrg browser mrg:index.html &");
-  return 0;
 }
 
-static int kill_client (MrgEvent *event, void *client_, void *data2)
+static void kill_client (MrgEvent *event, void *client_, void *data2)
 {
   MrgClient *client = client_;
   mrg_client_kill (client);
-  return 0;
 }
 
-static int maximize_client (MrgEvent *event, void *client_, void *host_)
+static void maximize_client (MrgEvent *event, void *client_, void *host_)
 {
   MrgClient *client = client_;
   mrg_client_maximize (client);
-  return 0;
 }
 
 static void render_client (Mrg *mrg, MrgHost *host, MrgClient *client)

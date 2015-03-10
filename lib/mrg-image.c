@@ -16,6 +16,7 @@
  */
 
 #include "mrg-internal.h"
+#include "nanojpeg.h"
 
 struct _MrgImage
 {
@@ -54,14 +55,61 @@ MrgImage *mrg_query_image (Mrg *mrg, const char *path,
     }
   }
   {
-    cairo_surface_t *surface = cairo_image_surface_create_from_png (path);
-    if (surface)
+    if (strstr (path, "png") || strstr (path, "PNG"))
     {
-      MrgImage *image = malloc (sizeof (MrgImage));
-      image->surface = surface;
-      image->path = strdup (path);
-      mrg_list_prepend_full (&image_cache, image, (void*)free_image, NULL);
-      return mrg_query_image (mrg, path, width, height);
+      cairo_surface_t *surface = cairo_image_surface_create_from_png (path);
+      if (surface)
+      {
+        MrgImage *image = malloc (sizeof (MrgImage));
+        image->path = strdup (path);
+        image->surface = surface;
+        mrg_list_prepend_full (&image_cache, image, (void*)free_image, NULL);
+        return mrg_query_image (mrg, path, width, height);
+      }
+    }
+    else /* probably jpg */
+    {
+      char *contents = NULL;
+      long length;
+      _mrg_file_get_contents (path, &contents, &length);
+      if (contents)
+      {
+        njInit();
+        fprintf (stderr, "foo!\n");
+        if (njDecode (contents, length) == NJ_OK)
+        {
+          int w = njGetWidth();
+          int h = njGetHeight();
+          MrgImage *image = malloc (sizeof (MrgImage));
+          fprintf (stderr, "%ix%i\n", njGetWidth(), njGetHeight());
+          image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
+          image->path = strdup (path);
+          {
+            int i;
+            char *src = (void*)njGetImage ();
+            char *dst = (void*)cairo_image_surface_get_data (image->surface);
+            if (njIsColor())
+              for (i = 0; i < w * h; i++)
+              {
+                dst[i*4 + 0] = src[i*3 + 2];
+                dst[i*4 + 1] = src[i*3 + 1];
+                dst[i*4 + 2] = src[i*3 + 0];
+              }
+            else
+              for (i = 0; i < w * h; i++)
+                dst[i*4 + 0] = dst[i*4+1] = dst[i*4+2] = src[i];
+
+          }
+          //memcpy (cairo_image_surface_get_data(image->surface), njGetImage(), njGetImageSize());
+          mrg_list_prepend_full (&image_cache, image,
+                                 (void*)free_image, NULL);
+          njDone();
+          free (contents);
+          return mrg_query_image (mrg, path, width, height);
+        }
+        njDone();
+        free (contents);
+      }
     }
   }
   return NULL;

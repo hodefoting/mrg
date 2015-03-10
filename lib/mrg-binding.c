@@ -59,7 +59,7 @@ void mrg_add_binding_full (Mrg *mrg,
   mrg->bindings[i].destroy_data = destroy_data;
 }
 
-int _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
+void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
   int i;
@@ -73,8 +73,9 @@ int _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
     {
       if (mrg->bindings[i].cb)
       {
-        if (mrg->bindings[i].cb (event, mrg->bindings[i].cb_data, NULL))
-          return 1;
+        mrg->bindings[i].cb (event, mrg->bindings[i].cb_data, NULL);
+        if (event->stop_propagate)
+          return;
         handled = 1;
       }
     }
@@ -84,11 +85,11 @@ int _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
     {
       if (mrg->bindings[i].cb)
       {
-        if (mrg->bindings[i].cb (event, mrg->bindings[i].cb_data, NULL))
-          return 1;
+        mrg->bindings[i].cb (event, mrg->bindings[i].cb_data, NULL);
+        if (event->stop_propagate)
+          return;
       }
     }
-  return 0;
 }
 
 void _mrg_clear_bindings (Mrg *mrg)

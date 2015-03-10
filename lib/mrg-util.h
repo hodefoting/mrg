@@ -19,7 +19,7 @@
 #define MRG_UTIL_H__
 
 
-int mrg_quit_cb (MrgEvent *event, void *data1, void *data2);
+void mrg_quit_cb (MrgEvent *event, void *data1, void *data2);
 
 void mrg_cairo_set_source_color (cairo_t *cr, MrgColor *color);
 

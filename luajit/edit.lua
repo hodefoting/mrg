@@ -61,7 +61,6 @@ function (mrg, data)
   mrg:edit_start(
     function(new_text)
       document = new_text 
-      return 0;
     end)
   mrg:set_style('background:transparent;syntax-highlight:C')
   mrg:print(document)
@@ -70,14 +69,12 @@ function (mrg, data)
   mrg:add_binding("control-q", NULL, NULL,
     function ()
       mrg:quit()
-      return 0
     end)
 
   mrg:add_binding("control-s", NULL, NULL, 
     function ()
       io.output(path)
       io.write(document)
-      return 0
     end)
 
   if move_y ~= 0 then

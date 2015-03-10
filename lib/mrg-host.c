@@ -311,7 +311,7 @@ MrgList *mrg_host_clients (MrgHost *host)
   return host->clients;
 }
 
-static int mrg_client_press (MrgEvent *event, void *client_, void *host_)
+static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
 {
   MrgHost *host = host_;
   MrgClient *client = client_;
@@ -322,10 +322,10 @@ static int mrg_client_press (MrgEvent *event, void *client_, void *host_)
   if (host->focused)
     mrg_client_raise_top (host->focused);
   mmm_add_event (mmm, buf);
-  return 0;
+  event->stop_propagate = 1;
 }
 
-static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
+static void mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 {
   MrgClient *client = client_;
   Mmm    *mmm    = client->mmm;
@@ -336,25 +336,27 @@ static int mrg_client_motion (MrgEvent *event, void *client_, void *host_)
   else
     sprintf (buf, "mouse-motion %f %f", event->x, event->y);
   mmm_add_event (mmm, buf);
-  return 0;
+  event->stop_propagate = 1;
 }
 
-static int mrg_client_release (MrgEvent *event, void *client_, void *host_)
+static void mrg_client_release (MrgEvent *event, void *client_, void *host_)
 {
   MrgClient *client = client_;
   Mmm *mmm = client->mmm;
   char buf[256];
   sprintf (buf, "mouse-release %f %f", event->x, event->y);
   mmm_add_event (mmm, buf);
-  return 0;
+  event->stop_propagate = 1;
 }
 
-static int host_key_down_cb (MrgEvent *event, void *host_, void *data2)
+static void host_key_down_cb (MrgEvent *event, void *host_, void *data2)
 {
   MrgHost *host = host_;
   if (host->focused && host->focused->mmm)
+  {
     mmm_add_event (host->focused->mmm, event->key_name);
-  return 0;
+    event->stop_propagate = 1; // XXX? needed?
+  }
 }
 
 void mrg_host_set_focused (MrgHost *host, MrgClient *client)
@@ -492,7 +494,9 @@ static int host_idle_check (Mrg *mrg, void *data)
       if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
       {
         MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
-        assert (width);
+        if (!width)
+          return 1;
+        //assert (width);
         mrg_queue_draw (mrg, &rect);
       }
 

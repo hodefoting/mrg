@@ -14,10 +14,7 @@ function (mrg, data)
   mrg:print_xml("<div style='color:red'>luajit + mrg</div> \n")
 
   mrg:set_xy(0, mrg:em() * 4)
-  mrg:text_listen(Mrg.PRESS, function(event,d1,d2)
-    mrg:quit();
-    return 0;
-  end)
+  mrg:text_listen(Mrg.PRESS, function(event,d1,d2) mrg:quit(); end)
 
   mrg:print("quit")
   mrg:text_listen_done()
@@ -28,10 +25,9 @@ function (mrg, data)
   mrg:listen(Mrg.MOTION, function (event, d1, d2)
        x = event.x; y = event.y;
        event.mrg:queue_draw(NULL)
-       return 0
      end)
 
-  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
+  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() end)
 
   -- draw a circle for mouse cursor
   cr:new_path()

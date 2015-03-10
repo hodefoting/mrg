@@ -781,12 +781,15 @@ static int pty_poll (Mrg *mrg, void *data)
   return 1;
 }
 
-static int event_handler (MrgEvent *event, void *data1, void *data2)
+static void event_handler (MrgEvent *event, void *data1, void *data2)
 {
   const char *str = event->key_name;
 
   if (!str)
-    return 1;
+  {
+    event->stop_propagate = 1;
+    return;
+  }
 
   if (cursor_key_application)
   {
@@ -881,7 +884,7 @@ done:
   if (strlen (str))
     write (pty, str, strlen (str));
 
-  return 1;
+  event->stop_propagate = 1;
 }
 
 static void render_ui (Mrg *mrg, void *data)

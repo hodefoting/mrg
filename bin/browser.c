@@ -22,23 +22,21 @@
 
 static float scroll[2] = {0,0};
 
-int pgup_cb (MrgEvent *e, void *data1, void *data2)
+void pgup_cb (MrgEvent *e, void *data1, void *data2)
 {
   float *pos = data1;
   pos[1] += mrg_height (e->mrg) * 0.8;
   mrg_queue_draw (e->mrg, NULL);
-  return 0;
 }
 
-int pgdn_cb (MrgEvent *e, void *data1, void *data2)
+void pgdn_cb (MrgEvent *e, void *data1, void *data2)
 {
   float *pos = data1;
   pos[1] -= mrg_height (e->mrg) * 0.8;
   mrg_queue_draw (e->mrg, NULL);
-  return 0;
 }
 
-int drag_pos (MrgEvent *e, void *data1, void *data2)
+void drag_pos (MrgEvent *e, void *data1, void *data2)
 {
   if (e->type == MRG_DRAG_MOTION && e->device_no == 1)
   {
@@ -46,7 +44,6 @@ int drag_pos (MrgEvent *e, void *data1, void *data2)
     pos[1] += e->delta_y;
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 typedef struct Mr
@@ -76,19 +73,16 @@ browser_set_uri (Mr *mr, const char *uri)
 #include <dirent.h>
 #include <libgen.h>
 
-static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
+static void toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  return 1;
 }
 
-
-static int href_cb (MrgEvent *event, void *src, void *data2)
+static void href_cb (MrgEvent *event, void *src, void *data2)
 {
   Mr *mr = data2;
   browser_set_uri (mr, src);
   scroll[0] = scroll[1] = 0;
-  return 0;
 }
 
 static const char *magic_mime (const char *data, int length)

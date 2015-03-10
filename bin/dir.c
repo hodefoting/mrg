@@ -36,7 +36,7 @@ todo: permit clicking path bar
 #include "mrg-string.h"
 #include "mrg-host.h"
 
-static int vertical_pan (MrgEvent *e, void *data1, void *data2)
+static void vertical_pan (MrgEvent *e, void *data1, void *data2)
 {
   if (e->type == MRG_DRAG_MOTION && e->device_no == 1)
   {
@@ -44,7 +44,6 @@ static int vertical_pan (MrgEvent *e, void *data1, void *data2)
     pos[1] += e->delta_y;
     mrg_queue_draw (e->mrg, NULL);
   }
-  return 0;
 }
 
 typedef void (*UiCb) (Mrg *mrg, void *state);
@@ -167,46 +166,46 @@ static void go_prev (State *state)
   }
 }
 
-static int edit_cb (MrgEvent *event, void *data1, void *data2)
+static void edit_cb (MrgEvent *event, void *data1, void *data2)
 {
   State *state = data1;
 
   state->sub_state = edit_state_new (state->path);
   mrg_queue_draw (event->mrg, NULL);
 
-  return 1;
+  event->stop_propagate = 1;
 }
 
-static int go_next_cb (MrgEvent *event, void *data1, void *data2)
+static void go_next_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_next (data1);
   pos[0] = pos[1] = 0;
-  return 1;
+  event->stop_propagate = 1;
 }
 
-static int go_prev_cb (MrgEvent *event, void *data1, void *data2)
+static void go_prev_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_prev (data1);
   pos[0] = pos[1] = 0;
-  return 1;
+  event->stop_propagate = 1;
 }
 
-static int go_parent_cb (MrgEvent *event, void *data1, void *data2)
+static void go_parent_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_parent (data1);
   pos[0] = pos[1] = 0;
-  return 1;
+  event->stop_propagate = 1;
 }
 
 #if 1
-static int toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
+static void toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  return 1;
+  event->stop_propagate = 1;
 }
 #endif
 
-static int entry_pressed (MrgEvent *event, void *data1, void *data2)
+static void entry_pressed (MrgEvent *event, void *data1, void *data2)
 {
   State *state = data2;
   struct dirent *entry = data1;
@@ -214,7 +213,8 @@ static int entry_pressed (MrgEvent *event, void *data1, void *data2)
   if (!strcmp (entry->d_name, ".."))
   {
     go_parent (state);
-    return 1;
+    event->stop_propagate = 1;
+    return;
   }
 
   switch (entry->d_type)
@@ -237,7 +237,6 @@ static int entry_pressed (MrgEvent *event, void *data1, void *data2)
     default:
     break;
   }
-  return 0;
 }
 
 static void render_dir (Mrg *mrg, void *data)
@@ -509,13 +508,13 @@ void resolve_renderer (State *state)
     state->ui = render_dir;
 }
 
-static int eeek (MrgEvent *e, void *data1, void *data2)
+static void eeek (MrgEvent *e, void *data1, void *data2)
 {
   system ("/tmp/test &");
-  return 1;
+  e->stop_propagate = 1;
 }
 
-static int reresolve_cb (MrgEvent *e, void *data1, void *data2)
+static void reresolve_cb (MrgEvent *e, void *data1, void *data2)
 {
   State *state = data1;
   if (state->sub_state)
@@ -524,9 +523,8 @@ static int reresolve_cb (MrgEvent *e, void *data1, void *data2)
     state->sub_state = NULL;
   }
   mrg_queue_draw (e->mrg, NULL);
-  return 0;
 }
-int host_key_down_cb (MrgEvent *event, void *host_, void *data2);
+void host_key_down_cb (MrgEvent *event, void *host_, void *data2);
 
 static void gui (Mrg *mrg, void *data)
 {

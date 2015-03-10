@@ -81,7 +81,7 @@ static MrgItem *item_find_next (Mrg *mrg, MrgItem *cursor, int x_delta, int y_de
   return best;
 }
 
-static int cmd_focus_up (MrgEvent *event, void *data, void *data2)
+static void cmd_focus_up (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -111,14 +111,11 @@ static int cmd_focus_up (MrgEvent *event, void *data, void *data2)
     float cx, cy;
     mrg_item_center (next, &cx, &cy);
     mrg_warp_pointer (mrg, cx, cy);
-    return 1;
+    event->stop_propagate = 1;
   }
-
-  return 0;
 }
 
-
-static int cmd_focus_down (MrgEvent *event, void *data, void *data2)
+static void cmd_focus_down (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -146,14 +143,12 @@ static int cmd_focus_down (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    return 1;
+    event->stop_propagate = 1;
   }
-
-  return 0;
 }
 
 
-static int cmd_focus_left (MrgEvent *event, void *data, void *data2)
+static void cmd_focus_left (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -181,14 +176,12 @@ static int cmd_focus_left (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    return 1;
+    event->stop_propagate = 1;
   }
-
-  return 0;
 }
 
 
-static int cmd_focus_right (MrgEvent *event, void *data, void *data2)
+static void cmd_focus_right (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -216,13 +209,11 @@ static int cmd_focus_right (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    return 1;
+    event->stop_propagate = 1;
   }
-
-  return 0;
 }
 
-static int cmd_focus_previous (MrgEvent *event, void *data, void *data2)
+static void cmd_focus_previous (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -246,7 +237,6 @@ static int cmd_focus_previous (MrgEvent *event, void *data, void *data2)
           }
           prev = item;
         }
-        return 0;
       }
   }
   else
@@ -265,10 +255,9 @@ static int cmd_focus_previous (MrgEvent *event, void *data, void *data2)
         mrg_warp_pointer (mrg, (found->x0 + found->x1)/2, (found->y0 * 0.2 + found->y1 * 0.8) );
       }
   }
-
-  return 0;
 }
-static int cmd_focus_next (MrgEvent *event, void *data, void *data2)
+
+static void cmd_focus_next (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
   float x = mrg_pointer_x (mrg);
@@ -286,13 +275,13 @@ static int cmd_focus_next (MrgEvent *event, void *data, void *data2)
           if (found)
           {
             mrg_warp_pointer (mrg, (item->x0 + item->x1)/2, (item->y0 * 0.2 + item->y1 * 0.8) );
-            return 0;
+            return;
           }
           if (item == current)
             found = 1;
         }
         mrg_warp_pointer (mrg, mrg_width(mrg)/2, mrg_height(mrg)-1);
-        return 0;
+        return;
       }
   }
   else
@@ -304,26 +293,25 @@ static int cmd_focus_next (MrgEvent *event, void *data, void *data2)
           MrgItem *item = a->data;
           if (!(item->x0 == 0 && item->y0 == 0)){
             mrg_warp_pointer (mrg, (item->x0 + item->x1)/2, (item->y0 * 0.2 + item->y1 * 0.8) );
-            return 0;
+            return;
           }
         }
       mrg_warp_pointer (mrg, 0, 0);
-      return 0;
+      return;
     }
 
   }
 
-  return 0;
+  return;
 }
 
 
-static int cmd_select (MrgEvent *event, void *data, void *data2)
+static void cmd_select (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
 
   mrg_pointer_press   (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0);
   mrg_pointer_release (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0);
-  return 0;
 }
 
 void mrg_focus_bindings (Mrg *mrg)

@@ -10,14 +10,13 @@ void make_big ();
 
 char *color = NULL;
 
-int set_color_cb (MrgEvent *event,
+void set_color_cb (MrgEvent *event,
      void *newcol, void *link_data) {
   if (color) free (color);
   color = strdup (newcol);
-  return 0;
 }
 
-int zoom_cb (MrgEvent *event, void *d1, void *d2)
+void zoom_cb (MrgEvent *event, void *d1, void *d2)
 {
  double *zoom = d1;
  *zoom = (event->x-50) / 200.0;
@@ -25,7 +24,6 @@ int zoom_cb (MrgEvent *event, void *d1, void *d2)
  if (*zoom < 0.01) *zoom = 0.01;
  if (*zoom > 2.0) *zoom = 2.0;
  mrg_queue_draw (event->mrg, NULL);
- return 0;
 }
 
 void ui (Mrg *mrg, void *data) {

@@ -70,19 +70,13 @@ mrg:set_ui(
       mrg:print(client:title())
 
       mrg:start('close')
-      mrg:text_listen(Mrg.PRESS, function(event)
-        client:kill()
-        return 0
-      end)
+      mrg:text_listen(Mrg.PRESS, function(event) client:kill() end)
       mrg:print('X')
       mrg:text_listen_done()
       mrg:close()
 
       mrg:start('max')
-      mrg:text_listen(Mrg.PRESS, function(event)
-        client:maximize()
-        return 0
-      end)
+      mrg:text_listen(Mrg.PRESS, function(event) client:maximize() end)
       mrg:print('  ')
       mrg:text_listen_done()
       mrg:close()
@@ -95,17 +89,13 @@ mrg:set_ui(
         w, h = w + event.delta_x, h + event.delta_y;
         client:set_size(w, h)
         mrg:queue_draw(NULL)
-        return 0
       end)
       cr:fill()
 
       mrg:close()
     end
     host:register_events()
-    mrg:add_binding("F10", nil, "quit", function()
-      mrg:quit()
-      return 0
-    end)
+    mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
     mrg:close()
   end
 )

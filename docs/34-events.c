@@ -4,11 +4,10 @@ void make_big ();
 
 MrgEvent event_copy;
 
-int handle_event_cb (MrgEvent *event,
-                     void *data1, void *data2) {
+void handle_event_cb (MrgEvent *event,
+                      void *data1, void *data2) {
   event_copy = *event;
   mrg_queue_draw (event->mrg, NULL);
-  return 0;
 }
  
 void ui (Mrg *mrg, void *data) { 

@@ -5,10 +5,9 @@ static char *xml;
 
 float margin_right = 40;
 
-int drag_cb (MrgEvent *event, void *data1, void *data2) { 
+void drag_cb (MrgEvent *event, void *data1, void *data2) { 
  margin_right -= event->delta_x;
  mrg_queue_draw (event->mrg, NULL);
- return 0;
 }
 
 void ui (Mrg *mrg, void *data) {
