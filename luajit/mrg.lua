@@ -203,6 +203,8 @@ float mrg_pointer_y    (Mrg *mrg);
 
 float mrg_em (Mrg *mrg);
 void  mrg_set_xy (Mrg *mrg, float x, float y);
+float  mrg_x (Mrg *mrg);
+float  mrg_y (Mrg *mrg);
 
 typedef enum _MrgModifierState MrgModifierState;
   
