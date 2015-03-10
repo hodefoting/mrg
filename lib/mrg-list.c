@@ -191,4 +191,16 @@ mrg_list_insert_sorted (MrgList **list, void *data,
   mrg_list_prepend (list, data);
   mrg_list_sort (list, compare, userdata);
 }
+
+static inline void *mrg_list_last (MrgList *list)
+{
+  if (list)
+    {
+      MrgList *last;
+      for (last = list; last->next; last=last->next);
+      return last->data;
+    }
+  return NULL;
+}
+
 #endif

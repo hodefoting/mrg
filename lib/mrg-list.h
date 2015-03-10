@@ -59,6 +59,16 @@ static inline void mrg_list_prepend (MrgList **list, void *data)
   *list = new_;
 }
 
+static inline void *mrg_list_last (MrgList *list)
+{
+  if (list)
+    {
+      MrgList *last;
+      for (last = list; last->next; last=last->next);
+      return last->data;
+    }
+  return NULL;
+}
 
 static inline void mrg_list_append_full (MrgList **list, void *data,
     void (*freefunc)(void *data, void *freefunc_data),
