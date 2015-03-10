@@ -118,9 +118,10 @@ static uint32_t path_hash (cairo_path_t *path)
   return ret;
 }
 
-MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
+MrgList *_mrg_detect_all (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgList *a;
+  MrgList *ret = NULL;
 
   if (type == MRG_KEY_DOWN ||
       type == MRG_KEY_UP ||
@@ -130,7 +131,10 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
     {
       MrgItem *item = a->data;
       if (item->types & type)
-        return item;
+      {
+        mrg_list_prepend (&ret, item);
+        return ret;
+      }
     }
     return NULL;
   }
@@ -155,15 +159,28 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
         if (cairo_in_fill (cr, u, v))
         {
           cairo_new_path (cr);
-          return item;
+          mrg_list_prepend (&ret, item);
         }
         cairo_new_path (cr);
       }
       else
       {
-        return item;
+        mrg_list_prepend (&ret, item);
       }
     }
+  }
+  return ret;
+}
+
+MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
+{
+  MrgList *l = _mrg_detect_all (mrg, x, y, type);
+  if (l)
+  {
+    mrg_list_reverse (&l);
+    MrgItem *ret = l->data;
+    mrg_list_free (&l);
+    return ret;
   }
   return NULL;
 }
@@ -464,7 +481,8 @@ void mrg_resized (Mrg *mrg, int width, int height)
   
   mrg->drag_event.mrg = mrg;
   mrg->drag_event.type = MRG_KEY_DOWN;
-  mrg->drag_event.key_name = "resize-event";
+  mrg->drag_event.key_name = "resize-event"; /* gets delivered to clients as a key_down event 
+   */
 
   if (item)
   {
