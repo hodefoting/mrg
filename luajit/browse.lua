@@ -18,7 +18,14 @@
 local S = require('syscall')
 
 --local path = '/home/pippin/src/mrg/luajit'
-local path = '/tmp'
+local path = '/home/'
+
+if (#arg >= 1) then
+  path = arg[1]
+end
+
+
+
 --local path = '/home/pippin/images'
 local io  = require('io')
 local Mrg = require('mrg')
@@ -187,14 +194,13 @@ function (mrg, data)
   mrg:listen(Mrg.DRAG, function(ev)
      folder_pan = folder_pan + ev.delta_y
      mrg:queue_draw(null)
-  return 0
   end)
   end
 
-  mrg:add_binding("control-q", NULL, NULL, function (foo) mrg:quit() return 0 end)
-  mrg:add_binding("escape", NULL, NULL, function (foo)
+  mrg:add_binding("control-q", NULL, NULL, function (event) mrg:quit() return 0 end)
+  mrg:add_binding("escape", NULL, NULL, function (event)
      go_parent()
-     return 0
+     event.stop_propagate = 1
   end)
 
 end)
