@@ -62,6 +62,9 @@ void _mrg_init (Mrg *mrg, int width, int height)
         free (contents);
       }
   }
+
+  if (getenv ("MRG_RESTARTER"))
+    mrg_restarter_init (mrg);
 }
 
 #if MRG_MMM

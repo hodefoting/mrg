@@ -118,6 +118,7 @@ float mrg_ddpx          (Mrg *mrg);
 
 unsigned char *mrg_get_pixels (Mrg *mrg, int *rowstride);
 
+void mrg_restarter_add_path (Mrg *mrg, const char *path);
 /*********************************************/
 
 Mrg *mrg_new_mrg (Mrg *parent, int width, int height); // NYI
@@ -689,6 +690,7 @@ ffi.metatype('Mrg', {__index = {
   main             = function (...) C.mrg_main(...) end,
   start            = function (mrg, cssid) C.mrg_start(mrg, cssid, NULL) end,
   start_with_style = function (mrg, cssid, style) C.mrg_start_with_style(mrg, cssid, NULL, style) end,
+  restarter_add_path = function (...) C.mrg_restarter_add_path(...) end,
   close            = function (...) C.mrg_end(...) end,
   queue_draw       = function (...) C.mrg_queue_draw(...) end,
 

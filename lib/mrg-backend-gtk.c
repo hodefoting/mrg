@@ -297,6 +297,7 @@ MrgBackend mrg_backend_gtk = {
   mrg_gtk_get_position,
   mrg_gtk_set_title,
   mrg_gtk_get_title,
+  NULL
 };
 
 GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),

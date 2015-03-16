@@ -275,6 +275,8 @@ struct _MrgBackend {
   void              (*mrg_get_position) (Mrg *mrg, int *x, int *y);
   void              (*mrg_set_title)    (Mrg *mrg, const char *title);
   const char *      (*mrg_get_title)    (Mrg *mrg);
+
+  void              (*mrg_restart)      (Mrg *mrg);
 };
 
 struct _Mrg {
@@ -452,6 +454,8 @@ void _mrg_log (Mrg *mrg,
                int line_no,
                int type,
                const char *format, ...);
+
+void mrg_restarter_init (Mrg *mrg);
 
 #define MRG_STYLE_INTERNAL 10
 #define MRG_STYLE_GLOBAL   15

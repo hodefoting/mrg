@@ -383,6 +383,7 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
   return 0;
 }
 
+#if 0
 static int
 _mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, float y)
 {
@@ -395,6 +396,7 @@ _mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, 
   }
   return 0;
 }
+#endif
 
 static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgList **hitlist)
 {
@@ -633,10 +635,10 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
   if (mrg_item)
   {
     int i;
-    MrgList *l;
+    //MrgList *l;
 
     //for (l = hitlist; l; l = l->next)
-    l = hitlist;// l; l = l->next)
+    //l = hitlist;// l; l = l->next)
     {
       //MrgItem *item = l->data;
       MrgItem *item = mrg_item;

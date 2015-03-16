@@ -33,16 +33,26 @@ _mrg_file_get_contents (const char  *path,
   long  remaining;
   char *buffer;
 
-
   file = fopen (path,"rb");
 
   if (!file)
     return -1;
 
-  fseek (file, 0, SEEK_END);
-  *length = size = remaining = ftell (file);
-  rewind (file);
-  buffer = malloc(size + 8);
+  if (!strncmp (path, "/proc", 4))
+  {
+    buffer = calloc(2048, 1);
+    *contents = buffer;
+    *length = fread (buffer, 1, 2047, file);
+    buffer[*length] = 0;
+    return 0;
+  }
+  else
+  {
+    fseek (file, 0, SEEK_END);
+    *length = size = remaining = ftell (file);
+    rewind (file);
+    buffer = malloc(size + 8);
+  }
 
   if (!buffer)
     {

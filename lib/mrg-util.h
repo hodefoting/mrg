@@ -27,6 +27,7 @@ void mrg_color_set (MrgColor *color, float red, float green, float blue, float a
 int mrg_in_dirty_rect (Mrg *mrg,
                         int x, int y,
                         int width, int height);
+void mrg_restarter_add_path (Mrg *mrg, const char *path);
 
 #define EM(value)           (value*mrg_em(mrg))
 #define PERCENT_X(value)    (value*mrg_width(mrg))

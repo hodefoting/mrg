@@ -175,6 +175,11 @@ static void  mmm_atexit (void)
 static Mrg *_mrg_mmm_new (int width, int height);
 static Mrg *_mrg_mmm_client_new (int width, int height);
 
+static void mrg_mmm_restart (Mrg *mrg)
+{
+  fprintf (stderr, "mmm restart! =)\n");
+}
+
 MrgBackend mrg_backend_mmm = {
   "mmm",
   _mrg_mmm_new,
@@ -192,6 +197,7 @@ MrgBackend mrg_backend_mmm = {
   mrg_mmm_get_position,
   mrg_mmm_set_title,
   mrg_mmm_get_title,
+  mrg_mmm_restart
 };
 
 MrgBackend mrg_backend_mmm_client = {
@@ -211,6 +217,7 @@ MrgBackend mrg_backend_mmm_client = {
   mrg_mmm_get_position,
   mrg_mmm_set_title,
   mrg_mmm_get_title,
+  NULL,
 };
 
 static Mrg *_mrg_mmm_client_new (int width, int height)

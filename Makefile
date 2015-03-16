@@ -3,9 +3,9 @@ LIB_PKGMODULES=cairo mmm gtk+-3.0
 PROJECT_NAME=mrg
 PROJECT_DESCRIPTION=Microraptor GUI
 SYMBOL_PREFIX=
-CFLAGS=-Wall -Wextra -g
+CFLAGS=-Wall -Wextra -g -D_FILE_OFFSET_BITS=64
 
-LIB_LD_FLAGS=-lutil -lm
+LIB_LD_FLAGS=-lutil -lm 
 
 LIB_CFILES=$(wildcard lib/*.c)
 BIN_CFILES=$(wildcard bin/*.c)
