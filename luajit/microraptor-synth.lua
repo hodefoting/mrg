@@ -5,7 +5,7 @@ local string = require('string')
 local Mrg = require('mrg')
 local mrg = Mrg.new(512,512);
 
-local Lyd = require('lyd')
+local  Lyd = require('lyd')
 local lyd = Lyd.new()
 
 local instrument = [[

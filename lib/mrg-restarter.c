@@ -96,8 +96,8 @@ int mrg_restart_cb (Mrg *mrg, void *data)
   {
     *strstr (path_exe, " (deleted") = 0;
   }
-  fprintf (stderr, "execv: %s %s %s %s\n", path_exe, argv[0], argv[1], argv[2]);
-  setenv ("MRG_RESTARTER", "foo", 1);
+  //fprintf (stderr, "execv: %s %s %s %s\n", path_exe, argv[0], argv[1], argv[2]);
+  //setenv ("MRG_RESTARTER", "foo", 1);
   if (mrg->backend->mrg_restart)
     mrg->backend->mrg_restart (mrg);
   execv (path_exe, argv);
@@ -165,5 +165,5 @@ void mrg_restarter_init (Mrg *mrg)
     if (!strstr (path_exe, "host"))
       mrg_restarter_add_path (mrg, path_exe);
   }
-  fprintf (stderr, "[[[%s]\n", getenv ("MRG_RESTARTER"));
+  mrg_restarter_add_path (mrg, "/usr/local/lib/libmrg.so");
 }

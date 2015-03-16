@@ -23,7 +23,7 @@ should listen for changes to file system, and based on these issue commands
 
 #endif
 
-
+#define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 
 #include <string.h>

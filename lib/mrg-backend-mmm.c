@@ -15,7 +15,10 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 
+#include <stdlib.h>
 #include "mrg-config.h"
 #if MRG_MMM
 
@@ -175,9 +178,12 @@ static void  mmm_atexit (void)
 static Mrg *_mrg_mmm_new (int width, int height);
 static Mrg *_mrg_mmm_client_new (int width, int height);
 
+
 static void mrg_mmm_restart (Mrg *mrg)
 {
-  fprintf (stderr, "mmm restart! =)\n");
+  const char *mmm_buffer_path = mmm_get_path (mrg_mmm (mrg));
+  
+  setenv ("MMM_BUFFER", mmm_buffer_path, 1);
 }
 
 MrgBackend mrg_backend_mmm = {
@@ -239,6 +245,13 @@ static Mrg *_mrg_mmm_new (int width, int height)
      fullscreen = 1;
   }
 
+  if (getenv ("MMM_BUFFER"))
+  {
+    mmm = mmm_client_reopen (getenv ("MMM_BUFFER"));
+    mmm_self = mmm;
+    atexit (mmm_atexit);
+  }
+  else
   if (getenv ("MMM_PATH"))
   {
     mmm = mmm_new (width, height, 0, NULL);
@@ -309,7 +322,7 @@ static void mrg_mmm_consume_events (Mrg *mrg, int block)
   }
   if (!events)
   {
-    usleep (5000);
+    usleep (3000);
   }
   {
     int w, h;

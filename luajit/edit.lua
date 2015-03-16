@@ -21,7 +21,7 @@ if (#arg >= 1) then
 end
 
 -- automatic cursor centeric with pan handling
-local vert_pan = 0
+local vert_pan = -20
 local move_y = 0  
 
 mrg:set_ui(
@@ -36,7 +36,7 @@ function (mrg, data)
 
   cr:translate (0, vert_pan)
 
-  mrg:set_style('color:red;font-size:20')
+  mrg:set_style('color:red;font-size:23')
   local em = mrg:em()
   mrg:set_edge_left (1.0 * em)
   mrg:set_edge_right (mrg:width()-1.0 * em)
@@ -75,6 +75,7 @@ function (mrg, data)
     function ()
       io.output(path)
       io.write(document)
+      io.close()
     end)
 
   if move_y ~= 0 then
