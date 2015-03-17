@@ -72,7 +72,7 @@ static MrgRestarterEntry *entry_new (const char *path)
   return entry;
 }
 
-int mrg_restart_cb (Mrg *mrg, void *data)
+void mrg_reexec (Mrg *mrg)
 {
   char *cmdline = NULL;
   long cmdline_length;
@@ -92,15 +92,25 @@ int mrg_restart_cb (Mrg *mrg, void *data)
       argv[a] = &cmdline[i+1];
     }
   }
-  if (strstr (path_exe, " (deleted)")) /* XXX: locale dependent? */
+  if (strstr (path_exe, " (deleted)"))
+  /* XXX: this is locale dependent - storing a copy on mrg startup
+   *      would avoid this
+   */
   {
     *strstr (path_exe, " (deleted") = 0;
   }
-  //fprintf (stderr, "execv: %s %s %s %s\n", path_exe, argv[0], argv[1], argv[2]);
-  //setenv ("MRG_RESTARTER", "foo", 1);
-  if (mrg->backend->mrg_restart)
-    mrg->backend->mrg_restart (mrg);
+
+  if (mrg)
+    {
+      if (mrg && mrg->backend->mrg_restart)
+        mrg->backend->mrg_restart (mrg);
+    }
   execv (path_exe, argv);
+}
+
+static int timedout_reexec (Mrg *mrg, void *data)
+{
+  mrg_reexec (mrg);
   return 0;
 }
 
@@ -116,7 +126,7 @@ int mrg_restarter_cb (Mrg *mrg, void *data)
       entry->mtime = mtime;
       if (mrg_restart_id != 0)
         mrg_remove_idle (mrg, mrg_restart_id);
-      mrg_restart_id = mrg_add_timeout (mrg, 1000, mrg_restart_cb, NULL);        
+      mrg_restart_id = mrg_add_timeout (mrg, 1000, timedout_reexec, mrg);        
     }
   }
   return 1;
@@ -133,12 +143,47 @@ void mrg_restarter_add_path (Mrg *mrg, const char *path)
     mrg_restarter_id = mrg_add_timeout (mrg, 1000, mrg_restarter_cb, NULL);        
 }
 
+void add_requires (Mrg *mrg, const char *path)
+{
+  char *contents = NULL;
+  long length;
+  char script_path[1024];
+  realpath (path, script_path);
+  _mrg_file_get_contents (script_path, &contents, &length);
+
+  if (contents)
+  {
+    char *t = contents;
+    //fprintf (stderr, "[monitoring: %s]\n", script_path);
+    mrg_restarter_add_path (mrg, script_path);
+    for (t = strstr (t, "require"); t; t = strstr (t, "require"))
+      {
+         char tmp[512]="";
+         t += strlen ("require");
+         strncpy (tmp, t, 256);
+         *strchr (tmp, '\n') = 0;
+         char *t = tmp;
+         while (*t == '(' || *t == '\'' || *t == '"')
+           t++;
+         if (strchr (t, '"'))
+           *strchr (t, '"') = 0;
+         if (strchr (t, '\''))
+           *strchr (t, '\'') = 0;
+         add_requires (mrg, t);
+         strcat (t, ".lua");
+         add_requires (mrg, t);
+      }
+    free (contents);
+  }
+}
+
 void mrg_restarter_init (Mrg *mrg)
 {
   char *cmdline = NULL;
   long cmdline_length;
   char path_exe[512]="";
-  _mrg_file_get_contents ("/proc/self/cmdline", &cmdline, &cmdline_length);
+  _mrg_file_get_contents ("/proc/self/cmdline", &cmdline,
+                                                &cmdline_length);
   readlink ("/proc/self/exe", path_exe, 512);
 
   char *argv[32]={0,0,0,0,0,0,0};
@@ -157,8 +202,8 @@ void mrg_restarter_init (Mrg *mrg)
   {
     char script_path[1024];
     realpath (argv[1], script_path);
-    mrg_restarter_add_path (mrg, script_path);
-    /* TODO: add recursive travarsal of require's */
+
+    add_requires (mrg, script_path);
   }
   else
   {
