@@ -367,13 +367,14 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
   }
 
   transformed_event.state = mrg->modifier_state;
+  transformed_event.type = type;
 
   for (i = item->cb_count-1; i >= 0; i--)
   {
-    if (item->cb[i].types & (type))
+    if (item->cb[i].types & type)
     {
       item->cb[i].cb (&transformed_event, item->cb[i].data1, item->cb[i].data2);
-      event->stop_propagate = transformed_event.stop_propagate;
+      event->stop_propagate = transformed_event.stop_propagate; /* copy back the response */
       if (event->stop_propagate)
         return event->stop_propagate;
     }
@@ -382,17 +383,25 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
 }
 
 static int
-_mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, float y)
+_mrg_emit_cb (Mrg *mrg, MrgList *items, MrgItem *grab_item, MrgEvent *event, MrgType type, float x, float y)
 {
   MrgList *l;
   event->stop_propagate = 0;
   for (l = items; l; l = l->next)
   {
-    _mrg_emit_cb_item (mrg, l->data, event, type, x, y);
-    if (event->stop_propagate)
+    MrgType type2 = type;
+    if (l->data == grab_item)
     {
-      return event->stop_propagate;
+      if (type2 == MRG_MOTION)
+        type2 = MRG_DRAG_MOTION;
+      else if (type2 == MRG_PRESS)
+        type2 = MRG_DRAG_PRESS;
+      else if (type2 == MRG_RELEASE)
+        type2 = MRG_DRAG_RELEASE;
     }
+    _mrg_emit_cb_item (mrg, l->data, event, type2, x, y);
+    if (event->stop_propagate)
+      return event->stop_propagate;
   }
   return 0;
 }
@@ -484,6 +493,9 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
       break;
   }
 
+  /* one of the drag event types is set on the item, create a closure for
+   * event delivery.
+   */
   if (mrg_item && (mrg_item->types & MRG_DRAG))
   {
     mrg->is_press_grabbed = 1;
@@ -498,7 +510,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
 
   if (mrg_item)
   {
-    int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_PRESS:MRG_PRESS, x, y);
+    int ret = _mrg_emit_cb (mrg, hitlist, mrg->grab, &mrg->drag_event, MRG_PRESS, x, y);
     mrg_list_free (&hitlist);
     return ret;
   }
@@ -589,7 +601,6 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
         }
       }
     }
-
     was_grabbed = 1;
   }
   else
@@ -598,7 +609,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   }
   if (mrg_item)
   {
-    int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
+    int ret = _mrg_emit_cb (mrg, hitlist, mrg->grab, &mrg->drag_event, MRG_RELEASE, x, y);
     mrg_list_free (&hitlist);
     return ret;
   }
@@ -610,7 +621,6 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   }
   return 0;
 }
-
 
 /*  for multi-touch, need a list of active grabs - thus a grab corresponds to
  *  a device id. even during drag-grabs events propagate; to stop that stop
@@ -631,8 +641,8 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
 
 
   mrg->drag_event.device_no = mrg->pointer_down[1]?1:
-                         mrg->pointer_down[2]?2:
-                         mrg->pointer_down[3]?3:0;
+                              mrg->pointer_down[2]?2:
+                              mrg->pointer_down[3]?3:0;
 
   mrg->pointer_x = x;
   mrg->pointer_y = y;
@@ -640,12 +650,15 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
   if (mrg->is_press_grabbed)
   {
     mrg->drag_event.type = MRG_DRAG_MOTION;
+    _mrg_update_item (mrg, x, y, MRG_MOTION, &hitlist);
     mrg_item = mrg->grab;
+    mrg_list_prepend (&hitlist, mrg->grab);
   }
   else
   {
     mrg_item = _mrg_update_item (mrg, x, y, MRG_MOTION | MRG_DRAG_MOTION, &hitlist);
   }
+
 
   /* XXX: too brutal; should use enter/leave events */
   if (getenv ("MRG_FAST") == NULL)
@@ -655,32 +668,15 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no)
   mrg->drag_event.stop_propagate = 0;
   if (mrg_item)
   {
-    int i;
-    //MrgList *l;
 
-    //for (l = hitlist; l; l = l->next)
-    //l = hitlist;// l; l = l->next)
-    {
-      //MrgItem *item = l->data;
-      MrgItem *item = mrg_item;
+    _mrg_emit_cb (mrg, hitlist, mrg->grab, &mrg->drag_event, MRG_MOTION, x, y);
+    mrg_list_free (&hitlist);
 
-      for (i = 0; i < item->cb_count; i++)
-      {
-        if (item->cb[i].types & (MRG_DRAG_MOTION | MRG_MOTION))
-        {
-          if (  !(item->cb[i].types & MRG_DRAG_MOTION) ||
-                  mrg->is_press_grabbed)
-          _mrg_emit_cb_item (mrg, item, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_MOTION:MRG_MOTION, x, y);
-          if (mrg->drag_event.stop_propagate)
-            goto done;
-        }
-      }
-    }
-    done:
     mrg->drag_event.delta_x = x - mrg->drag_event.prev_x;
     mrg->drag_event.delta_y = y - mrg->drag_event.prev_y;
     mrg->drag_event.prev_x = x;
     mrg->drag_event.prev_y = y;
+
     return mrg->drag_event.stop_propagate;
   }
   return 0;
