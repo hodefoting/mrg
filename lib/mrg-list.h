@@ -195,13 +195,12 @@ mrg_list_insert_sorted (MrgList **list, void *data,
 static inline void
 mrg_list_reverse (MrgList **list)
 {
-  /* XXX: optimize */
-  MrgList *new = NULL;
+  MrgList *new_ = NULL;
   MrgList *l;
-  for (l = *list; l->next; l=l->next);
-    mrg_list_prepend (&new, l->data);
+  for (l = *list; l; l=l->next)
+    mrg_list_prepend (&new_, l->data);
   mrg_list_free (list);
-  *list = new;
+  *list = new_;
 }
 
 #endif
