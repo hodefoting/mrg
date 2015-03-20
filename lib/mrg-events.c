@@ -71,7 +71,6 @@ static void restore_path (cairo_t *cr, cairo_path_t *path)
   }
 }
 
-
 /* using bigger primes would be a good idea, this falls apart due to rounding
  * when zoomed in close
  */
@@ -567,7 +566,30 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   {
     mrg->drag_event.type = MRG_DRAG_RELEASE;
     mrg->is_press_grabbed = 0;
+    _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
     mrg_item = mrg->grab;
+
+    if (!hitlist)
+    {
+      mrg_list_append (&hitlist, mrg->grab);
+    } else
+    {
+      if (hitlist->data != mrg->grab)
+      {
+        int found = 0;
+        MrgList *l;
+        for (l = hitlist; l; l=l->next)
+        {
+          if (l->data == mrg->grab)
+            found = 1;
+        }
+        if (!found)
+        {
+          mrg_list_prepend (&hitlist, mrg->grab);
+        }
+      }
+    }
+
     was_grabbed = 1;
   }
   else
@@ -576,9 +598,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   }
   if (mrg_item)
   {
-    mrg->drag_event.stop_propagate = 0;
-    //int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
-    int ret = _mrg_emit_cb_item (mrg, mrg_item, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
+    int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
     mrg_list_free (&hitlist);
     return ret;
   }
