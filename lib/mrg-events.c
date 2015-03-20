@@ -367,15 +367,14 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
     transformed_event.delta_y = ty;
   }
 
-  event = &transformed_event;
-  event->state = mrg->modifier_state;
+  transformed_event.state = mrg->modifier_state;
 
-  event->stop_propagate = 0;
   for (i = item->cb_count-1; i >= 0; i--)
   {
     if (item->cb[i].types & (type))
     {
-      item->cb[i].cb (event, item->cb[i].data1, item->cb[i].data2);
+      item->cb[i].cb (&transformed_event, item->cb[i].data1, item->cb[i].data2);
+      event->stop_propagate = transformed_event.stop_propagate;
       if (event->stop_propagate)
         return event->stop_propagate;
     }
@@ -383,31 +382,31 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
   return 0;
 }
 
-#if 0
 static int
 _mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, float y)
 {
   MrgList *l;
+  event->stop_propagate = 0;
   for (l = items; l; l = l->next)
   {
     _mrg_emit_cb_item (mrg, l->data, event, type, x, y);
     if (event->stop_propagate)
+    {
       return event->stop_propagate;
+    }
   }
   return 0;
 }
-#endif
 
 static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgList **hitlist)
 {
-  MrgItem *current = NULL;//_mrg_detect (mrg, x, y, MRG_ANY);
+  MrgItem *current = NULL;
 
   MrgList *l = _mrg_detect_all (mrg, x, y, type);
   if (l)
   {
     mrg_list_reverse (&l);
     current = l->data;
-    //mrg_list_free (&l);
   }
   if (hitlist)
     *hitlist = l;
@@ -467,8 +466,9 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
 
   if (mrg->pointer_down[device_no] == 1)
   {
-    fprintf (stderr, "device %i already down\n", device_no);
+    fprintf (stderr, "mrg thought device %i was already down\n", device_no);
   }
+  /* doing just one of these two should be enough? */
   mrg->pointer_down[device_no] = 1;
   switch (device_no)
   {
@@ -499,8 +499,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no)
 
   if (mrg_item)
   {
-    //int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_PRESS:MRG_PRESS, x, y);
-    int ret = _mrg_emit_cb_item (mrg, mrg_item, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_PRESS:MRG_PRESS, x, y);
+    int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, mrg->is_press_grabbed?MRG_DRAG_PRESS:MRG_PRESS, x, y);
     mrg_list_free (&hitlist);
     return ret;
   }
@@ -519,6 +518,7 @@ void mrg_resized (Mrg *mrg, int width, int height)
 
   if (item)
   {
+    mrg->drag_event.stop_propagate = 0;
     _mrg_emit_cb_item (mrg, item, &mrg->drag_event, MRG_KEY_DOWN, 0, 0);
   }
 }
@@ -576,6 +576,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no)
   }
   if (mrg_item)
   {
+    mrg->drag_event.stop_propagate = 0;
     //int ret = _mrg_emit_cb (mrg, hitlist, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
     int ret = _mrg_emit_cb_item (mrg, mrg_item, &mrg->drag_event, was_grabbed?MRG_DRAG_RELEASE:MRG_RELEASE, x, y);
     mrg_list_free (&hitlist);
@@ -744,10 +745,6 @@ void _mrg_debug_overlays (Mrg *mrg)
       cairo_matrix_invert (&matrix);
       cairo_set_matrix (cr, &matrix);
       restore_path (cr, item->path);
-/*
-      cairo_rectangle (cr, item->x0, item->y0,
-                       (item->x1-item->x0),
-                       (item->y1-item->y0));*/
       cairo_stroke (cr);
     }
   }
