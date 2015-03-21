@@ -26,9 +26,8 @@
  * how to determine that something is an mmm app?
  */
 
-#ifndef _DEFAULT_SOURCE
 #define _DEFAULT_SOURCE
-#endif
+#define _BSD_SOURCE
 
 #include <string.h>
 #include <stdio.h>
@@ -395,13 +394,13 @@ static int acoustics_idle_check (Mrg *mrg, void *data)
     static int prev_ticks = -1;
     int ticks, delta, i;
 
-    if (prev_ticks==-1) prev_ticks = _mrg_ticks ();
-    ticks = _mrg_ticks ();
+    if (prev_ticks==-1) prev_ticks = mrg_ms (mrg);
+    ticks = mrg_ms (mrg);
     delta = ticks - prev_ticks;
     prev_ticks = ticks;
 
     // XXX: measure number of ticks; then write
-    int bytes = delta * 8000.0 / 1000000.0;
+    int bytes = delta * 8000.0 / 1000.0;
     uint16_t target_buf[MMM_PCM_BUFFER_SIZE]={0,};
     uint8_t temp2[MMM_PCM_BUFFER_SIZE];
 

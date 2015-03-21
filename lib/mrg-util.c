@@ -16,35 +16,9 @@
  */
 
 
-#include <sys/time.h>
 #include <string.h>
 #include "mrg.h"
 
-static struct timeval start_time;
-
-#define usecs(time)    ((time.tv_sec - start_time.tv_sec) * 1000000 + time.     tv_usec)
-
-static void
-init_ticks (void)
-{
-  static int done = 0;
-
-  if (done)
-    return;
-  done = 1;
-  gettimeofday (&start_time, NULL);
-}
-
-long
-_mrg_ticks (void)
-{
-  struct timeval measure_time;
-  init_ticks ();
-  gettimeofday (&measure_time, NULL);
-  return usecs (measure_time) - usecs (start_time);
-}
-
-#undef usecs
 
 void mrg_quit_cb (MrgEvent *event, void *data1, void *data2)
 {

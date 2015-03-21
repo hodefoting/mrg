@@ -44,7 +44,6 @@ int terminal_main   (int argc, char **argv);
 int browser_main    (int argc, char **argv);
 int session_main    (int argc, char **argv);
 int acoustics_main  (int argc, char **argv);
-//int mcp_main        (int argc, char **argv);
 
 AppMap mains[]={
 
@@ -64,11 +63,7 @@ AppMap mains[]={
   {"terminal", "[command]",
     terminal_main,   APP_FLAG_DEFAULTS,
     "Terminal emulator, if no command is provided \"sh\" is used."},
-/*
-  {"mcp", "",
-    mcp_main,       APP_FLAG_DEFAULTS,
-    "launch master control program, monitors for filsystem changes and re-builds/re-launches clients"},
-*/
+  
   {"session", "",
     session_main,   APP_FLAG_DEFAULTS,
     "launch a session (runs hosts in a loop)"},

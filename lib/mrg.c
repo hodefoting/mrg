@@ -17,6 +17,7 @@
 
 #include "mrg-config.h"
 #include "mrg-internal.h"
+#include <sys/time.h>
 
 void mrg_quit (Mrg *mrg)
 {
@@ -24,8 +25,11 @@ void mrg_quit (Mrg *mrg)
   mrg_queue_draw (mrg, NULL); /* to force some backends into action */
 }
 
+static void init_ticks (void);
+
 void _mrg_init (Mrg *mrg, int width, int height)
 {
+  init_ticks ();
   mrg->state = &mrg->states[0];
   /* XXX: is there a better place to set the default text color to black? */
   mrg->state->style.color.red = 
@@ -47,6 +51,11 @@ void _mrg_init (Mrg *mrg, int width, int height)
   mrg_set_mrg_get_contents (mrg, mrg_get_contents_default, NULL);
   mrg->style_global = mrg_string_new ("");
 
+  mrg->tap_delay_min  = 120;
+  mrg->tap_delay_max  = 800;
+  mrg->tap_delay_hold = 800;
+  mrg->tap_hysteresis = 8;  /* XXX: should be ppi dependent */
+
   {
     const char *global_css_uri = "mrg:theme.css";
 
@@ -66,6 +75,34 @@ void _mrg_init (Mrg *mrg, int width, int height)
   if (getenv ("MRG_RESTARTER"))
     mrg_restarter_init (mrg);
 }
+
+
+static struct timeval start_time;
+
+#define usecs(time)    ((time.tv_sec - start_time.tv_sec) * 1000000 + time.     tv_usec)
+
+static void
+init_ticks (void)
+{
+  static int done = 0;
+
+  if (done)
+    return;
+  done = 1;
+  gettimeofday (&start_time, NULL);
+}
+static inline long
+_mrg_ticks (void)
+{
+  struct timeval measure_time;
+  gettimeofday (&measure_time, NULL);
+  return usecs (measure_time) - usecs (start_time);
+}
+long mrg_ms (Mrg *mrg)
+{
+  return _mrg_ticks () / 1000;
+}
+
 
 #if MRG_MMM
 extern MrgBackend mrg_backend_mmm;
@@ -192,7 +229,7 @@ void mrg_set_size (Mrg *mrg, int width, int height)
 {
   mrg->width = width;
   mrg->height = height;
-  mrg_resized (mrg, width, height);
+  mrg_resized (mrg, width, height, 0);
   mrg_queue_draw (mrg, NULL);
 }
 
@@ -722,17 +759,17 @@ void  mrg_ui_update (Mrg *mrg)
 
 static void mrg_mrg_press (MrgEvent *event, void *mrg, void *data2)
 {
-  mrg_pointer_press (mrg, event->x, event->y, event->device_no);
+  mrg_pointer_press (mrg, event->x, event->y, event->device_no, 0);
 }
 
 static void mrg_mrg_motion (MrgEvent *event, void *mrg, void *data2)
 {
-  mrg_pointer_motion (mrg, event->x, event->y, event->device_no);
+  mrg_pointer_motion (mrg, event->x, event->y, event->device_no, 0);
 }
 
 static void mrg_mrg_release (MrgEvent *event, void *mrg, void *data2)
 {
-  mrg_pointer_release (mrg, event->x, event->y, event->device_no);
+  mrg_pointer_release (mrg, event->x, event->y, event->device_no, 0);
 }
 
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
@@ -970,3 +1007,6 @@ int mrg_in_dirty_rect (Mrg *mrg,
      return 0;
    return 1;
 }
+
+
+#undef usecs

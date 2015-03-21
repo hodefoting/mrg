@@ -145,12 +145,12 @@ int  _mrg_has_quit       (Mrg *mrg);
 void _mrg_init           (Mrg *mrg, int width, int height);
 void _mrg_queue_draw     (Mrg *mrg, MrgRectangle *rectangle);
 
-int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no);
-int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no);
-int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no);
+int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no, long time);
+int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, long time);
+int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, long time);
 
-int mrg_key_press (Mrg *mrg, unsigned int keyval, const char *string);
-void mrg_resized (Mrg *mrg, int width, int height);
+int mrg_key_press (Mrg *mrg, unsigned int keyval, const char *string, long time);
+void mrg_resized (Mrg *mrg, int width, int height, long time);
 
 void _mrg_item_ref (MrgItem *mrg);
 void _mrg_item_unref (MrgItem *mrg);
@@ -185,7 +185,6 @@ MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type);
 float _mrg_dynamic_edge_right (Mrg *mrg);
 float _mrg_dynamic_edge_left (Mrg *mrg);
 
-long _mrg_ticks (void);
 char *_mrg_stylesheet_collate_style (Mrg *mrg);
 void _mrg_set_style_properties (Mrg *mrg, const char *style_properties);
 
@@ -380,6 +379,13 @@ struct _Mrg {
   MrgList     *idles;
   int          idle_id;
 
+  long         tap_delay_min;
+  long         tap_delay_max;
+  long         tap_delay_hold;
+
+  int          tap_hysteresis;
+
+  long         drag_start;
 };
 
 int _mrg_file_get_contents (const char  *path,
