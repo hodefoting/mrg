@@ -40,6 +40,11 @@ mrg:set_ui(function()
       mrg:queue_draw(NULL)
       event.stop_propagate = v.stopPropagate
     end)
+    if k == 2 then
+      mrg:listen(Mrg.MOTION, function(event)
+        event.stop_propagate = v.stopPropagate
+      end)
+    end
     end
     cr:fill ()
     mrg:print ('x=' .. v.x .. ' y=' .. v.y .. ' rad=' .. v.rad .. '\n')

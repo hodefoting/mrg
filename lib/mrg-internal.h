@@ -296,10 +296,15 @@ struct _Mrg {
 
   MrgList       *items; 
   MrgItem       *prev;
-  MrgItem       *grab;
+
+  MrgList       *grabs;
+  //MrgItem       *grab;
+
   int            frozen;
   int            fullscreen;
-  int            is_press_grabbed;
+
+  //int          is_press_grabbed;
+
   int            quit;
   float          pointer_x;
   float          pointer_y;
