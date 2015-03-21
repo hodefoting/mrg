@@ -198,6 +198,8 @@ void mrg_listen_full (Mrg     *mrg,
                       void   (*finalize)(void *listen_data, void *listen_data2,  void *finalize_data),
                       void    *finalize_data);
 
+long mrg_ms (Mrg *mrg);
+
 /* these deal with pointer_no 0 only
  */
 void  mrg_warp_pointer (Mrg *mrg, float x, float y);
@@ -696,7 +698,7 @@ ffi.metatype('Mrg', {__index = {
   restarter_add_path = function (...) C.mrg_restarter_add_path(...) end,
   close            = function (...) C.mrg_end(...) end,
   queue_draw       = function (...) C.mrg_queue_draw(...) end,
-
+  ms               = function (mrg) C.mrg_ms(mrg) end,
   add_binding = function(mrg,key,action,label,cb,db_data)
     local notify_fun, cb_fun;
     local notify_cb = function (data1, data2,finalize_data)
