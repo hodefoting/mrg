@@ -123,8 +123,7 @@ static void mrg_mmm_main (Mrg *mrg,
     if (_mrg_is_dirty (mrg))
       mrg_ui_update (mrg);
 
-    if (mrg->idles)
-      _mrg_idle_iteration (mrg);
+    _mrg_idle_iteration (mrg);
 
     mrg_mmm_consume_events (mrg, !mrg->idles);
   }
