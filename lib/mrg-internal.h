@@ -248,7 +248,7 @@ struct _MrgHtml
   int   attributes;
 };
 
-#define MRG_MAX_DEVICES 8
+#define MRG_MAX_DEVICES 16
 
 typedef struct _MrgBackend MrgBackend;
 struct _MrgBackend {
@@ -333,7 +333,7 @@ struct _Mrg {
   void          *backend_data;
   int            do_clip;
 
-  MrgEvent drag_event;
+  MrgEvent drag_event[MRG_MAX_DEVICES];
 
   int (*mrg_get_contents) (const char  *referer,
                            const char  *input_uri,
