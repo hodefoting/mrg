@@ -11,10 +11,15 @@
         sets up a callbackfunction of type <tt>int cb (MrgEvent *event, void
           *data1, void *data2)</tt>, if you need to free data when the
         callback is destroyed (Which it will be next time the ui is painted;
-        and it isn't an active callback (due to drag)). A finalization
-        procedure with its own user_data can be passed using
+        and it isn't an active callback (due to drag)). A destroy notify for
+        the callback with userdata, can be passed by using by
         <tt>mrg_listen_full</tt>.
         </p>
+
+      <p>by registering for MRG_DRAG, which is a union of the types
+      MRG_DRAG_PRESS, MRG_DRAG_MOTION and MRG_DRAG_RELEASE; a closure handling
+      the drag gesture event cycle will be registered.
+      </p>
       
       <div class='navbar_wrap'>
         <div class='navbar'>

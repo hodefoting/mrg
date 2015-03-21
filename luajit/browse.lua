@@ -19,19 +19,62 @@ local S = require('syscall')
 
 --local path = '/home/pippin/src/mrg/luajit'
 local path = '/home/'
+local folder_pan = 0;
+
+local os = require('os')
+
+function serialize (o)
+  if type(o) == "number" then
+    io.write(o)
+  elseif type(o) == "string" then
+    io.write(string.format("%q", o))
+  elseif type(o) == "table" then
+    io.write("{\n")
+    for k,v in pairs(o) do
+      --io.write("  ", k, " = ")
+      io.write ("  [")
+      serialize(k)
+      io.wite ("] = ")
+      ---
+
+      serialize(v)
+      io.write(",\n")
+    end
+    io.write("}\n")
+  else
+    error("cannot serialize a " .. type(o))
+  end
+end
+
+function store_state()
+  S.setenv("BROWSER_PATH", path)
+  print ("set ".. path)
+  S.setenv("FOLDER_PAN", ''.. folder_pan)
+end
+
+function restore_state()
+  if (os.getenv("BROWSER_PATH")) then
+  path = os.getenv("BROWSER_PATH")
+    print ("got it! " .. path)
+  end
+  if (os.getenv("FOLDER_PAN")) then
+  folder_pan = tonumber (os.getenv("FOLDER_PAN"))
+  end
+  print(path)
+end
 
 if (#arg >= 1) then
   path = arg[1]
 end
 
-
+restore_state()
+print 'foo'
 
 --local path = '/home/pippin/images'
 local io  = require('io')
 local Mrg = require('mrg')
 local mrg = Mrg.new(512,384);
 
-local folder_pan = 0;
 
 
 local sting = require('string')
@@ -69,6 +112,7 @@ end
 function set_path(new_path)
   path = new_path
   mrg:queue_draw(null)
+  store_state()
 end
 
 function path_bar(mrg)
@@ -177,8 +221,14 @@ function (mrg, data)
     mrg:set_edge_top(y)
 
     if string.find(path, ".png") or 
-       string.find(path, ".jpg") or
        string.find(path, ".PNG") or
+       string.find(path, ".jpg") or
+       string.find(path, ".gif") or
+       string.find(path, ".hdr") or
+       string.find(path, ".HDR") or
+       string.find(path, ".GIF") or
+       string.find(path, ".jpeg") or
+       string.find(path, ".JPEG") or
        string.find(path, ".JPG") 
       then
       draw_image(mrg,x, y)
@@ -203,8 +253,11 @@ function (mrg, data)
      event.stop_propagate = 1
   end)
 
+
 end)
 
 mrg:css_set(css)
+
+restore_state()
 mrg:main()
 

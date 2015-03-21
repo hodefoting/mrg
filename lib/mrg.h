@@ -75,9 +75,15 @@ typedef struct _MrgImage MrgImage;
 /* force a ui render, this is included for use with the headless backend.
  */
 void  mrg_ui_update (Mrg *mrg);
+
 MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
                            int *width,
                            int *height);
+
+void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
+
+void mrg_set_image_cache_mb (Mrg *mrg, int new_max_size);
+int mrg_get_image_cache_mb (Mrg *mrg);
 
 /* built in http / local file URI fetcher, this is the callback interface
  * that needs to be implemented for mrg_xml_render if external resources (css

@@ -16,7 +16,8 @@
  */
 
 #include "mrg-internal.h"
-#include "nanojpeg.h"
+#define  STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 struct _MrgImage
 {
@@ -24,15 +25,51 @@ struct _MrgImage
   cairo_surface_t *surface;
 };
 
+static int compute_size (int w, int h)
+{
+  return w * h * 4 + sizeof (MrgImage) + 1024;
+}
+
+static long image_cache_size = 0;
+static int image_cache_max_size_mb = 128; 
+
 static MrgList *image_cache = NULL;
 
-static void free_image (Mrg *mrg, void *data)
+static void free_image (void *data, void *foo)
 {
   MrgImage *image = data;
   free (image->path);
   cairo_surface_destroy (image->surface);
   free (data);
 }
+
+static void trim_cache (void)
+{
+  if (image_cache_size > image_cache_max_size_mb * 1024 * 1024)
+  {
+    MrgImage *image;
+    int item = mrg_list_length (image_cache);
+    int w, h;
+    item = random() % item;
+    image = mrg_list_nth (image_cache, item)->data;
+    w = cairo_image_surface_get_width (image->surface);
+    h = cairo_image_surface_get_height (image->surface);
+    mrg_list_remove (&image_cache, image);
+    image_cache_size -= compute_size (w, h);
+  }
+}
+
+void mrg_set_image_cache_mb (Mrg *mrg, int new_max_size)
+{
+  image_cache_max_size_mb = new_max_size;
+  trim_cache ();
+}
+
+int mrg_get_image_cache_mb (Mrg *mrg)
+{
+  return image_cache_max_size_mb;
+}
+
 
 MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
                            int *width,
@@ -54,60 +91,67 @@ MrgImage *mrg_query_image (Mrg *mrg, const char *path,
       return image;
     }
   }
+  trim_cache ();
   {
     if (strstr (path, "png") || strstr (path, "PNG"))
     {
+      /* use cairo and thus the full libpng to try decoding png images 
+       */
       cairo_surface_t *surface = cairo_image_surface_create_from_png (path);
       if (surface)
       {
+        int w = cairo_image_surface_get_width (surface);
+        int h = cairo_image_surface_get_height (surface);
         MrgImage *image = malloc (sizeof (MrgImage));
         image->path = strdup (path);
         image->surface = surface;
         mrg_list_prepend_full (&image_cache, image, (void*)free_image, NULL);
+
+        image_cache_size += compute_size (w, h);
+
         return mrg_query_image (mrg, path, width, height);
       }
     }
-    else /* probably jpg */
+    else /* some other type of file, try with stb image */
     {
       char *contents = NULL;
       long length;
       _mrg_file_get_contents (path, &contents, &length);
       if (contents)
       {
-        njInit();
-        fprintf (stderr, "foo!\n");
-        if (njDecode (contents, length) == NJ_OK)
-        {
-          int w = njGetWidth();
-          int h = njGetHeight();
+          int w, h, comp;
+          unsigned char *data;
+
+          data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
+          if (data)
+          {
           MrgImage *image = malloc (sizeof (MrgImage));
-          fprintf (stderr, "%ix%i\n", njGetWidth(), njGetHeight());
           image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
           image->path = strdup (path);
           {
             int i;
-            char *src = (void*)njGetImage ();
+            char *src = (void*) data;
             char *dst = (void*)cairo_image_surface_get_data (image->surface);
-            if (njIsColor())
-              for (i = 0; i < w * h; i++)
-              {
-                dst[i*4 + 0] = src[i*3 + 2];
-                dst[i*4 + 1] = src[i*3 + 1];
-                dst[i*4 + 2] = src[i*3 + 0];
-              }
-            else
-              for (i = 0; i < w * h; i++)
-                dst[i*4 + 0] = dst[i*4+1] = dst[i*4+2] = src[i];
-
+            /* XXX: this depends on endianness of platform */
+            for (i = 0; i < w * h; i++)
+            {
+              dst[i*4 + 0] = src[i*4 + 2];
+              dst[i*4 + 1] = src[i*4 + 1];
+              dst[i*4 + 2] = src[i*4 + 0];
+              dst[i*4 + 3] = src[i*4 + 3];
+            }
           }
-          //memcpy (cairo_image_surface_get_data(image->surface), njGetImage(), njGetImageSize());
           mrg_list_prepend_full (&image_cache, image,
                                  (void*)free_image, NULL);
-          njDone();
+          free (data);
           free (contents);
+
+          image_cache_size +=
+              compute_size (w, h);
+
+
           return mrg_query_image (mrg, path, width, height);
         }
-        njDone();
         free (contents);
       }
     }

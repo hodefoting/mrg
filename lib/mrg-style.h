@@ -323,7 +323,4 @@ void  mrg_set_line_height (Mrg *mrg, float line_height);
 float  mrg_line_height (Mrg *mrg);
 
 
-/* XXX: doesnt feel like it belongs here */
-void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
-
 #endif
