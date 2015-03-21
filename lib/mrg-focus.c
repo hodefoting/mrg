@@ -305,13 +305,12 @@ static void cmd_focus_next (MrgEvent *event, void *data, void *data2)
   return;
 }
 
-
 static void cmd_select (MrgEvent *event, void *data, void *data2)
 {
   Mrg *mrg = event->mrg;
 
-  mrg_pointer_press   (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0);
-  mrg_pointer_release (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0);
+  mrg_pointer_press   (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0, 0);
+  mrg_pointer_release (mrg, mrg_pointer_x (mrg), mrg_pointer_y (mrg), 0, 0);
 }
 
 void mrg_focus_bindings (Mrg *mrg)

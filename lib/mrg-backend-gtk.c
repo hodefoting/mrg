@@ -80,7 +80,8 @@ static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer
   MrgGtk *mrg_gtk = mrg->backend_data;
   return mrg_pointer_press (mrg, event->button.x + mrg_gtk->xoffset,
 				 event->button.y + mrg_gtk->yoffset,
-				 event->button.button);
+				 event->button.button,
+         event->button.time);
 }
 
 static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
@@ -89,7 +90,8 @@ static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpoint
   MrgGtk *mrg_gtk = mrg->backend_data;
   return mrg_pointer_release (mrg, event->button.x + mrg_gtk->xoffset,
                                    event->button.y + mrg_gtk->yoffset,
-                                   event->button.button);
+                                   event->button.button,
+                                   event->button.time);
 }
 
 static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
@@ -102,7 +104,8 @@ static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointe
       (event->motion.state&GDK_BUTTON2_MASK)?1:
       (event->motion.state&GDK_BUTTON3_MASK)?2:
       (event->motion.state&GDK_BUTTON4_MASK)?3:
-      (event->motion.state&GDK_BUTTON5_MASK)?4:0);
+      (event->motion.state&GDK_BUTTON5_MASK)?4:0,
+      event->motion.time);
 }
 
 static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   mrg)
@@ -173,7 +176,8 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
   if (!name)
     name = event->key.string;
 
-  return mrg_key_press (mrg, gdk_keyval_to_unicode (event->key.keyval), name);
+  return mrg_key_press (mrg, gdk_keyval_to_unicode (event->key.keyval), name,
+                        event->key.time);
 }
 
 static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)

@@ -29,6 +29,9 @@ int mrg_in_dirty_rect (Mrg *mrg,
                         int width, int height);
 void mrg_restarter_add_path (Mrg *mrg, const char *path);
 
+/* returns ms since start */
+long mrg_ms (Mrg *mrg);
+
 #define EM(value)           (value*mrg_em(mrg))
 #define PERCENT_X(value)    (value*mrg_width(mrg))
 #define PERCENT_Y(value)    (value*mrg_height(mrg))

@@ -303,20 +303,20 @@ static void mrg_mmm_consume_events (Mrg *mrg, int block)
     sscanf (event, "%s %f %f", event_type, &x, &y);
     if (!strcmp (event_type, "mouse-press"))
     {
-      mrg_pointer_press (mrg, x, y, 1);
+      mrg_pointer_press (mrg, x, y, 1, 0);
     }
     else if (!strcmp (event_type, "mouse-drag") ||
              !strcmp (event_type, "mouse-motion"))
     {
-      mrg_pointer_motion (mrg, x, y, 1);
+      mrg_pointer_motion (mrg, x, y, 1, 0);
     }
     else if (!strcmp (event_type, "mouse-release"))
     {
-      mrg_pointer_release (mrg, x, y, 1);
+      mrg_pointer_release (mrg, x, y, 1, 0);
     }
     else
     {
-      mrg_key_press (mrg, 0, event);
+      mrg_key_press (mrg, 0, event, 0);
     }
     events ++;
   }

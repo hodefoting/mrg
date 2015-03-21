@@ -354,24 +354,24 @@ static int mrg_nct_consume_events (Mrg *mrg)
 
       if (!strcmp (event, "mouse-press"))
       {
-        mrg_pointer_press (mrg, x, y, 0);
+        mrg_pointer_press (mrg, x, y, 0, 0);
         was_down = 1;
       } else if (!strcmp (event, "mouse-release"))
       {
-        mrg_pointer_release (mrg, x, y, 0);
+        mrg_pointer_release (mrg, x, y, 0, 0);
       } else if (!strcmp (event, "mouse-motion"))
       {
         nct_set_cursor_pos (backend->term, ix, iy);
         nct_flush (backend->term);
         if (was_down)
         {
-          mrg_pointer_release (mrg, x, y, 0);
+          mrg_pointer_release (mrg, x, y, 0, 0);
           was_down = 0;
         }
-        mrg_pointer_motion (mrg, x, y, 0);
+        mrg_pointer_motion (mrg, x, y, 0, 0);
       } else if (!strcmp (event, "mouse-drag"))
       {
-        mrg_pointer_motion (mrg, x, y, 0);
+        mrg_pointer_motion (mrg, x, y, 0, 0);
       } else if (!strcmp (event, "size-changed"))
       {
         int width = nct_sys_terminal_width ();
@@ -391,15 +391,15 @@ static int mrg_nct_consume_events (Mrg *mrg)
       else
       {
         if (!strcmp (event, "esc"))
-          mrg_key_press (mrg, 0, "escape");
+          mrg_key_press (mrg, 0, "escape", 0);
         else if (!strcmp (event, "space"))
-          mrg_key_press (mrg, 0, "space");
+          mrg_key_press (mrg, 0, "space", 0);
         else if (!strcmp (event, "enter"))
-          mrg_key_press (mrg, 0, "\n");
+          mrg_key_press (mrg, 0, "\n", 0);
         else if (!strcmp (event, "return"))
-          mrg_key_press (mrg, 0, "\n");
+          mrg_key_press (mrg, 0, "\n", 0);
         else
-        mrg_key_press (mrg, 0, event);
+        mrg_key_press (mrg, 0, event, 0);
       }
     }
     
