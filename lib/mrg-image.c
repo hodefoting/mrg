@@ -45,7 +45,7 @@ static void free_image (void *data, void *foo)
 
 static void trim_cache (void)
 {
-  if (image_cache_size > image_cache_max_size_mb * 1024 * 1024)
+  while (image_cache_size > image_cache_max_size_mb * 1024 * 1024)
   {
     MrgImage *image;
     int item = mrg_list_length (image_cache);
