@@ -29,7 +29,6 @@ static void init_ticks (void);
 
 void _mrg_init (Mrg *mrg, int width, int height)
 {
-  init_ticks ();
   mrg->state = &mrg->states[0];
   /* XXX: is there a better place to set the default text color to black? */
   mrg->state->style.color.red = 
@@ -51,9 +50,9 @@ void _mrg_init (Mrg *mrg, int width, int height)
   mrg_set_mrg_get_contents (mrg, mrg_get_contents_default, NULL);
   mrg->style_global = mrg_string_new ("");
 
-  mrg->tap_delay_min  = 120;
+  mrg->tap_delay_min  = 80;
   mrg->tap_delay_max  = 800;
-  mrg->tap_delay_hold = 800;
+  mrg->tap_delay_hold = 1000;
   mrg->tap_hysteresis = 8;  /* XXX: should be ppi dependent */
 
   {
@@ -95,6 +94,7 @@ static inline long
 _mrg_ticks (void)
 {
   struct timeval measure_time;
+  init_ticks ();
   gettimeofday (&measure_time, NULL);
   return usecs (measure_time) - usecs (start_time);
 }
@@ -385,7 +385,7 @@ void _mrg_idle_iteration (Mrg *mrg)
   MrgList *l;
   MrgList *to_remove = NULL;
   long ticks = _mrg_ticks ();
-  long tick_delta = ticks - prev_ticks;
+  long tick_delta = (prev_ticks == 0) ? 0 : ticks - prev_ticks;
   prev_ticks = ticks;
 
   if (!mrg->idles)
@@ -495,8 +495,8 @@ void mrg_warp_pointer (Mrg *mrg, float x, float y)
 {
   if (mrg->backend->mrg_warp_pointer)
     mrg->backend->mrg_warp_pointer (mrg, x, y);
-  mrg->pointer_x = x;
-  mrg->pointer_y = y;
+  mrg->pointer_x[0] = x;
+  mrg->pointer_y[0] = y;
 }
 
 void mrg_set_fullscreen (Mrg *mrg, int fullscreen)

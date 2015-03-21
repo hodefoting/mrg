@@ -435,8 +435,8 @@ static void mrg_nct_warp_pointer (Mrg *mrg, float x, float y)
 {
   MrgNct *backend = mrg->backend_data;
 
-  mrg->pointer_x = x;
-  mrg->pointer_y = y;
+  mrg->pointer_x[0] = x;
+  mrg->pointer_y[0] = y;
   nct_set_cursor_pos (backend->term, x/CPX, y/CPX);
   nct_flush (backend->term);
 }

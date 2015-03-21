@@ -5,6 +5,7 @@ local mrg = Mrg.new(512,384)
 
 local shapes={
   {e = Mrg.TAP,          x=60,    y=175, rad=20, stopPropagate=0, r=0,g=1,b=0,a=0.8},
+  {e = Mrg.TAP + Mrg.TAP_AND_HOLD,          x=60,    y=235, rad=20, stopPropagate=0, r=0,g=1,b=0,a=0.8},
   {e = Mrg.TAP_AND_HOLD, x=180, y=175, rad=20, stopPropagate=1, r=1,g=0,b=0,a=0.8},
   {e = Mrg.PRESS,        x=60, y=300, rad=20, stopPropagate=1, r=1,g=0,b=0,a=0.8},
   {e = Mrg.RELEASE,      x=180, y=300, rad=20, stopPropagate=1, r=1,g=0,b=0,a=0.8},
@@ -26,7 +27,11 @@ mrg:set_ui(function()
     cr:set_source_rgba (v.r,v.g,v.b,v.a)
     cr:arc (v.x, v.y, v.rad, 0, 3.1415*2)
     mrg:listen(v.e, function(event)
-      v.rad = v.rad + 3
+      if event.type == Mrg.TAP_AND_HOLD then
+        v.rad = v.rad - 3
+      else
+        v.rad = v.rad + 3
+      end
       mrg:queue_draw(NULL)
       event.stop_propagate = v.stopPropagate
     end)

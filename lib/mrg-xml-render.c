@@ -886,8 +886,8 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
     {
       cairo_matrix_t transform;
       cairo_get_matrix (mrg_cr (mrg), &transform);
-      double x = mrg->pointer_x;
-      double y = mrg->pointer_y;
+      double x = mrg_pointer_x (mrg);
+      double y = mrg_pointer_y (mrg);
       cairo_matrix_invert (&transform);
       cairo_matrix_transform_point (&transform, &x, &y);
 

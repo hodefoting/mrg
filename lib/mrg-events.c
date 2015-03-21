@@ -23,22 +23,19 @@ struct _MrgGrab
 {
   MrgItem *item;
   int      device_no;
+
+  int      timeout_id;
 };
 
-static void grab_free (MrgGrab *grab)
+static void grab_free (Mrg *mrg, MrgGrab *grab)
 {
+  if (grab->timeout_id)
+  {
+    mrg_remove_idle (mrg, grab->timeout_id);
+    grab->timeout_id = 0;
+  }
   _mrg_item_unref (grab->item);
   free (grab);
-}
-
-static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item)
-{
-  MrgGrab *grab = calloc (1, sizeof (MrgGrab));
-  grab->item = item;
-  _mrg_item_ref (item);
-  grab->device_no = device_no;
-  mrg_list_append (&mrg->grabs, grab);
-  return grab;
 }
 
 static void device_remove_grab (Mrg *mrg, int device_no)
@@ -57,8 +54,19 @@ static void device_remove_grab (Mrg *mrg, int device_no)
   if (grab)
   {
     mrg_list_remove (&mrg->grabs, grab);
-    grab_free (grab);
+    grab_free (mrg, grab);
   }
+}
+
+static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item)
+{
+  device_remove_grab (mrg, device_no);
+  MrgGrab *grab = calloc (1, sizeof (MrgGrab));
+  grab->item = item;
+  _mrg_item_ref (item);
+  grab->device_no = device_no;
+  mrg_list_append (&mrg->grabs, grab);
+  return grab;
 }
 
 static MrgGrab *device_get_grab (Mrg *mrg, int device_no)
@@ -519,13 +527,43 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgL
   return current;
 }
 
+static int tap_and_hold_fire (Mrg *mrg, void *data)
+{
+  MrgGrab *grab = data;
+  MrgList *list = NULL;
+  mrg_list_prepend (&list, grab->item);
+  MrgEvent event = {0, };
+
+  event.mrg = mrg;
+  event.time = mrg_ms (mrg);
+  event.type = MRG_TAP_AND_HOLD;
+
+  int ret = _mrg_emit_cb (mrg, list, NULL, &event, MRG_TAP_AND_HOLD,
+      mrg->pointer_x[grab->device_no], mrg->pointer_y[grab->device_no]);
+
+  fprintf (stderr, "emitting!\n");
+
+  mrg_list_free (&list);
+
+  grab->timeout_id = 0;
+
+  return 0;
+
+  return ret;
+}
+
 int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
 {
   MrgList *hitlist = NULL;
   MrgItem *mrg_item = _mrg_update_item (mrg, x, y, 
       MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
-  mrg->pointer_x = x;
-  mrg->pointer_y = y;
+  mrg->pointer_x[device_no] = x;
+  mrg->pointer_y[device_no] = y;
+  if (device_no <= 3)
+  {
+    mrg->pointer_x[0] = x;
+    mrg->pointer_y[0] = y;
+  }
 
   if (device_no < 0) device_no = 0;
   if (device_no >= MRG_MAX_DEVICES) device_no = MRG_MAX_DEVICES-1;
@@ -575,6 +613,14 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
 
     event->type = MRG_DRAG_PRESS;
     mrg->drag_start = time;
+
+
+    if (mrg_item->types & MRG_TAP_AND_HOLD)
+    {
+      //fprintf (stderr, "%i\n", mrg->tap_delay_hold);
+       grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
+    
+    }
   }
 
   mrg_queue_draw (mrg, NULL); /* in case of style change */
@@ -613,7 +659,6 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
 int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
 {
   MrgItem *mrg_item;
-  int was_grabbed = 0;
 
   if (time == 0)
     time = mrg_ms (mrg);
@@ -655,8 +700,13 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
   }
   mrg->pointer_down[device_no] = 0;
 
-  mrg->pointer_x = x;
-  mrg->pointer_y = y;
+  mrg->pointer_x[device_no] = x;
+  mrg->pointer_y[device_no] = y;
+  if (device_no <= 3)
+  {
+    mrg->pointer_x[0] = x;
+    mrg->pointer_y[0] = y;
+  }
   MrgList *hitlist = NULL;
   MrgGrab *grab;
 
@@ -670,14 +720,15 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
       if (delay > mrg->tap_delay_min &&
           delay < mrg->tap_delay_max)
       {
-        fprintf (stderr, "%li\n", delay);
         event->type = MRG_TAP;
+        /* we're using side effects of update_item here.. should be refactored
+         */
         _mrg_update_item (mrg, x, y, MRG_TAP, &hitlist);
       }
       else
       {
-        hitlist = NULL;
-        device_remove_grab (mrg, device_no);
+        if (grab->timeout_id == 0)
+          device_remove_grab (mrg, device_no);
         return 0;
       }
     }
@@ -686,17 +737,30 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
       _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
     }
     mrg_item = grab->item;
-    was_grabbed = grab?1:0;
-
     mrg_list_prepend (&hitlist, grab->item);
   }
   else
   {
     mrg_item = _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
   }
+
+  if (grab && grab->timeout_id)
+  {
+    mrg_remove_idle (mrg, grab->timeout_id);
+    grab->timeout_id = 0;
+  }
+
   if (mrg_item)
   {
-    int ret = _mrg_emit_cb (mrg, hitlist, grab?grab->item:NULL, event, was_grabbed==2?MRG_TAP:MRG_RELEASE, x, y);
+    MrgType type = MRG_RELEASE;
+
+    if (mrg_item->types & MRG_TAP)
+      type |= MRG_TAP;
+    //if (mrg_item->types & MRG_TAP_AND_HOLD)
+    //  type |= MRG_TAP_AND_HOLD;
+
+    int ret = _mrg_emit_cb (mrg, hitlist, grab?grab->item:NULL, event, type,
+                            x, y);
     mrg_list_free (&hitlist);
     if (grab)
       device_remove_grab (mrg, device_no);
@@ -738,8 +802,13 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
                               mrg->pointer_down[2]?2:
                               mrg->pointer_down[3]?3:0;*/
 
-  mrg->pointer_x = x;
-  mrg->pointer_y = y;
+  mrg->pointer_x[device_no] = x;
+  mrg->pointer_y[device_no] = y;
+  if (device_no <= 3)
+  {
+    mrg->pointer_x[0] = x;
+    mrg->pointer_y[0] = y;
+  }
 
   mrg_item = _mrg_update_item (mrg, x, y, MRG_MOTION | MRG_DRAG_MOTION, &hitlist);
 
@@ -816,12 +885,12 @@ void mrg_thaw             (Mrg *mrg)
 
 float mrg_pointer_x (Mrg *mrg)
 {
-  return mrg->pointer_x;
+  return mrg->pointer_x[0];
 }
 
 float mrg_pointer_y (Mrg *mrg)
 {
-  return mrg->pointer_y;
+  return mrg->pointer_y[0];
 }
 
 void _mrg_debug_overlays (Mrg *mrg)

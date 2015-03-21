@@ -306,8 +306,8 @@ struct _Mrg {
   //int          is_press_grabbed;
 
   int            quit;
-  float          pointer_x;
-  float          pointer_y;
+  float          pointer_x[MRG_MAX_DEVICES];
+  float          pointer_y[MRG_MAX_DEVICES];
   unsigned char  pointer_down[MRG_MAX_DEVICES];
 
   MrgBinding     bindings[640];

@@ -28,8 +28,8 @@ enum _MrgType {
   MRG_RELEASE        = 1 << 2,
   MRG_ENTER          = 1 << 3,
   MRG_LEAVE          = 1 << 4,
-  MRG_TAP            = 1 << 5, /* NYI */
-  MRG_TAP_AND_HOLD   = 1 << 6, /* NYI */
+  MRG_TAP            = 1 << 5,
+  MRG_TAP_AND_HOLD   = 1 << 6,
 
   /* NYI: SWIPE, ZOOM ROT_ZOOM, */
 
