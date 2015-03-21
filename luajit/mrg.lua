@@ -56,22 +56,24 @@ typedef struct _MrgEvent     MrgEvent;
 
 enum _MrgType {
   MRG_PRESS          = 1 << 0,
-  MRG_PRESS_AND_HOLD = 1 << 1, /* NYI */
-  MRG_MOTION         = 1 << 2,
-  MRG_RELEASE        = 1 << 3,
-  MRG_ENTER          = 1 << 4,
-  MRG_LEAVE          = 1 << 5,
-  MRG_DRAG_PRESS     = 1 << 6,
-  MRG_DRAG_MOTION    = 1 << 7,
-  MRG_DRAG_RELEASE   = 1 << 8,
-  MRG_KEY_DOWN       = 1 << 9,
-  MRG_KEY_UP         = 1 << 10,
+  MRG_MOTION         = 1 << 1,
+  MRG_RELEASE        = 1 << 2,
+  MRG_ENTER          = 1 << 3,
+  MRG_LEAVE          = 1 << 4,
+  MRG_TAP            = 1 << 5, /* NYI */
+  MRG_TAP_AND_HOLD   = 1 << 6, /* NYI */
+  MRG_DRAG_PRESS     = 1 << 7,
+  MRG_DRAG_MOTION    = 1 << 8,
+  MRG_DRAG_RELEASE   = 1 << 9,
+  MRG_KEY_DOWN       = 1 << 10,
+  MRG_KEY_UP         = 1 << 11,
 
+  MRG_TAPS     = (MRG_TAP | MRG_TAP_AND_HOLD),
   MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE),
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
-  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY),
+  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_TAPS),
 };
 
 
@@ -222,7 +224,7 @@ enum _MrgModifierState
 struct _MrgEvent {
   MrgType  type;
   Mrg     *mrg;
-
+  long     time;
   MrgModifierState state;
 
   int      device_no; /* 0 = left mouse button / virtual focus */
@@ -248,6 +250,7 @@ struct _MrgEvent {
   const char *key_name; /* can be "up" "down" "a" "b" "ø" etc .. */
   int stop_propagate;
 };
+void mrg_event_stop_propagate (MrgEvent *event);
 
 void  mrg_text_listen (Mrg *mrg, MrgType types,
                        MrgCb cb, void *data1, void *data2);
@@ -788,7 +791,11 @@ ffi.metatype('Mrg', {__index = {
   edge_bottom      = function (...) return C.mrg_edge_bottom (...) end,
   set_edge_bottom  = function (...) C.mrg_set_edge_bottom (...) end,
 }})
-ffi.metatype('MrgEvent',     {__index = { }})
+ffi.metatype('MrgEvent',     {__index = { 
+
+  stop_propagation = function (...) return C.mrg_event_stop_propagate (...) end,
+
+}})
 ffi.metatype('MrgColor',     {__index = { }})
 ffi.metatype('MrgStyle',     {__index = { }})
 ffi.metatype('MrgRectangle', {__index = { }})
@@ -840,6 +847,8 @@ ffi.metatype('MrgClient',    {__index = {
   M.LEAVE = C.MRG_LEAVE;
   M.PRESS = C.MRG_PRESS;
   M.RELEASE = C.MRG_RELEASE;
+  M.TAP = C.MRG_TAP;
+  M.TAP_AND_HOLD = C.MRG_TAP_AND_HOLD;
   M.DRAG_MOTION = C.MRG_DRAG_MOTION;
   M.DRAG_PRESS = C.MRG_DRAG_PRESS;
   M.DRAG_RELEASE = C.MRG_DRAG_RELEASE;

@@ -24,26 +24,31 @@
 
 enum _MrgType {
   MRG_PRESS          = 1 << 0,
-  MRG_PRESS_AND_HOLD = 1 << 1, /* NYI */
-  MRG_MOTION         = 1 << 2,
-  MRG_RELEASE        = 1 << 3,
-  MRG_ENTER          = 1 << 4,
-  MRG_LEAVE          = 1 << 5,
-  MRG_DRAG_PRESS     = 1 << 6,
-  MRG_DRAG_MOTION    = 1 << 7,
-  MRG_DRAG_RELEASE   = 1 << 8,
-  MRG_KEY_DOWN       = 1 << 9,
-  MRG_KEY_UP         = 1 << 10,
-  MRG_PERSIST        = 1 << 11, /* client should store state - preparing
+  MRG_MOTION         = 1 << 1,
+  MRG_RELEASE        = 1 << 2,
+  MRG_ENTER          = 1 << 3,
+  MRG_LEAVE          = 1 << 4,
+  MRG_TAP            = 1 << 5, /* NYI */
+  MRG_TAP_AND_HOLD   = 1 << 6, /* NYI */
+
+  /* NYI: SWIPE, ZOOM ROT_ZOOM, */
+
+  MRG_DRAG_PRESS     = 1 << 7,
+  MRG_DRAG_MOTION    = 1 << 8,
+  MRG_DRAG_RELEASE   = 1 << 9,
+  MRG_KEY_DOWN       = 1 << 10,
+  MRG_KEY_UP         = 1 << 11,
+  MRG_PERSIST        = 1 << 12, /* client should store state - preparing
                                  * for restart
                                  */
 
   MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE),
+  MRG_TAPS     = (MRG_TAP | MRG_TAP_AND_HOLD),
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
   MRG_MISC     = (MRG_PERSIST),
-  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC), 
+  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC | MRG_TAPS), 
 };
 
 #define MRG_CLICK   MRG_PRESS   // SHOULD HAVE MORE LOGIC
@@ -73,6 +78,7 @@ enum _MrgModifierState
 struct _MrgEvent {
   MrgType  type;
   Mrg     *mrg;
+  long     time;
 
   MrgModifierState state;
 
