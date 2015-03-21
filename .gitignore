@@ -1,0 +1,12 @@
+*.o
+examples/audio
+examples/client_move
+examples/gtk-embed
+examples/image
+examples/in-process-compositor
+mrg
+mrg.pc
+symbols
+*.a
+*.so
+data.inc
