@@ -100,11 +100,11 @@ static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointe
   MrgGtk *mrg_gtk = mrg->backend_data;
   return mrg_pointer_motion (mrg, event->motion.x + mrg_gtk->xoffset,
                                   event->motion.y + mrg_gtk->yoffset, 
-      (event->motion.state&GDK_BUTTON1_MASK)?0:
-      (event->motion.state&GDK_BUTTON2_MASK)?1:
-      (event->motion.state&GDK_BUTTON3_MASK)?2:
-      (event->motion.state&GDK_BUTTON4_MASK)?3:
-      (event->motion.state&GDK_BUTTON5_MASK)?4:0,
+      (event->motion.state&GDK_BUTTON1_MASK)?1:
+      (event->motion.state&GDK_BUTTON2_MASK)?2:
+      (event->motion.state&GDK_BUTTON3_MASK)?3:
+      (event->motion.state&GDK_BUTTON4_MASK)?4:
+      (event->motion.state&GDK_BUTTON5_MASK)?5:0,
       event->motion.time);
 }
 
