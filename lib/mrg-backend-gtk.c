@@ -78,10 +78,12 @@ static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer
 {
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
-  return mrg_pointer_press (mrg, event->button.x + mrg_gtk->xoffset,
-				 event->button.y + mrg_gtk->yoffset,
-				 event->button.button,
-         event->button.time);
+  if (event->button.type == GDK_BUTTON_PRESS)
+    return mrg_pointer_press (mrg, event->button.x + mrg_gtk->xoffset,
+           event->button.y + mrg_gtk->yoffset,
+           event->button.button,
+           event->button.time);
+  return 0;
 }
 
 static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
