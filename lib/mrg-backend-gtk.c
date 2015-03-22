@@ -15,7 +15,6 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "mrg-config.h"
 #if MRG_GTK
 #include <gtk/gtk.h>
@@ -236,10 +235,8 @@ static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userda
              event->touch.y + mrg_gtk->yoffset,
              device_no,
              event->touch.time);
-      //fprintf (stderr, "touch begin %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
       break;
     case GDK_TOUCH_UPDATE:
-      //fprintf (stderr, "touch update %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
       device_no = event_to_id (mrg_gtk, event);
       return mrg_pointer_motion (mrg, event->touch.x + mrg_gtk->xoffset,
              event->touch.y + mrg_gtk->yoffset,
@@ -247,7 +244,6 @@ static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userda
              event->touch.time);
       break;
     case GDK_TOUCH_END:
-      //fprintf (stderr, "touch end %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
       device_no = event_to_id (mrg_gtk, event);
       int ret = mrg_pointer_release (mrg, event->touch.x + mrg_gtk->xoffset,
              event->touch.y + mrg_gtk->yoffset,
@@ -258,7 +254,6 @@ static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userda
       return ret;
       break;
     default:
-      fprintf (stderr, "uh?\n");
       break;
   }
 
