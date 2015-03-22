@@ -16,8 +16,9 @@ local pan_x = 0
 
 mrg:set_ui(function()
   local cr = mrg:cr()
-    mrg:print('tap, tap and hold\n')
-    mrg:print('press, release\n')
+    mrg:print('tap,       tap and hold\n')
+    mrg:print('tap+tap and hold\n')
+    mrg:print('press,     release\n')
     mrg:print('\nthe rectangle pans all, but blocks only some')
     mrg:print('\nthe tap and tap_and_hold not getting the events through the rectangle is a bug')
 

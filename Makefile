@@ -90,3 +90,6 @@ dist:
 		 --exclude='*.o' \
 		 --exclude='*.a' \
 		 --exclude='*.so' mrg; ls -la mrg.tar.gz; cp mrg.tar.gz /tar)
+
+sentry:
+	sentry */*.[ch] -- sh -c 'make && sudo make install'

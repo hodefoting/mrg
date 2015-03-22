@@ -23,7 +23,6 @@ struct _MrgGrab
 {
   MrgItem *item;
   int      device_no;
-
   int      timeout_id;
 };
 

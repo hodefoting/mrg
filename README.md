@@ -1,14 +1,14 @@
 microraptor gui
 ===============
 
-Immediate UI framework with cairo. Also an attempt at a minimal usable
-graphical user environment built from this, including: a shell/host for client
+Immediate UI framework with cairo. Also a minimal usable graphical user
+environment built using the framework, including: a shell/host for client
 programs, a terminal emulator, file browser and text editor written using the
 library.
 
 Features:
   cairos drawing/transformation API
-  pointer/keyboard events
+  pointer/keyboard/multi touch events
   CSS styling/layout
   Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
   SDL/GTK/framebuffer/terminal backends.

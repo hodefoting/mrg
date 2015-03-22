@@ -159,7 +159,7 @@ function draw_folder(mrg, path, currpath, details)
          if details then
            local size = S.stat(path .. '/' .. d.name).size
 
-            mrg:text_listen(Mrg.PRESS,
+            mrg:text_listen(Mrg.TAP,
               function(event,d1,d2)
                 set_path (path .. '/' .. d.name);
                 return 0;
@@ -175,7 +175,7 @@ function draw_folder(mrg, path, currpath, details)
 
            --print(d.name)
          else
-            mrg:text_listen(Mrg.PRESS,
+            mrg:text_listen(Mrg.TAP,
               function(event,d1,d2)
                 set_path (path .. '/' .. d.name);
                 return 0;

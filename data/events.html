@@ -20,7 +20,13 @@
       MRG_DRAG_PRESS, MRG_DRAG_MOTION and MRG_DRAG_RELEASE; a closure handling
       the drag gesture event cycle will be registered.
       </p>
-      
+
+      <p>The device_no is 1 for left mouse button 2 for middle mouse button
+      and 3 for right mouse button. device_no 4 and above are multi touch
+      touchpoints. By writing code that mostly doesn't care about the
+      device_no the interface would end up being multi-touch capable.
+      </p>
+
       <div class='navbar_wrap'>
         <div class='navbar'>
           <a href='mrg.html'>mrg</a>
