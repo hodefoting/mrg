@@ -22,11 +22,14 @@
 #include "mrg-internal.h"
 
 typedef struct MrgGtk {
-  GtkWidget *eventbox;
-  GtkWidget *drawingarea;
-  GtkWidget *window;
-  int        xoffset;
-  int        yoffset;
+  GtkWidget        *eventbox;
+  GtkWidget        *drawingarea;
+  GtkWidget        *window;
+  int               xoffset;
+  int               yoffset;
+
+  GHashTable       *ht;
+  GdkEventSequence *fingers[MRG_MAX_DEVICES]; 
 } MrgGtk;
 
 static void mrg_gtk_flush (Mrg *mrg)
@@ -78,6 +81,10 @@ static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer
 {
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
+
+  if (gdk_device_get_source (gdk_event_get_source_device (event)) == GDK_SOURCE_TOUCHSCREEN)
+    return 0;
+
   if (event->button.type == GDK_BUTTON_PRESS)
     return mrg_pointer_press (mrg, event->button.x + mrg_gtk->xoffset,
            event->button.y + mrg_gtk->yoffset,
@@ -90,6 +97,10 @@ static gboolean button_release_event (GtkWidget *widget, GdkEvent *event, gpoint
 {
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
+
+  if (gdk_device_get_source (gdk_event_get_source_device (event)) == GDK_SOURCE_TOUCHSCREEN)
+    return 0;
+
   return mrg_pointer_release (mrg, event->button.x + mrg_gtk->xoffset,
                                    event->button.y + mrg_gtk->yoffset,
                                    event->button.button,
@@ -100,6 +111,10 @@ static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointe
 {
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
+
+  if (gdk_device_get_source (gdk_event_get_source_device (event)) == GDK_SOURCE_TOUCHSCREEN)
+    return 0;
+
   return mrg_pointer_motion (mrg, event->motion.x + mrg_gtk->xoffset,
                                   event->motion.y + mrg_gtk->yoffset, 
       (event->motion.state&GDK_BUTTON1_MASK)?1:
@@ -182,6 +197,74 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
                         event->key.time);
 }
 
+static int event_to_id (MrgGtk *mrg_gtk, GdkEvent *event)
+{
+  GdkEventSequence *sequence = event->touch.sequence;
+  int ret = GPOINTER_TO_SIZE(
+      g_hash_table_lookup (mrg_gtk->ht, sequence));
+
+  if (!ret)
+  {
+    int i;
+    ret = 0;
+    for (i = 4; i < MRG_MAX_DEVICES; i++)
+    {
+      if (mrg_gtk->fingers[i] == NULL)
+      {
+        mrg_gtk->fingers[i] = event->touch.sequence;
+        g_hash_table_insert (mrg_gtk->ht, sequence, GSIZE_TO_POINTER (i));
+        ret = i;
+        i = MRG_MAX_DEVICES;
+      }
+    }
+
+  }
+  return ret;
+}
+
+static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
+{
+  Mrg    *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+
+  switch (event->touch.type)
+  {
+    int device_no = 0;
+    case GDK_TOUCH_BEGIN:
+      device_no = event_to_id (mrg_gtk, event);
+      return mrg_pointer_press (mrg, event->touch.x + mrg_gtk->xoffset,
+             event->touch.y + mrg_gtk->yoffset,
+             device_no,
+             event->touch.time);
+      //fprintf (stderr, "touch begin %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
+      break;
+    case GDK_TOUCH_UPDATE:
+      //fprintf (stderr, "touch update %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
+      device_no = event_to_id (mrg_gtk, event);
+      return mrg_pointer_motion (mrg, event->touch.x + mrg_gtk->xoffset,
+             event->touch.y + mrg_gtk->yoffset,
+             device_no,
+             event->touch.time);
+      break;
+    case GDK_TOUCH_END:
+      //fprintf (stderr, "touch end %p %f %f\n", event->touch.sequence, event->touch.x, event->touch.y);
+      device_no = event_to_id (mrg_gtk, event);
+      int ret = mrg_pointer_release (mrg, event->touch.x + mrg_gtk->xoffset,
+             event->touch.y + mrg_gtk->yoffset,
+             device_no,
+             event->touch.time);
+      g_hash_table_remove (mrg_gtk->ht, event->touch.sequence);
+      mrg_gtk->fingers[device_no] = NULL;
+      return ret;
+      break;
+    default:
+      fprintf (stderr, "uh?\n");
+      break;
+  }
+
+  return FALSE;
+}
+
 static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
 {
   Mrg    *mrg = userdata;
@@ -221,6 +304,10 @@ static void mrg_gtk_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 
 static void mrg_gtk_destroy (Mrg *mrg)
 {
+  MrgGtk *mrg_gtk = mrg->backend_data;
+
+  g_hash_table_destroy (mrg_gtk->ht);
+
   if (mrg->backend_data)
   {
     free (mrg->backend_data);
@@ -318,6 +405,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   gtk_container_add (GTK_CONTAINER(mrg_gtk->eventbox), mrg_gtk->drawingarea);
 
   gtk_widget_add_events (mrg_gtk->eventbox, GDK_BUTTON_MOTION_MASK |
+                                            GDK_TOUCH_MASK |
                                             GDK_POINTER_MOTION_MASK);
 
   gtk_widget_set_can_focus (mrg_gtk->eventbox, TRUE);
@@ -330,6 +418,8 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   
   mrg_set_ui (mrg, ui_update, user_data);
 
+  g_signal_connect (mrg_gtk->eventbox, "touch-event",
+                    G_CALLBACK (touch_event), mrg);
   g_signal_connect (mrg_gtk->eventbox, "button-press-event",
                     G_CALLBACK (button_press_event), mrg);
   g_signal_connect (mrg_gtk->eventbox, "button-release-event",
@@ -344,6 +434,8 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   g_timeout_add (30, idle_iteration, mrg);
 
   g_object_set_data_full (G_OBJECT (mrg_gtk->eventbox), "mrg", mrg, (void*)mrg_destroy);
+
+  mrg_gtk->ht = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   return mrg_gtk->eventbox;
 }
