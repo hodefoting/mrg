@@ -141,10 +141,10 @@ static void restore_path (cairo_t *cr, cairo_path_t *path)
 /* using bigger primes would be a good idea, this falls apart due to rounding
  * when zoomed in close
  */
-static uint32_t path_hash (cairo_path_t *path)
+static double path_hash (cairo_path_t *path)
 {
   int i;
-  uint32_t ret = 0;
+  double ret = 0;
   cairo_path_data_t *data;
   for (i = 0; i <path->num_data; i += path->data[i].header.length)
   {
@@ -182,6 +182,40 @@ static uint32_t path_hash (cairo_path_t *path)
     }
   }
   return ret;
+}
+
+static int
+path_equal (cairo_path_t *path,
+            cairo_path_t *path2)
+{
+  int i;
+  cairo_path_data_t *data;
+  cairo_path_data_t *data2;
+
+  if (path->num_data != path2->num_data)
+    return 0;
+
+  for (i = 0; i <path->num_data; i += path->data[i].header.length)
+  {
+    int count = 0;
+    data = &path->data[i];
+    data2 = &path2->data[i];
+    if (data->header.type != data2->header.type)
+      return 0;
+    if (data->header.type == CAIRO_PATH_CURVE_TO)
+      count = 3;
+    switch (data->header.type) {
+      case CAIRO_PATH_MOVE_TO: count = 1; break;
+      case CAIRO_PATH_LINE_TO: count = 1; break;
+      case CAIRO_PATH_CURVE_TO: count = 3; break;
+      default: count = 0; break;
+    }
+    for (int j = 0; j < count; j ++)
+      if (data[j].point.x != data2[j].point.x ||
+          data[j].point.y != data2[j].point.y)
+        return 0;
+  }
+  return 1;
 }
 
 MrgList *_mrg_detect_all (Mrg *mrg, float x, float y, MrgType type)
@@ -378,12 +412,14 @@ void mrg_listen_full (Mrg     *mrg,
       {
         MrgItem *item2 = l->data;
 
-        /* reuse previous rectangles, when they are exactly the same 
-         * XXX: adapt to deal with paths as well,,.
-         *
-         * or stop doing this?
+        /* store multiple callbacks for one entry when the paths
+         * are exact matches, reducing per event traversal checks at the
+         * cost of a little paint-hit (XXX: is this the right tradeoff,
+         * perhaps it is better to spend more time during event processing
+         * than during paint?)
          * */
-        if (item->path_hash == item2->path_hash)
+        if (item->path_hash == item2->path_hash &&
+            path_equal (item->path, item2->path))
         {
           /* found an item, copy over cb data  */
           item2->cb[item2->cb_count] = item->cb[0];
