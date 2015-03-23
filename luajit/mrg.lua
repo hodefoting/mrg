@@ -745,6 +745,8 @@ ffi.metatype('Mrg', {__index = {
   cr               = function (...) return C.mrg_cr (...) end,
   width            = function (...) return C.mrg_width (...) end,
   height           = function (...) return C.mrg_height (...) end,
+  set_fullscreen   = function (...) C.mrg_set_fullscreen(...) end,
+  is_fullscreen    = function (...) return C.mrg_is_fullscreen(...) ~= 0 end,
   x                = function (...) return C.mrg_x (...) end,
   y                = function (...) return C.mrg_y (...) end,
   xy               = function (mrg) return mrg:x(), mrg:y() end,
