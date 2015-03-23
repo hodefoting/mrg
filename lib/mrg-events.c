@@ -37,29 +37,14 @@ static void grab_free (Mrg *mrg, MrgGrab *grab)
   free (grab);
 }
 
-static void device_remove_grab (Mrg *mrg, int device_no)
+static void device_remove_grab (Mrg *mrg, MrgGrab *grab)
 {
-  MrgGrab *grab = NULL;
-  MrgList *l;
-  for (l = mrg->grabs; l; l = l?l->next:NULL)
-  {
-    MrgGrab *t = l->data;
-    if (t->device_no == device_no)
-    {
-      grab = t;
-      l = NULL;
-    }
-  }
-  if (grab)
-  {
-    mrg_list_remove (&mrg->grabs, grab);
-    grab_free (mrg, grab);
-  }
+  mrg_list_remove (&mrg->grabs, grab);
+  grab_free (mrg, grab);
 }
 
 static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item)
 {
-  device_remove_grab (mrg, device_no);
   MrgGrab *grab = calloc (1, sizeof (MrgGrab));
   grab->item = item;
   _mrg_item_ref (item);
@@ -68,16 +53,17 @@ static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item)
   return grab;
 }
 
-static MrgGrab *device_get_grab (Mrg *mrg, int device_no)
+MrgList *device_get_grabs (Mrg *mrg, int device_no)
 {
+  MrgList *ret = NULL;
   MrgList *l;
   for (l = mrg->grabs; l; l = l->next)
   {
     MrgGrab *grab = l->data;
     if (grab->device_no == device_no)
-      return grab;
+      mrg_list_append (&ret, grab);
   }
-  return NULL;
+  return ret;
 }
 
 /* XXX: stopping sibling grabs should be an addtion to stop propagation,
@@ -417,7 +403,7 @@ void mrg_listen_full (Mrg     *mrg,
          * cost of a little paint-hit (XXX: is this the right tradeoff,
          * perhaps it is better to spend more time during event processing
          * than during paint?)
-         * */
+         */
         if (item->path_hash == item2->path_hash &&
             path_equal (item->path, item2->path))
         {
@@ -576,8 +562,6 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
   int ret = _mrg_emit_cb (mrg, list, NULL, &event, MRG_TAP_AND_HOLD,
       mrg->pointer_x[grab->device_no], mrg->pointer_y[grab->device_no]);
 
-  fprintf (stderr, "emitting!\n");
-
   mrg_list_free (&list);
 
   grab->timeout_id = 0;
@@ -590,8 +574,6 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
 int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
 {
   MrgList *hitlist = NULL;
-  MrgItem *mrg_item = _mrg_update_item (mrg, x, y, 
-      MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
   mrg->pointer_x[device_no] = x;
   mrg->pointer_y[device_no] = y;
   if (device_no <= 3)
@@ -607,12 +589,12 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
   if (time == 0)
     time = mrg_ms (mrg);
 
-  event->type = MRG_PRESS;
   event->x = event->start_x = event->prev_x = x;
   event->y = event->start_y = event->prev_y = y;
   event->delta_x = event->delta_y = 0;
   event->device_no = device_no;
   event->time      = time;
+  event->stop_propagate = 0;
 
   if (mrg->pointer_down[device_no] == 1)
   {
@@ -634,38 +616,46 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
     default:
       break;
   }
+
+
   MrgGrab *grab = NULL;
+  MrgList *l;
 
-  /* one of the drag event or tap types is set on the item,
-   * create a closure for event delivery.
-   */
-  if (mrg_item &&
-      ((mrg_item->types & MRG_DRAG)||
-       (mrg_item->types & MRG_TAP) ||
-       (mrg_item->types & MRG_TAP_AND_HOLD)))
+  _mrg_update_item (mrg, x, y, 
+      MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
+
+  for (l = hitlist; l; l = l?l->next:NULL)
   {
-    grab = device_add_grab (mrg, device_no, mrg_item);
-
-    event->type = MRG_DRAG_PRESS;
-    mrg->drag_start = time;
-
-
-    if (mrg_item->types & MRG_TAP_AND_HOLD)
+    MrgItem *mrg_item = l->data;
+    if (mrg_item &&
+        ((mrg_item->types & MRG_DRAG)||
+         (mrg_item->types & MRG_TAP) ||
+         (mrg_item->types & MRG_TAP_AND_HOLD)))
     {
-      //fprintf (stderr, "%i\n", mrg->tap_delay_hold);
-       grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
+      grab = device_add_grab (mrg, device_no, mrg_item);
+
+      mrg->drag_start = time; // XXX: should be on grab
+
+      if (mrg_item->types & MRG_TAP_AND_HOLD)
+      {
+         grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
     
+      }
     }
+    event->type = MRG_PRESS;
+    _mrg_emit_cb_item (mrg, mrg_item, event, MRG_PRESS, x, y);
+    if (!event->stop_propagate)
+    {
+      event->type = MRG_DRAG_PRESS;
+      _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DRAG_PRESS, x, y);
+    }
+
+    if (event->stop_propagate)
+      l = NULL;
   }
 
-  mrg_queue_draw (mrg, NULL); /* in case of style change */
-
-  if (mrg_item)
-  {
-    int ret = _mrg_emit_cb (mrg, hitlist, grab?grab->item:NULL, event, MRG_PRESS, x, y);
-    mrg_list_free (&hitlist);
-    return ret;
-  }
+  mrg_queue_draw (mrg, NULL); /* in case of style change, and more  */
+  mrg_list_free (&hitlist);
 
   return 0;
 }
@@ -693,8 +683,6 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
 
 int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
 {
-  MrgItem *mrg_item;
-
   if (time == 0)
     time = mrg_ms (mrg);
 
@@ -703,11 +691,11 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
   MrgEvent *event = &mrg->drag_event[device_no];
 
   event->time = time;
-  event->type = MRG_RELEASE;
   event->x = x;
   event->mrg = mrg;
   event->y = y;
   event->device_no = device_no;
+  event->stop_propagate = 0;
 
   switch (device_no)
   {
@@ -743,67 +731,58 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
     mrg->pointer_y[0] = y;
   }
   MrgList *hitlist = NULL;
+  MrgList *grablist = NULL , *g= NULL;
   MrgGrab *grab;
 
-  if ((grab = device_get_grab (mrg, device_no)))
-  {
-    event->type  = MRG_DRAG_RELEASE;
+  _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
+  grablist = device_get_grabs (mrg, device_no);
 
-    if (grab->item->types & MRG_TAP)
+  for (g = grablist; g; g = g->next)
+  {
+    grab = g->data;
+
+    if (!event->stop_propagate)
     {
-      long delay = time - mrg->drag_start;
-      if (delay > mrg->tap_delay_min &&
-          delay < mrg->tap_delay_max)
+      if (grab->item->types & MRG_TAP)
       {
-        event->type = MRG_TAP;
-        /* we're using side effects of update_item here.. should be refactored
-         */
-        _mrg_update_item (mrg, x, y, MRG_TAP, &hitlist);
+        long delay = time - mrg->drag_start;
+        if (delay > mrg->tap_delay_min &&
+            delay < mrg->tap_delay_max &&
+            
+            (event->start_x - event->x) * (event->start_x - event->x) < 8 &&
+            (event->start_y - event->y) * (event->start_y - event->y) < 8 
+            )
+        {
+          event->type = MRG_TAP;
+          _mrg_emit_cb_item (mrg, grab->item, event, MRG_TAP, x, y);
+        }
       }
-      else
+
+      if (!event->stop_propagate && grab->item->types & MRG_DRAG_RELEASE)
       {
-        if (grab->timeout_id == 0)
-          device_remove_grab (mrg, device_no);
-        return 0;
+        event->type = MRG_DRAG_RELEASE;
+        _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_RELEASE, x, y);
       }
     }
-    else
+
+    if (grab->timeout_id)
     {
-      _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
+      mrg_remove_idle (mrg, grab->timeout_id);
+      grab->timeout_id = 0;
     }
-    mrg_item = grab->item;
-    mrg_list_prepend (&hitlist, grab->item);
-  }
-  else
-  {
-    mrg_item = _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
+    device_remove_grab (mrg, grab);
   }
 
-  if (grab && grab->timeout_id)
+  if (hitlist)
   {
-    mrg_remove_idle (mrg, grab->timeout_id);
-    grab->timeout_id = 0;
-  }
-
-  if (mrg_item)
-  {
-    MrgType type = MRG_RELEASE;
-
-    if (mrg_item->types & MRG_TAP)
-      type |= MRG_TAP;
-    //if (mrg_item->types & MRG_TAP_AND_HOLD)
-    //  type |= MRG_TAP_AND_HOLD;
-
-    int ret = _mrg_emit_cb (mrg, hitlist, grab?grab->item:NULL, event, type,
-                            x, y);
+    if (!event->stop_propagate)
+    {
+      event->type = MRG_RELEASE;
+      _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_RELEASE, x, y);
+    }
     mrg_list_free (&hitlist);
-    if (grab)
-      device_remove_grab (mrg, device_no);
-    return ret;
   }
-
-  if (grab)
-    device_remove_grab (mrg, device_no);
+  mrg_list_free (&grablist);
   return 0;
 }
 
@@ -816,8 +795,8 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
 
 int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
 {
-  MrgItem   *mrg_item;
   MrgList   *hitlist = NULL;
+  MrgList   *grablist = NULL, *g;
   MrgGrab   *grab;
 
   if (device_no < 0) device_no = 0;
@@ -828,50 +807,53 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
     time = mrg_ms (mrg);
 
   event->type = MRG_MOTION;
-  event->mrg = mrg;
-  event->x = x;
-  event->y = y;
+  event->mrg  = mrg;
+  event->x    = x;
+  event->y    = y;
   event->time = time;
-
-  event->device_no = device_no;/*mrg->pointer_down[1]?1:
-                              mrg->pointer_down[2]?2:
-                              mrg->pointer_down[3]?3:0;*/
-
+  event->device_no = device_no;
+  event->stop_propagate = 0;
+  
   mrg->pointer_x[device_no] = x;
   mrg->pointer_y[device_no] = y;
+
   if (device_no <= 3)
   {
     mrg->pointer_x[0] = x;
     mrg->pointer_y[0] = y;
   }
 
-  mrg_item = _mrg_update_item (mrg, x, y, MRG_MOTION | MRG_DRAG_MOTION, &hitlist);
-
-  if ((grab = device_get_grab (mrg, device_no)))
-  {
-    event->type = MRG_DRAG_MOTION;
-    _mrg_update_item (mrg, x, y, MRG_MOTION, &hitlist);
-    mrg_item = grab->item;
-    mrg_list_prepend (&hitlist, grab->item);
-  }
-
   /* XXX: too brutal; should use enter/leave events */
   if (getenv ("MRG_FAST") == NULL)
   mrg_queue_draw (mrg, NULL); /* XXX: not really needed for all backends,
                                       needs more tinkering */
+  grablist = device_get_grabs (mrg, device_no);
+  _mrg_update_item (mrg, x, y, MRG_MOTION, &hitlist);
 
-  if (mrg_item)
+  event->delta_x = x - event->prev_x;
+  event->delta_y = y - event->prev_y;
+  event->prev_x  = x;
+  event->prev_y  = y;
+
+  for (g = grablist; g; g = g->next)
   {
-    event->delta_x = x - event->prev_x;
-    event->delta_y = y - event->prev_y;
-    event->prev_x  = x;
-    event->prev_y  = y;
+    grab = g->data;
+    event->type = MRG_DRAG_MOTION;
 
-    _mrg_emit_cb (mrg, hitlist, grab?grab->item:NULL, event, MRG_MOTION, x, y);
-    mrg_list_free (&hitlist);
-
-    return event->stop_propagate;
+    _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_MOTION, x, y);
+    if (event->stop_propagate)
+      break;
   }
+  if (hitlist)
+  {
+    if (!event->stop_propagate)
+    {
+      event->type = MRG_MOTION;
+      _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_MOTION, x, y);
+    }
+    mrg_list_free (&hitlist);
+  }
+  mrg_list_free (&grablist);
   return 0;
 }
 
