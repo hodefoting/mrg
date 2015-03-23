@@ -272,4 +272,5 @@ mrg:set_ui(function()
   mrg:add_binding("F11", NULL, NULL, toggle_fullscreen)
 end)
 
+mrg:set_title('flipping game')
 mrg:main()

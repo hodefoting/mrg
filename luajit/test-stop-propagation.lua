@@ -5,8 +5,8 @@ local mrg = Mrg.new(512,384)
 
 local shapes={
   {x=240, y=175, rad=40, stopPropagate=0, r=0,g=1,b=0.02,a=0.8},
-  {x=182, y=251, rad=80, stopPropagate=1, r=1,g=0,b=0,a=0.8},
   {x=292, y=249, rad=80, stopPropagate=0, r=0,g=0,b=1,a=0.8},
+  {x=182, y=251, rad=80, stopPropagate=1, r=1,g=0,b=0,a=0.8},
   {x=392, y=249, rad=80, stopPropagate=0, r=0,g=0,b=1,a=0.8},
 }
 
