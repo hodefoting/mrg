@@ -145,12 +145,8 @@ int  _mrg_has_quit       (Mrg *mrg);
 void _mrg_init           (Mrg *mrg, int width, int height);
 void _mrg_queue_draw     (Mrg *mrg, MrgRectangle *rectangle);
 
-int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no, long time);
-int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, long time);
-int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, long time);
 
-int mrg_key_press (Mrg *mrg, unsigned int keyval, const char *string, long time);
-void mrg_resized (Mrg *mrg, int width, int height, long time);
+void mrg_resized         (Mrg *mrg, int width, int height, long time);
 
 void _mrg_item_ref (MrgItem *mrg);
 void _mrg_item_unref (MrgItem *mrg);

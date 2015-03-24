@@ -19,6 +19,8 @@
 #ifndef MRG_EVENT_H
 #define MRG_EVENT_H
 
+#include <stdint.h>
+
 /* XXX: separate events for different buttons? */
 /* pinch/zoom gestures, handled similar to "drag-gesture" ? */
 
@@ -78,7 +80,7 @@ enum _MrgModifierState
 struct _MrgEvent {
   MrgType  type;
   Mrg     *mrg;
-  long     time;
+  uint32_t time;
 
   MrgModifierState state;
 
@@ -174,5 +176,10 @@ void mrg_listen_full (Mrg     *mrg,
 void  mrg_warp_pointer (Mrg *mrg, float x, float y);
 float mrg_pointer_x    (Mrg *mrg);
 float mrg_pointer_y    (Mrg *mrg);
+
+int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_key_press        (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
 
 #endif

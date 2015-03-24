@@ -19,6 +19,7 @@
 #define MICRO_RAPTOR_GUI
 #include "mrg-config.h"
 
+#include <stdint.h>
 /* if we've got GTK we've always got cairo */
 #if MRG_GTK
 #undef MRG_CAIRO

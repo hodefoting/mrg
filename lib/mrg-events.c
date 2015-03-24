@@ -473,23 +473,13 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
 }
 
 static int
-_mrg_emit_cb (Mrg *mrg, MrgList *items, MrgItem *grab_item, MrgEvent *event, MrgType type, float x, float y)
+_mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, float y)
 {
   MrgList *l;
   event->stop_propagate = 0;
   for (l = items; l; l = l->next)
   {
-    MrgType type2 = type;
-    if (l->data == grab_item)
-    {
-      if (type2 == MRG_MOTION)
-        type2 = MRG_DRAG_MOTION;
-      else if (type2 == MRG_PRESS)
-        type2 = MRG_DRAG_PRESS;
-      else if (type2 == MRG_RELEASE)
-        type2 = MRG_DRAG_RELEASE;
-    }
-    _mrg_emit_cb_item (mrg, l->data, event, type2, x, y);
+    _mrg_emit_cb_item (mrg, l->data, event, type, x, y);
     if (event->stop_propagate)
       return event->stop_propagate;
   }
@@ -559,7 +549,7 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
   event.mrg = mrg;
   event.time = mrg_ms (mrg);
 
-  int ret = _mrg_emit_cb (mrg, list, NULL, &event, MRG_TAP_AND_HOLD,
+  int ret = _mrg_emit_cb (mrg, list, &event, MRG_TAP_AND_HOLD,
       mrg->pointer_x[grab->device_no], mrg->pointer_y[grab->device_no]);
 
   mrg_list_free (&list);
@@ -571,7 +561,7 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
   return ret;
 }
 
-int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
+int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 {
   MrgList *hitlist = NULL;
   mrg->pointer_x[device_no] = x;
@@ -639,14 +629,11 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
       if (mrg_item->types & MRG_TAP_AND_HOLD)
       {
          grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
-    
       }
     }
     _mrg_emit_cb_item (mrg, mrg_item, event, MRG_PRESS, x, y);
     if (!event->stop_propagate)
-    {
       _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DRAG_PRESS, x, y);
-    }
 
     if (event->stop_propagate)
       l = NULL;
@@ -678,7 +665,7 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
   }
 }
 
-int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
+int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 {
   if (time == 0)
     time = mrg_ms (mrg);
@@ -771,9 +758,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
   if (hitlist)
   {
     if (!event->stop_propagate)
-    {
-      _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_RELEASE, x, y);
-    }
+      _mrg_emit_cb (mrg, hitlist, event, MRG_RELEASE, x, y);
     mrg_list_free (&hitlist);
   }
   mrg_list_free (&grablist);
@@ -787,7 +772,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
  *
  */
 
-int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
+int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 {
   MrgList   *hitlist = NULL;
   MrgList   *grablist = NULL, *g;
@@ -839,9 +824,7 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
   if (hitlist)
   {
     if (!event->stop_propagate)
-    {
-      _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_MOTION, x, y);
-    }
+      _mrg_emit_cb (mrg, hitlist, event, MRG_MOTION, x, y);
     mrg_list_free (&hitlist);
   }
   mrg_list_free (&grablist);
@@ -849,7 +832,7 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
 }
 
 int mrg_key_press (Mrg *mrg, unsigned int keyval,
-                   const char *string, long time)
+                   const char *string, uint32_t time)
 {
   MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_KEY_DOWN);
   MrgEvent event = {0,};

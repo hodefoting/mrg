@@ -98,7 +98,8 @@ _mrg_ticks (void)
   gettimeofday (&measure_time, NULL);
   return usecs (measure_time) - usecs (start_time);
 }
-long mrg_ms (Mrg *mrg)
+
+uint32_t mrg_ms (Mrg *mrg)
 {
   return _mrg_ticks () / 1000;
 }

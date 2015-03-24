@@ -30,7 +30,7 @@ int mrg_in_dirty_rect (Mrg *mrg,
 void mrg_restarter_add_path (Mrg *mrg, const char *path);
 
 /* returns ms since start */
-long mrg_ms (Mrg *mrg);
+uint32_t mrg_ms (Mrg *mrg);
 
 #define EM(value)           (value*mrg_em(mrg))
 #define PERCENT_X(value)    (value*mrg_width(mrg))

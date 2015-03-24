@@ -198,7 +198,12 @@ void mrg_listen_full (Mrg     *mrg,
                       void   (*finalize)(void *listen_data, void *listen_data2,  void *finalize_data),
                       void    *finalize_data);
 
-long mrg_ms (Mrg *mrg);
+uint32_t mrg_ms (Mrg *mrg);
+
+int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_key_press        (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
 
 /* these deal with pointer_no 0 only
  */
@@ -758,6 +763,11 @@ ffi.metatype('Mrg', {__index = {
   set_title        = function (...) C.mrg_set_title (...) end,
   get_title        = function (...) return C.mrg_get_title (...) end,
   set_font_size    = function (...) C.mrg_set_font_size (...) end,
+
+  pointer_press = function (...) C.mrg_pointer_press (...) end,
+  pointer_release = function (...) C.mrg_pointer_release (...) end,
+  pointer_motion = function (...) C.mrg_pointer_motion (...) end,
+  key_press      = function (...) C.mrg_key_press (...) end,
 
   add_idle = function (mrg, ms, cb, data1)
     local notify_fun, cb_fun;
