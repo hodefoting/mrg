@@ -389,8 +389,6 @@ struct _Mrg {
   long         tap_delay_hold;
 
   int          tap_hysteresis;
-
-  long         drag_start;
 };
 
 int _mrg_file_get_contents (const char  *path,

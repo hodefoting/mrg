@@ -24,6 +24,7 @@ struct _MrgGrab
   MrgItem *item;
   int      device_no;
   int      timeout_id;
+  int      start_time;
 };
 
 static void grab_free (Mrg *mrg, MrgGrab *grab)
@@ -634,7 +635,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
     {
       grab = device_add_grab (mrg, device_no, mrg_item);
 
-      mrg->drag_start = time; // XXX: should be on grab
+      grab->start_time = time;
 
       if (mrg_item->types & MRG_TAP_AND_HOLD)
       {
@@ -745,7 +746,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
     {
       if (grab->item->types & MRG_TAP)
       {
-        long delay = time - mrg->drag_start;
+        long delay = time - grab->start_time;
         if (delay > mrg->tap_delay_min &&
             delay < mrg->tap_delay_max &&
             
