@@ -374,6 +374,7 @@ typedef struct IdleCb {
   void (*destroy_notify)(void *destroy_data);
   void *destroy_data;
 
+  int   ticks_full;
   int   ticks_remaining;
   int   is_idle;
   int   id;
@@ -404,6 +405,8 @@ void _mrg_idle_iteration (Mrg *mrg)
     {
       if (item->cb (mrg, item->idle_data) == FALSE)
         mrg_list_prepend (&to_remove, item);
+      else
+        item->ticks_remaining = item->ticks_full;
     }
   }
   for (l = to_remove; l; l = l->next)
@@ -836,6 +839,7 @@ int mrg_add_timeout_full (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_
   item->cb = idle_cb;
   item->idle_data = idle_data;
   item->id = ++mrg->idle_id;
+  item->ticks_full = 
   item->ticks_remaining = ms * 1000;
   item->destroy_notify = destroy_notify;
   item->destroy_data = destroy_data;
@@ -855,6 +859,7 @@ int mrg_add_idle_full (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void
   item->cb = idle_cb;
   item->idle_data = idle_data;
   item->id = ++mrg->idle_id;
+  item->ticks_full =
   item->ticks_remaining = -1;
   item->is_idle = 1;
   item->destroy_notify = destroy_notify;
