@@ -295,9 +295,7 @@ struct _Mrg {
   MrgString     *style_global;
 
   MrgList       *items; 
-  MrgItem       *prev;
 
-  MrgList       *grabs;
   //MrgItem       *grab;
 
   int            frozen;
@@ -306,6 +304,11 @@ struct _Mrg {
   //int          is_press_grabbed;
 
   int            quit;
+
+  MrgList       *grabs; /* could split the grabs per device in the same way,
+                           to make dispatch overhead smaller,. probably
+                           not much to win though. */
+  MrgItem       *prev[MRG_MAX_DEVICES];
   float          pointer_x[MRG_MAX_DEVICES];
   float          pointer_y[MRG_MAX_DEVICES];
   unsigned char  pointer_down[MRG_MAX_DEVICES];

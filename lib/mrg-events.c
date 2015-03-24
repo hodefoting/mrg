@@ -205,7 +205,7 @@ path_equal (cairo_path_t *path,
   return 1;
 }
 
-MrgList *_mrg_detect_all (Mrg *mrg, float x, float y, MrgType type)
+MrgList *_mrg_detect_list (Mrg *mrg, float x, float y, MrgType type)
 {
   MrgList *a;
   MrgList *ret = NULL;
@@ -261,7 +261,7 @@ MrgList *_mrg_detect_all (Mrg *mrg, float x, float y, MrgType type)
 
 MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type)
 {
-  MrgList *l = _mrg_detect_all (mrg, x, y, type);
+  MrgList *l = _mrg_detect_list (mrg, x, y, type);
   if (l)
   {
     mrg_list_reverse (&l);
@@ -496,11 +496,11 @@ _mrg_emit_cb (Mrg *mrg, MrgList *items, MrgItem *grab_item, MrgEvent *event, Mrg
   return 0;
 }
 
-static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgList **hitlist)
+static MrgItem *_mrg_update_item (Mrg *mrg, int device_no, float x, float y, MrgType type, MrgList **hitlist)
 {
   MrgItem *current = NULL;
 
-  MrgList *l = _mrg_detect_all (mrg, x, y, type);
+  MrgList *l = _mrg_detect_list (mrg, x, y, type);
   if (l)
   {
     mrg_list_reverse (&l);
@@ -512,25 +512,25 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgL
     mrg_list_free (&l);
 
 
-  if (mrg->prev == NULL || current == NULL || (current->path_hash != mrg->prev->path_hash))
+  if (mrg->prev[device_no] == NULL || current == NULL || (current->path_hash != mrg->prev[device_no]->path_hash))
   {
     int focus_radius = 2;
     if (current)
       _mrg_item_ref (current);
 
-    if (mrg->prev)
+    if (mrg->prev[device_no])
     {
       {
-        MrgRectangle rect = {floor(mrg->prev->x0-focus_radius),
-                             floor(mrg->prev->y0-focus_radius),
-                             ceil(mrg->prev->x1)-floor(mrg->prev->x0) + focus_radius * 2,
-                             ceil(mrg->prev->y1)-floor(mrg->prev->y0) + focus_radius * 2};
+        MrgRectangle rect = {floor(mrg->prev[device_no]->x0-focus_radius),
+                             floor(mrg->prev[device_no]->y0-focus_radius),
+                             ceil(mrg->prev[device_no]->x1)-floor(mrg->prev[device_no]->x0) + focus_radius * 2,
+                             ceil(mrg->prev[device_no]->y1)-floor(mrg->prev[device_no]->y0) + focus_radius * 2};
         mrg_queue_draw (mrg, &rect);
       }
 
-      _mrg_emit_cb_item (mrg, mrg->prev, NULL, MRG_LEAVE, x, y);
-      _mrg_item_unref (mrg->prev);
-      mrg->prev = NULL;
+      _mrg_emit_cb_item (mrg, mrg->prev[device_no], NULL, MRG_LEAVE, x, y);
+      _mrg_item_unref (mrg->prev[device_no]);
+      mrg->prev[device_no] = NULL;
     }
     if (current)
     {
@@ -542,7 +542,7 @@ static MrgItem *_mrg_update_item (Mrg *mrg, float x, float y, MrgType type, MrgL
         mrg_queue_draw (mrg, &rect);
       }
       _mrg_emit_cb_item (mrg, current, NULL, MRG_ENTER, x, y);
-      mrg->prev = current;
+      mrg->prev[device_no] = current;
     }
   }
   current = _mrg_detect (mrg, x, y, type);
@@ -558,7 +558,6 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
 
   event.mrg = mrg;
   event.time = mrg_ms (mrg);
-  event.type = MRG_TAP_AND_HOLD;
 
   int ret = _mrg_emit_cb (mrg, list, NULL, &event, MRG_TAP_AND_HOLD,
       mrg->pointer_x[grab->device_no], mrg->pointer_y[grab->device_no]);
@@ -622,7 +621,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
   MrgGrab *grab = NULL;
   MrgList *l;
 
-  _mrg_update_item (mrg, x, y, 
+  _mrg_update_item (mrg, device_no, x, y, 
       MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
 
   for (l = hitlist; l; l = l?l->next:NULL)
@@ -643,11 +642,9 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, long time)
     
       }
     }
-    event->type = MRG_PRESS;
     _mrg_emit_cb_item (mrg, mrg_item, event, MRG_PRESS, x, y);
     if (!event->stop_propagate)
     {
-      event->type = MRG_DRAG_PRESS;
       _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DRAG_PRESS, x, y);
     }
 
@@ -671,7 +668,6 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
   
   event.mrg = mrg;
   event.time = time;
-  event.type = MRG_KEY_DOWN;
   event.key_name = "resize-event"; /* gets delivered to clients as a key_down event 
    */
 
@@ -735,7 +731,7 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
   MrgList *grablist = NULL , *g= NULL;
   MrgGrab *grab;
 
-  _mrg_update_item (mrg, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
+  _mrg_update_item (mrg, device_no, x, y, MRG_RELEASE | MRG_DRAG_RELEASE, &hitlist);
   grablist = device_get_grabs (mrg, device_no);
 
   for (g = grablist; g; g = g->next)
@@ -754,14 +750,12 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
             (event->start_y - event->y) * (event->start_y - event->y) < 8 
             )
         {
-          event->type = MRG_TAP;
           _mrg_emit_cb_item (mrg, grab->item, event, MRG_TAP, x, y);
         }
       }
 
       if (!event->stop_propagate && grab->item->types & MRG_DRAG_RELEASE)
       {
-        event->type = MRG_DRAG_RELEASE;
         _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_RELEASE, x, y);
       }
     }
@@ -778,7 +772,6 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, long time)
   {
     if (!event->stop_propagate)
     {
-      event->type = MRG_RELEASE;
       _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_RELEASE, x, y);
     }
     mrg_list_free (&hitlist);
@@ -807,7 +800,6 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
   if (time == 0)
     time = mrg_ms (mrg);
 
-  event->type = MRG_MOTION;
   event->mrg  = mrg;
   event->x    = x;
   event->y    = y;
@@ -829,7 +821,7 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
   mrg_queue_draw (mrg, NULL); /* XXX: not really needed for all backends,
                                       needs more tinkering */
   grablist = device_get_grabs (mrg, device_no);
-  _mrg_update_item (mrg, x, y, MRG_MOTION, &hitlist);
+  _mrg_update_item (mrg, device_no, x, y, MRG_MOTION, &hitlist);
 
   event->delta_x = x - event->prev_x;
   event->delta_y = y - event->prev_y;
@@ -839,7 +831,6 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
   for (g = grablist; g; g = g->next)
   {
     grab = g->data;
-    event->type = MRG_DRAG_MOTION;
 
     _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_MOTION, x, y);
     if (event->stop_propagate)
@@ -849,7 +840,6 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, long time)
   {
     if (!event->stop_propagate)
     {
-      event->type = MRG_MOTION;
       _mrg_emit_cb (mrg, hitlist, NULL, event, MRG_MOTION, x, y);
     }
     mrg_list_free (&hitlist);

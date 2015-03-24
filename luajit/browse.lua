@@ -1,5 +1,7 @@
 #!/usr/bin/env luajit
 
+
+
 -- todo
 --   scrolling of file view
 --   more info in dir mode
@@ -17,11 +19,14 @@
 
 local S = require('syscall')
 
+S.setenv('MRG_RESTARTER','yes')
+S.setenv('MRG_BACKEND','mmm')
+
 --local path = '/home/pippin/src/mrg/luajit'
 local path = '/home/'
 local folder_pan = 0;
 
-local os = require('os')
+-- local os = require('os')
 
 function serialize (o)
   if type(o) == "number" then
@@ -47,20 +52,19 @@ function serialize (o)
 end
 
 function store_state()
-  S.setenv("BROWSER_PATH", path)
+  S.setenv("BROWSER_PATH", path, 1)
   print ("set ".. path)
-  S.setenv("FOLDER_PAN", ''.. folder_pan)
+  S.setenv("FOLDER_PAN", ''.. folder_pan, 1)
 end
 
 function restore_state()
-  if (os.getenv("BROWSER_PATH")) then
-  path = os.getenv("BROWSER_PATH")
-    print ("got it! " .. path)
+  if (S.getenv("BROWSER_PATH")) then
+    path = S.getenv("BROWSER_PATH")
   end
-  if (os.getenv("FOLDER_PAN")) then
-  folder_pan = tonumber (os.getenv("FOLDER_PAN"))
+  if (S.getenv("FOLDER_PAN")) then
+    folder_pan = tonumber (S.getenv("FOLDER_PAN"))
   end
-  print(path)
+  print( 'path:'..path .. ' pan:' .. folder_pan)
 end
 
 if (#arg >= 1) then
@@ -73,14 +77,14 @@ print 'foo'
 --local path = '/home/pippin/images'
 local io  = require('io')
 local Mrg = require('mrg')
-local mrg = Mrg.new(512,384);
+local mrg = Mrg.new(640, 480);
 
 
 
 local sting = require('string')
 local css = [[
 
-document {font-size: 30px; }
+document {font-size: 20px; }
 .folder {border: 1px solid red; }
 .dentry {color:blue} 
 .entry  {border: 1px solid green; }
