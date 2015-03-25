@@ -318,7 +318,7 @@ static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
   Mmm *mmm = client->mmm;
 
   char buf[256];
-  sprintf (buf, "mouse-press %f %f", event->x, event->y);
+  sprintf (buf, "mouse-press %f %f %i", event->x, event->y, event->device_no);
   if (host->focused)
     mrg_client_raise_top (host->focused);
   mmm_add_event (mmm, buf);
@@ -332,9 +332,9 @@ static void mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 
   char buf[256];
   if (event->mrg->pointer_down[1])
-    sprintf (buf, "mouse-drag %f %f", event->x, event->y);
+    sprintf (buf, "mouse-drag %f %f %i", event->x, event->y, event->device_no);
   else
-    sprintf (buf, "mouse-motion %f %f", event->x, event->y);
+    sprintf (buf, "mouse-motion %f %f %i", event->x, event->y, event->device_no);
   mmm_add_event (mmm, buf);
   event->stop_propagate = 1;
 }
@@ -344,7 +344,7 @@ static void mrg_client_release (MrgEvent *event, void *client_, void *host_)
   MrgClient *client = client_;
   Mmm *mmm = client->mmm;
   char buf[256];
-  sprintf (buf, "mouse-release %f %f", event->x, event->y);
+  sprintf (buf, "mouse-release %f %f %i", event->x, event->y, event->device_no);
   mmm_add_event (mmm, buf);
   event->stop_propagate = 1;
 }
