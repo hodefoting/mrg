@@ -868,4 +868,185 @@ ffi.metatype('MrgClient',    {__index = {
   M.DRAG_RELEASE = C.MRG_DRAG_RELEASE;
   M.DRAG = C.MRG_DRAG;
 
+
+
+local keyboard_visible = false
+
+local keys={
+  {x=20,   y=25, w=44, label='esc'},
+  {x=20,   y=65, label='`', shifted='~'},
+  {x=60,   y=65, label='1', shifted='!'},
+  {x=100,  y=65, label='2', shifted='@'},
+  {x=140,  y=65, label='3', shifted='#'},
+  {x=180,  y=65, label='4', shifted='$'},
+  {x=220,  y=65, label='5', shifted='%'},
+  {x=260,  y=65, label='6', shifted='^'},
+  {x=300,  y=65, label='7', shifted='&'},
+  {x=340,  y=65, label='8', shifted='*'},
+  {x=380,  y=65, label='9', shifted='('},
+  {x=420,  y=65, label='0', shifted=')'},
+  {x=460,  y=65, label='-', shifted='_'},
+  {x=500,  y=65, label='=', shifted='+'},
+  {x=540,  w=40, y=65, label='⌫', code='backspace'},
+
+  {x=400,  w=40, y=225, label='ins', code='insert'},
+  {x=450,  w=40, y=225, label='del', code='delete'},
+
+  {x=20,   y=105, label='↹', code='tab'},
+  {x=65,   y=105, label='q', shifted='Q'},
+  {x=105,  y=105, label='w', shifted='W'},
+  {x=145,  y=105, label='e', shifted='E'},
+  {x=185,  y=105, label='r', shifted='R'},
+  {x=225,  y=105, label='t', shifted='T'},
+  {x=265,  y=105, label='y', shifted='Y'},
+  {x=305,  y=105, label='u', shifted='U'},
+  {x=345,  y=105, label='i', shifted='I'},
+  {x=385,  y=105, label='o', shifted='O'},
+  {x=425,  y=105, label='p', shifted='P'},
+  {x=465,  y=105, label='[', shifted='{'},
+  {x=505,  y=105, label=']', shifted='}'},
+  {x=545,  y=105, label='\\', shifted='|'},
+
+  {x=70,   y=145, label='a', shifted='A'},
+  {x=110,  y=145, label='s', shifted='S'},
+  {x=150,  y=145, label='d', shifted='D'},
+  {x=190,  y=145, label='f', shifted='F'},
+  {x=230,  y=145, label='g', shifted='G'},
+  {x=270,  y=145, label='h', shifted='H'},
+  {x=310,  y=145, label='j', shifted='J'},
+  {x=350,  y=145, label='k', shifted='K'},
+  {x=390,  y=145, label='l', shifted='L'},
+  {x=430,  y=145, label=';', shifted=':'},
+  {x=470,  y=145, label='\'', shifted='"'},
+  {x=510, w=50, y=145, label='⏎', code='return' },
+
+  {x=10,   w=60, y=185, label='shift', type='modal'},  -- ⇧
+  {x=75,   y=185, label='z', shifted='Z'},
+  {x=115,  y=185, label='x', shifted='X'},
+  {x=155,  y=185, label='c', shifted='C'},
+  {x=195,  y=185, label='v', shifted='V'},
+  {x=235,  y=185, label='b', shifted='B'},
+  {x=275,  y=185, label='n', shifted='N'},
+  {x=315,  y=185, label='m', shifted='M'},
+  {x=355,  y=185, label=',', shifted='<'},
+  {x=395,  y=185, label='.', shifted='>'},
+  {x=435,  y=185, label='/', shifted='?'},
+  {x=475,  w=60, y=185, label='shift', type='modal'},
+
+  {x=20, w=50, y=225, label='ctrl', type='modal'},
+  {x=75, w=40,  y=225, label='alt', type='modal'},
+  {x=120,  y=225, w=230, label=' ', code='space'},
+
+  {x=540,  y=185, label='↑', code='up'},
+  {x=500,  y=225, label='←', code='left'},
+  {x=540,  y=225, label='↓', code='down'},
+  {x=580,  y=225, label='→', code='right'},
+
+  {x=590,  y=145, label='⌨', type='keyboard'},
+}
+
+local pan_y = 0
+local pan_x = 0
+local shifted = false
+local alted = false
+local ctrld = false
+
+M.draw_keyboard = function (mrg)
+  local em = 20
+  local cr = mrg:cr()
+
+  local dim = mrg:width() / 620
+
+  cr:set_font_size(em)
+
+  if not keyboard_visible then
+    cr:rectangle (mrg:width() - 4 * em, mrg:height() - 4 * em, 4 * em, 4 * em)
+    mrg:listen(M.TAP, function(event) 
+      keyboard_visible = true
+      mrg:queue_draw(nil)
+    end)
+    cr:set_source_rgba(0,0,0,0.3)
+    cr:fill()
+  else
+    cr:translate(0,mrg:height()-250* dim)
+    cr:scale(dim, dim)
+    cr:translate(pan_x, pan_y)
+    for k,v in ipairs(keys) do
+      cr:new_path()
+      if not v.w then v.w = 34 end
+      if v.w then
+        cr:rectangle(v.x - em * 0.8, v.y - em, v.w, em * 1.8)
+      else
+        cr:arc (v.x, v.y, em, 0, 3.1415*2)
+      end
+      mrg:listen(M.TAP, function(event)
+        if v.type == 'keyboard' then
+          keyboard_visible = false
+        else
+          local keystr = v.label
+          if shifted and v.shifted then keystr = v.shifted end
+          if v.code then keystr = v.code end
+          if alted  then keystr = 'alt-' .. keystr end
+          if ctrled then keystr = 'control-' .. keystr end
+          mrg:key_press(0, keystr, 0)
+        end
+        mrg:queue_draw(nil)
+        event.stop_propagate = 1
+      end)
+      if v.type == 'modal' then
+
+        mrg:listen(M.TAP, function(event)
+          if v.label == 'shift' then
+            shifted = not shifted
+            mrg:queue_draw(nil)
+          end
+          if v.label == 'ctrl' then
+            ctrled = not ctrled
+            mrg:queue_draw(nil)
+          end
+          if v.label == 'alt' then
+            alted = not alted
+            mrg:queue_draw(nil)
+          end
+        end)
+        if (v.label == 'shift' and shifted) or
+           (v.label == 'alt' and alted) or
+           (v.label == 'ctrl' and ctrled)
+          then
+          cr:set_source_rgba (0,0,0,0.5)
+          cr:stroke_preserve()
+        end
+
+      end
+      cr:set_source_rgba (0.0,0.0,0.0,0.25)
+      cr:fill ()
+      cr:move_to (v.x - 6, v.y + 4)
+      cr:set_source_rgba (1,1,1,1.0)
+      if shifted then
+        if v.shifted then
+          cr:show_text (v.shifted)
+        else
+          cr:show_text (v.label)
+        end
+      else
+        cr:show_text (v.label)
+      end
+    end
+
+    cr:rectangle(50,5,470,35)
+    cr:set_source_rgba(0,0,1,0.2)
+    mrg:listen(M.DRAG, function(event)
+      pan_y = pan_y + event.delta_y
+      --pan_x = pan_x + event.delta_x
+      mrg:queue_draw(nil)
+      event.stop_propagate = 1
+    end)
+    cr:fill()
+  end
+end
+
+
+
+
+
 return M

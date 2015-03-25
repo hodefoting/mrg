@@ -10,7 +10,7 @@ local mrg    = Mrg.new(640, 480);
 local host   = mrg:host_new("/tmp/mrg")
 
 local css = "document {background-color:#111; }";
-
+--[[
 local mrg2 = Mrg.new(200, 200, "mem")
 mrg2:set_title ("task list")
 mrg2:set_ui(function(mrg) 
@@ -18,7 +18,7 @@ mrg2:set_ui(function(mrg)
 end)
 host:add_client_mrg(mrg2, 40, 40)
 host:add_client_mrg(mrg2, 40, 140)
-
+]]
 mrg:set_ui(
   function()
     local cr = mrg:cr()
@@ -40,7 +40,7 @@ mrg:set_ui(
 
     host:monitor_dir()
     local old_focused = host:focused()
-    host:set_focused(nil)  -- (render_sloppy sets focused as part of rendering)
+    -- host:set_focused(nil)  -- (render_sloppy sets focused as part of rendering)
 
 
     local clients = host:clients()
@@ -48,7 +48,7 @@ mrg:set_ui(
       local x, y = client:xy()
       local w, h = client:size()
 
-      client:render_sloppy(x, y)
+      client:render(mrg, x, y)
 
       if old_focused == client then
       mrg:start_with_style('client.focused', string.format('left:%dpx;top:%dpx;width:%dpx;height:%dpx', x-1, y-1, w, h))
@@ -64,7 +64,9 @@ mrg:set_ui(
         local x, y = client:xy()
         x, y = x + event.delta_x, y + event.delta_y;
         client:set_xy(x,y)
+        host:set_focused(client)
         mrg:queue_draw(NULL)
+        event.stop_propagate = 1
         return 0
       end)
       mrg:print(client:title())
@@ -89,6 +91,7 @@ mrg:set_ui(
         w, h = w + event.delta_x, h + event.delta_y;
         client:set_size(w, h)
         mrg:queue_draw(NULL)
+        event.stop_propagate = 1
       end)
       cr:fill()
 
@@ -97,6 +100,8 @@ mrg:set_ui(
     host:register_events()
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
     mrg:close()
+
+    Mrg.draw_keyboard(mrg)
   end
 )
 

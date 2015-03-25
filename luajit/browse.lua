@@ -214,6 +214,14 @@ function (mrg, data)
     path_bar(mrg, path)
     x, y = mrg:xy()
     draw_folder(mrg, path, undefined, true)
+
+    cr:rectangle(0, y, mrg:width(), mrg:height())
+    mrg:listen(Mrg.DRAG, function(ev)
+       folder_pan = folder_pan + ev.delta_y
+       mrg:queue_draw(null)
+    end)
+    cr:new_path()
+
   elseif stat.isreg then
     path_bar(mrg, path)
     x, y = mrg:xy()
@@ -241,15 +249,15 @@ function (mrg, data)
       mrg:print_xml ("<pre class='content'>".. f:read("*all") .. "</pre> ")
       f:close()
     end
+
+    cr:rectangle(0, y, 8 * mrg:em(), mrg:height())
+    mrg:listen(Mrg.DRAG, function(ev)
+       folder_pan = folder_pan + ev.delta_y
+       mrg:queue_draw(null)
+    end)
+    cr:new_path()
   end
 
-  if true then
-  cr:rectangle(0, y, 8 * mrg:em(), mrg:height())
-  mrg:listen(Mrg.DRAG, function(ev)
-     folder_pan = folder_pan + ev.delta_y
-     mrg:queue_draw(null)
-  end)
-  end
 
   mrg:add_binding("control-q", NULL, NULL, function (event) mrg:quit() return 0 end)
   mrg:add_binding("escape", NULL, NULL, function (event)
