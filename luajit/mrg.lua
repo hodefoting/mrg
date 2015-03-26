@@ -703,7 +703,7 @@ ffi.metatype('Mrg', {__index = {
   restarter_add_path = function (...) C.mrg_restarter_add_path(...) end,
   close            = function (...) C.mrg_end(...) end,
   queue_draw       = function (...) C.mrg_queue_draw(...) end,
-  ms               = function (mrg) C.mrg_ms(mrg) end,
+  ms               = function (...) return C.mrg_ms(...) end,
   add_binding = function(mrg,key,action,label,cb,db_data)
     local notify_fun, cb_fun;
     local notify_cb = function (data1, data2,finalize_data)
