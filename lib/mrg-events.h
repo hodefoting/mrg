@@ -89,14 +89,14 @@ struct _MrgEvent {
                       /* 2 = right mouse button */
                       /* 3 = first multi-touch .. (NYI) */
 
-  float   device_x; /* untransformed x/y coordinates  */
+  float   device_x; /* untransformed (device) coordinates  */
   float   device_y;
 
   /* coordinates; and deltas for motion/drag events in user-coordinates: */
   float   x;
   float   y;
-  float   start_x; /* start-coordinates (press) event for drag */
-  float   start_y;
+  float   start_x; /* start-coordinates (press) event for drag, */
+  float   start_y; /*    untransformed coordinates */
   float   prev_x;  /* previous events coordinates */
   float   prev_y;
   float   delta_x; /* x - prev_x, redundant - but often useful */

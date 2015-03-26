@@ -17,6 +17,7 @@
 
 #include "mrg-internal.h"
 
+
 typedef struct _MrgGrab MrgGrab;
 
 struct _MrgGrab
@@ -25,6 +26,7 @@ struct _MrgGrab
   int      device_no;
   int      timeout_id;
   int      start_time;
+  MrgType  type;
 };
 
 static void grab_free (Mrg *mrg, MrgGrab *grab)
@@ -44,10 +46,11 @@ static void device_remove_grab (Mrg *mrg, MrgGrab *grab)
   grab_free (mrg, grab);
 }
 
-static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item)
+static MrgGrab *device_add_grab (Mrg *mrg, int device_no, MrgItem *item, MrgType type)
 {
   MrgGrab *grab = calloc (1, sizeof (MrgGrab));
   grab->item = item;
+  grab->type = type;
   _mrg_item_ref (item);
   grab->device_no = device_no;
   mrg_list_append (&mrg->grabs, grab);
@@ -449,6 +452,21 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
   cairo_matrix_transform_point (&item->inv_matrix, &tx, &ty);
     transformed_event.x = tx;
     transformed_event.y = ty;
+
+    if ((type & MRG_DRAG_PRESS) ||
+        (type & MRG_DRAG_MOTION) ||
+        (type & MRG_MOTION))   /* probably a worthwhile check for the performance 
+                                  benefit
+                                */
+    {
+      tx = transformed_event.start_x;
+      ty = transformed_event.start_y;
+    cairo_matrix_transform_point (&item->inv_matrix, &tx, &ty);
+      transformed_event.start_x = tx;
+      transformed_event.start_y = ty;
+    }
+
+
     tx = transformed_event.delta_x;
     ty = transformed_event.delta_y;
   cairo_matrix_transform_distance (&item->inv_matrix, &tx, &ty);
@@ -622,8 +640,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, uint32_t time)
          (mrg_item->types & MRG_TAP) ||
          (mrg_item->types & MRG_TAP_AND_HOLD)))
     {
-      grab = device_add_grab (mrg, device_no, mrg_item);
-
+      grab = device_add_grab (mrg, device_no, mrg_item, mrg_item->types);
       grab->start_time = time;
 
       if (mrg_item->types & MRG_TAP_AND_HOLD)
@@ -747,11 +764,6 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t tim
       }
     }
 
-    if (grab->timeout_id)
-    {
-      mrg_remove_idle (mrg, grab->timeout_id);
-      grab->timeout_id = 0;
-    }
     device_remove_grab (mrg, grab);
   }
 
@@ -813,13 +825,38 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time
   event->prev_x  = x;
   event->prev_y  = y;
 
+  MrgList *remove_grabs = NULL;
+
   for (g = grablist; g; g = g->next)
   {
     grab = g->data;
 
-    _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_MOTION, x, y);
-    if (event->stop_propagate)
-      break;
+    if ((grab->type & MRG_TAP) ||
+        (grab->type & MRG_TAP_AND_HOLD))
+    {
+      if (
+          sqrt (
+            (event->start_x - event->x) * (event->start_x - event->x) +
+            (event->start_y - event->y) * (event->start_y - event->y)) > 
+              mrg->tap_hysteresis
+          )
+      {
+        mrg_list_prepend (&remove_grabs, grab);
+      }
+    }
+
+    if (grab->type & MRG_DRAG_MOTION)
+    {
+      _mrg_emit_cb_item (mrg, grab->item, event, MRG_DRAG_MOTION, x, y);
+      if (event->stop_propagate)
+        break;
+    }
+  }
+  if (remove_grabs)
+  {
+    for (g = remove_grabs; g; g = g->next)
+      device_remove_grab (mrg, g->data);
+    mrg_list_free (&remove_grabs);
   }
   if (hitlist)
   {
