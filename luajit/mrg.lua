@@ -667,6 +667,17 @@ ffi.metatype('Mrg', {__index = {
   warp_pointer     = function (...) C.mrg_warp_pointer(...) end,
   quit             = function (...) C.mrg_quit(...) end,
   image            = function (...) C.mrg_image(...) end,
+
+  image_size       = function (mrg, path)
+    local rw = ffi.new'int[1]'
+    local rh = ffi.new'int[1]'
+    rw[0] = -1
+    rh[0] = -1
+    C.mrg_query_image (mrg, path, rw, rh)
+    return rw[0], rh[0]
+  end,
+
+
   css_set          = function (...) C.mrg_css_set(...) end,
   set_style        = function (...) C.mrg_set_style(...) end,
   css_add          = function (...) C.mrg_css_add(...) end,

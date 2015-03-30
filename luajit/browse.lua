@@ -52,8 +52,9 @@ function serialize (o)
 end
 
 function store_state()
+  -- the state of the browser is small enough to contain in environment
+  -- variables, which is good enough for live-coding
   S.setenv("BROWSER_PATH", path, 1)
-  print ("set ".. path)
   S.setenv("FOLDER_PAN", ''.. folder_pan, 1)
 end
 
@@ -64,7 +65,6 @@ function restore_state()
   if (S.getenv("FOLDER_PAN")) then
     folder_pan = tonumber (S.getenv("FOLDER_PAN"))
   end
-  print( 'path:'..path .. ' pan:' .. folder_pan)
 end
 
 if (#arg >= 1) then
@@ -72,7 +72,6 @@ if (#arg >= 1) then
 end
 
 restore_state()
-print 'foo'
 
 --local path = '/home/pippin/images'
 local io  = require('io')
@@ -80,14 +79,12 @@ local Mrg = require('mrg')
 local mrg = Mrg.new(640, 480);
 
 
-
-local sting = require('string')
 local css = [[
-
+.pathbar { background: white; }
 document {font-size: 20px; }
-.folder {border: 1px solid red; }
+/* .folder {border: 1px solid red; } */
 .dentry {color:blue} 
-.entry  {border: 1px solid green; }
+/* .entry  {border: 1px solid green; } */
 #current { background: yellow; }
 .content {color: blue ; background: white; }
 .size { width: 4em; display: block; float: left; }
@@ -152,47 +149,71 @@ function path_bar(mrg)
   mrg:close()
 end
 
+function collect_path (path)
+    --local fd = S.open(path, "directory, rdonly")
+    local dir = {}
+    local hide_dot = true
+    for name in S.util.ls(path) do --fd:getdents() do
+       if name ~= '..' and name ~= '.' then
+         local combined_path = path .. '/' .. name
+         local file = {}
+         local stat = S.stat(combined_path)
+         if stat then
+         file.size = stat.size
+         file.isdir = stat.isdir
+         else
+           file.size = -1
+           file.isdir = false
+         end
+         file.path = combined_path
+         file.name = name
+         if not hide_dot or string.sub(file.name, 1, 1) ~= '.' then
+           table.insert(dir, file) 
+         end
+       end
+    end
+
+    table.sort(dir, function (a,b) 
+      if a.isdir == false and b.isdir == true then
+        return false
+      elseif a.isdir == true and b.isdir == false then
+        return true
+      end
+      return a.name < b.name
+    end)
+
+    return dir
+end
+
 function draw_folder(mrg, path, currpath, details)
     local cr = mrg:cr()
     cr:save()
     cr:translate (0, folder_pan)
-    local fd = S.open(path, "directory, rdonly")
     mrg:start('div.folder')
-    for d in fd:getdents() do
-       if d.name ~= '..' and d.name ~= '.' then
-         if details then
-           local size = S.stat(path .. '/' .. d.name).size
 
-            mrg:text_listen(Mrg.TAP,
-              function(event,d1,d2)
-                set_path (path .. '/' .. d.name);
-                return 0;
-              end)
-           if ( path .. '/' .. d.name == currpath) then
-             mrg:print_xml("<div class='entry' id='current'><span class='fname'>" .. d.name .. 
-               "</span><span class='size'>" .. size .. "</span></div> \n")
-           else
-             mrg:print_xml("<div class='entry'><span class='fname'>" .. d.name .. 
-               "</span><span class='size'>" .. size .. "</span></div> \n")
-           end
-           mrg:text_listen_done()
+    local dir = collect_path (path)
 
-           --print(d.name)
-         else
-            mrg:text_listen(Mrg.TAP,
-              function(event,d1,d2)
-                set_path (path .. '/' .. d.name);
-                return 0;
-              end)
-           if ( path .. '/' .. d.name == currpath) then
-             mrg:print_xml("<div class='entry' id='current'>" .. d.name .. 
-               "</div> \n")
-           else
-             mrg:print_xml("<div class='entry'>" .. d.name .. "</div> \n")
-           end
-           mrg:text_listen_done()
-         end
+    for i,file in pairs(dir) do
+      mrg:text_listen(Mrg.TAP,
+         function(event,d1,d2)
+           set_path (file.path)
+           return 0;
+         end)
+      local xml = "<div class='entry' "
+      if ( file.path == currpath) then
+        xml = xml .. " id='current' "
+      end
+      xml = xml .. "><span class='fname'>" .. file.name .. "</span>"
+      if details then
+          if file.isdir then
+            xml = xml .. "<span class='size'>[DIR]</span>"
+          else
+            xml = xml .. "<span class='size'>" .. file.size .. "</span>"
+          end
        end
+      xml = xml .. "</div> "
+      mrg:print_xml(xml)
+      mrg:text_listen_done()
     end
     mrg:close()
     cr:restore()
@@ -200,7 +221,36 @@ end
 
 function draw_image (mrg, x, y)
   local em = mrg:em()
-  mrg:image(8 * em,y,mrg:width() - 8 * em, mrg:height() - y, path)
+  local w, h = mrg:image_size(path)
+  local cr = mrg:cr()
+
+  local scale = 1.0;
+
+  local dw, dh;
+    
+  scale = (mrg:width () - 8 * em) / w
+  
+  dw, dh = w * scale, h * scale
+
+  if dw > mrg:width() - 8 * em then
+    scale = (mrg:width () - 8 * em) / w
+    dw, dh = w * scale, h * scale
+  end
+  if dh > mrg:height() - y then
+    scale = (mrg:height() - y) / h
+    dw, dh = w * scale, h * scale
+  end
+
+  cr:save()
+  cr:translate(8*em + ((mrg:width()-8 * em) - dw)/2, 
+              (y + ((mrg:height()-y) - dh)/2))
+  cr:rectangle(0, 0, mrg:width() - 8 * em, mrg:height() - y)
+  cr:clip()
+
+
+  mrg:image(0, 0, dw, dh, path)
+
+  cr:restore()
 end
 
 mrg:set_ui(
@@ -211,7 +261,6 @@ function (mrg, data)
   local x, y
 
   if stat.isdir then
-    path_bar(mrg, path)
     x, y = mrg:xy()
     draw_folder(mrg, path, undefined, true)
 
@@ -221,9 +270,10 @@ function (mrg, data)
        mrg:queue_draw(null)
     end)
     cr:new_path()
+    mrg:set_xy(0,0)
+    path_bar(mrg, path)
 
   elseif stat.isreg then
-    path_bar(mrg, path)
     x, y = mrg:xy()
     local em = mrg:em()
     draw_folder(mrg, get_parent(path), path, false)
@@ -256,6 +306,10 @@ function (mrg, data)
        mrg:queue_draw(null)
     end)
     cr:new_path()
+
+    mrg:set_xy(0,0)
+    path_bar(mrg, path)
+
   end
 
 

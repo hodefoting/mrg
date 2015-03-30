@@ -3,7 +3,7 @@
 local Mrg = require('mrg')
 local math = require('math')
 local os = require('os')
-local mrg = Mrg.new(500, 500)
+local mrg = Mrg.new(-1,-1)
 
 local BLANK = 0
 local LIGHT = 1
