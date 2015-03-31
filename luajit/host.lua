@@ -32,8 +32,11 @@ mrg:set_ui(
     mrg:close()
 
     mrg:start("applications")
-    mrg:print(" $ ")
-    mrg:print(" @ ")
+    mrg:text_listen(Mrg.PRESS, function(event)
+      os.execute('mrg terminal&')
+    end)
+    mrg:print("terminal")
+    mrg:text_listen_done()
     mrg:close()
 
     mrg:close()
@@ -41,7 +44,6 @@ mrg:set_ui(
     host:monitor_dir()
     local old_focused = host:focused()
     -- host:set_focused(nil)  -- (render_sloppy sets focused as part of rendering)
-
 
     local clients = host:clients()
     for i, client in ipairs(clients) do 
