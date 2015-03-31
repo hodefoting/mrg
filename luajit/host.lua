@@ -67,6 +67,7 @@ mrg:set_ui(
         x, y = x + event.delta_x, y + event.delta_y;
         client:set_xy(x,y)
         host:set_focused(client)
+        client:raise_top()
         mrg:queue_draw(NULL)
         event.stop_propagate = 1
         return 0

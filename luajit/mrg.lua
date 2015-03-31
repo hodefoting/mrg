@@ -1026,9 +1026,10 @@ local minimal={
   {x=400,  y=185, label='.', shifted='>', fn_label='”'},
   {x=440,  y=185, label='/', shifted='?', fn_label='€'},
 
-  {x=20, w=50, y=225, label='ctrl', type='modal'},
-  {x=75, w=40,  y=225, label='alt', type='modal'},
-  {x=120,  y=225, w=230, label=' ', code='space'},
+  {x=20,  y=225, w=30, label='Fn', shifted='Fx', type='modal'},
+  {x=55, w=50, y=225, label='ctrl', type='modal'},
+  {x=110, w=40,  y=225, label='alt', type='modal'},
+  {x=155,  y=225, w=230, label=' ', code='space'},
 
   {x=440,  y=225, label='←', code='left', fn_label='pup', fn_code='page-up'},
   {x=480,  y=225, label='↓', code='down', fn_label='end', fn_code='end'},
@@ -1036,8 +1037,7 @@ local minimal={
   {x=520,  y=225, label='→', code='right', fn_label='pdn', fn_code='page-down'},
 
   {x=520,   y=185, label='`', shifted='~', fn_label='ins', fn_code='insert'},
-  {x=355,  y=225, w=45, label='⌨', type='keyboard'},
-  {x=405,  y=225, w=30, label='Fn', shifted='Fx', type='modal'},
+  {x=390, w=45, y=225, label='⌨', type='keyboard'},
 }
 
 local keys, y_start
@@ -1060,10 +1060,13 @@ local fnd = false
 M.draw_keyboard = function (mrg)
   local em = 20
   local cr = mrg:cr()
+  local fg = {r=0,g=0,b=0}
+  local bg = {r=1,g=1,b=1}
+
 
   local dim = mrg:width() / 555
 
-  cr:set_font_size(em * 0.7)
+  cr:set_font_size(em * 0.8)
 
   if not keyboard_visible then
     cr:rectangle (mrg:width() - 4 * em, mrg:height() - 4 * em, 4 * em, 4 * em)
@@ -1071,7 +1074,7 @@ M.draw_keyboard = function (mrg)
       keyboard_visible = true
       mrg:queue_draw(nil)
     end)
-    cr:set_source_rgba(0,0,0,0.3)
+    cr:set_source_rgba(bg.r,bg.g,bg.b,0.6)
     cr:fill()
   else
     cr:translate(0,mrg:height()-250* dim)
@@ -1079,7 +1082,7 @@ M.draw_keyboard = function (mrg)
     cr:translate(pan_x, pan_y)
 
     cr:rectangle(0,y_start,620,166)
-    cr:set_source_rgba(0,0,0,0.4)
+    cr:set_source_rgba(bg.r,bg.g,bg.b,0.6)
     mrg:listen(M.COORD, function(e) e.stop_propagate=1 end)
     cr:fill()
 
@@ -1108,41 +1111,56 @@ M.draw_keyboard = function (mrg)
         mrg:queue_draw(nil)
         event.stop_propagate = 1
       end)
+      if v.active then
+        cr:set_source_rgba (bg.r,bg.g,bg.b,0.8)
+      else
+        cr:set_source_rgba (fg.r,fg.g,fg.b,0.8)
+      end
+      cr:set_line_width(1)
+      cr:stroke_preserve()
       if v.type == 'modal' then
 
         mrg:listen(M.TAP, function(event)
           if v.isshift then
             shifted = not shifted
+            v.active = shifted
             mrg:queue_draw(nil)
           end
           if v.label == 'ctrl' then
             ctrld = not ctrld
+            v.active = ctrld
             mrg:queue_draw(nil)
           end
           if v.label == 'alt' then
             alted = not alted
+            v.active = alted
             mrg:queue_draw(nil)
           end
           if v.label == 'Fn' then
             fnd = not fnd
+            v.active = fnd
             mrg:queue_draw(nil)
           end
         end)
-        if (v.isshift and shifted) or
-           (v.label == 'alt' and alted) or
-           (v.label == 'Fn' and fnd) or
-           (v.label == 'ctrl' and ctrld)
-          then
-          cr:set_source_rgba (1,1,0.5,0.8)
+        if (v.active and false) then
+          cr:set_source_rgba (fg.r,fg.g,fg.b,0.8)
           cr:set_line_width(4)
           cr:stroke_preserve()
         end
 
       end
-      cr:set_source_rgba (0.0,0.0,0.0,0.66)
+      if v.active then
+        cr:set_source_rgba (fg.r,fg.g,fg.b,0.4)
+      else
+        cr:set_source_rgba (bg.r,bg.g,bg.b,0.4)
+      end
       cr:fill ()
       cr:move_to (v.x - 6, v.y + 4)
-      cr:set_source_rgba (1,1,1,1.0)
+      if v.active then
+        cr:set_source_rgba (bg.r,bg.g,bg.b,1.0)
+      else
+        cr:set_source_rgba (fg.r,fg.g,fg.b,1.0)
+      end
 
       if fnd then
         if v.fn_label then
