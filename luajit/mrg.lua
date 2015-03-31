@@ -73,6 +73,9 @@ enum _MrgType {
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
+
+
+  MRG_COORD    = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_TAPS),
   MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_TAPS),
 };
 
@@ -878,46 +881,64 @@ ffi.metatype('MrgClient',    {__index = {
   M.DRAG_PRESS = C.MRG_DRAG_PRESS;
   M.DRAG_RELEASE = C.MRG_DRAG_RELEASE;
   M.DRAG = C.MRG_DRAG;
+  M.ANY = C.MRG_ANY;
+  M.KEY = C.MRG_KEY;
+  M.COORD = C.MRG_COORD;
 
 
+--local keyboard_visible = false
+local keyboard_visible = true
 
-local keyboard_visible = false
 
-local keys={
-  {x=20,   y=25, w=44, label='esc'},
-  {x=20,   y=65, label='`', shifted='~'},
-  {x=60,   y=65, label='1', shifted='!'},
-  {x=100,  y=65, label='2', shifted='@'},
-  {x=140,  y=65, label='3', shifted='#'},
-  {x=180,  y=65, label='4', shifted='$'},
-  {x=220,  y=65, label='5', shifted='%'},
-  {x=260,  y=65, label='6', shifted='^'},
-  {x=300,  y=65, label='7', shifted='&'},
-  {x=340,  y=65, label='8', shifted='*'},
-  {x=380,  y=65, label='9', shifted='('},
-  {x=420,  y=65, label='0', shifted=')'},
-  {x=460,  y=65, label='-', shifted='_'},
-  {x=500,  y=65, label='=', shifted='+'},
-  {x=540,  w=40, y=65, label='⌫', code='backspace'},
+local quite_complete={
 
-  {x=400,  w=40, y=225, label='ins', code='insert'},
-  {x=450,  w=40, y=225, label='del', code='delete'},
+  {x=5,   y=26, w=44, label='esc'},
+  {x=55,   y=26, label='F1'},
+  {x=95,   y=26, label='F2'},
+  {x=135,   y=26, label='F3'},
+  {x=175,   y=26, label='F4'},
+  {x=215,   y=26, label='F5'},
+  {x=255,   y=26, label='F6'},
+  {x=295,   y=26, label='F7'},
+  {x=335,   y=26, label='F8'},
+  {x=375,   y=26, label='F9'},
+  {x=415,   y=26, label='F10'},
+  {x=455,   y=26, label='F11'},
+  {x=495,   y=26, label='F12'},
+
+
+  {x=5,   y=65, label='`', shifted='~'},
+  {x=45,   y=65, label='1', shifted='!'},
+  {x=85,  y=65, label='2', shifted='@'},
+  {x=125,  y=65, label='3', shifted='#'},
+  {x=165,  y=65, label='4', shifted='$'},
+  {x=205,  y=65, label='5', shifted='%'},
+  {x=245,  y=65, label='6', shifted='^'},
+  {x=285,  y=65, label='7', shifted='&'},
+  {x=325,  y=65, label='8', shifted='*'},
+  {x=365,  y=65, label='9', shifted='('},
+  {x=405,  y=65, label='0', shifted=')'},
+  {x=445,  y=65, label='-', shifted='_'},
+  {x=485,  y=65, label='=', shifted='+'},
+  {x=525,  w=40, y=65, label='⌫', code='backspace'},
+
+  --[[{x=355,  w=40, y=225, label='ins', code='insert'},
+  {x=400,  w=40, y=225, label='del', code='delete'},]]
+
+  {x=60,   y=105, label='q', shifted='Q'},
+  {x=100,  y=105, label='w', shifted='W'},
+  {x=140,  y=105, label='e', shifted='E'},
+  {x=180,  y=105, label='r', shifted='R'},
+  {x=220,  y=105, label='t', shifted='T'},
+  {x=260,  y=105, label='y', shifted='Y'},
+  {x=300,  y=105, label='u', shifted='U'},
+  {x=340,  y=105, label='i', shifted='I'},
+  {x=380,  y=105, label='o', shifted='O'},
+  {x=420,  y=105, label='p', shifted='P'},
+  {x=460,  y=105, label='[', shifted='{'},
+  {x=500,  y=105, label=']', shifted='}'},
 
   {x=20,   y=105, label='↹', code='tab'},
-  {x=65,   y=105, label='q', shifted='Q'},
-  {x=105,  y=105, label='w', shifted='W'},
-  {x=145,  y=105, label='e', shifted='E'},
-  {x=185,  y=105, label='r', shifted='R'},
-  {x=225,  y=105, label='t', shifted='T'},
-  {x=265,  y=105, label='y', shifted='Y'},
-  {x=305,  y=105, label='u', shifted='U'},
-  {x=345,  y=105, label='i', shifted='I'},
-  {x=385,  y=105, label='o', shifted='O'},
-  {x=425,  y=105, label='p', shifted='P'},
-  {x=465,  y=105, label='[', shifted='{'},
-  {x=505,  y=105, label=']', shifted='}'},
-  {x=545,  y=105, label='\\', shifted='|'},
-
   {x=70,   y=145, label='a', shifted='A'},
   {x=110,  y=145, label='s', shifted='S'},
   {x=150,  y=145, label='d', shifted='D'},
@@ -929,46 +950,120 @@ local keys={
   {x=390,  y=145, label='l', shifted='L'},
   {x=430,  y=145, label=';', shifted=':'},
   {x=470,  y=145, label='\'', shifted='"'},
-  {x=510, w=50, y=145, label='⏎', code='return' },
+  {x=510, w=45, y=145, label='⏎', code='return' },
 
-  {x=10,   w=60, y=185, label='shift', type='modal'},  -- ⇧
-  {x=75,   y=185, label='z', shifted='Z'},
-  {x=115,  y=185, label='x', shifted='X'},
-  {x=155,  y=185, label='c', shifted='C'},
-  {x=195,  y=185, label='v', shifted='V'},
-  {x=235,  y=185, label='b', shifted='B'},
-  {x=275,  y=185, label='n', shifted='N'},
-  {x=315,  y=185, label='m', shifted='M'},
-  {x=355,  y=185, label=',', shifted='<'},
-  {x=395,  y=185, label='.', shifted='>'},
-  {x=435,  y=185, label='/', shifted='?'},
-  {x=475,  w=60, y=185, label='shift', type='modal'},
+  {x=20,   w=45, y=145, label='⇧', type='modal', isshift='true'},  -- ⇧ XXX:  code relies on label
+  {x=40,  y=185, label='\\', shifted='|'},
+  {x=80,   y=185, label='z', shifted='Z'},
+  {x=120,  y=185, label='x', shifted='X'},
+  {x=160,  y=185, label='c', shifted='C'},
+  {x=200,  y=185, label='v', shifted='V'},
+  {x=240,  y=185, label='b', shifted='B'},
+  {x=280,  y=185, label='n', shifted='N'},
+  {x=320,  y=185, label='m', shifted='M'},
+  {x=360,  y=185, label=',', shifted='<'},
+  {x=400,  y=185, label='.', shifted='>'},
+  {x=440,  y=185, label='/', shifted='?'},
 
   {x=20, w=50, y=225, label='ctrl', type='modal'},
   {x=75, w=40,  y=225, label='alt', type='modal'},
   {x=120,  y=225, w=230, label=' ', code='space'},
 
-  {x=540,  y=185, label='↑', code='up'},
-  {x=500,  y=225, label='←', code='left'},
-  {x=540,  y=225, label='↓', code='down'},
-  {x=580,  y=225, label='→', code='right'},
+  {x=440,  y=225, label='←', code='left'},
+  {x=480,  y=225, label='↓', code='down'},
+  {x=480,  y=185, label='↑', code='up'},
+  {x=520,  y=225, label='→', code='right'},
 
-  {x=590,  y=145, label='⌨', type='keyboard'},
+  {x=355,  y=225, w=45, label='⌨', type='keyboard'},
 }
+
+local minimal={
+
+
+  --[[{x=355,  w=40, y=225, label='ins', code='insert'},
+  {x=400,  w=40, y=225, label='del', code='delete'},]]
+
+  {x=60,   y=105, label='q', shifted='Q', fn_label='1'},
+  {x=100,  y=105, label='w', shifted='W', fn_label='2'},
+  {x=140,  y=105, label='e', shifted='E', fn_label='3'},
+  {x=180,  y=105, label='r', shifted='R', fn_label='4'},
+  {x=220,  y=105, label='t', shifted='T', fn_label='5'},
+  {x=260,  y=105, label='y', shifted='Y', fn_label='6'},
+  {x=300,  y=105, label='u', shifted='U', fn_label='7'},
+  {x=340,  y=105, label='i', shifted='I', fn_label='8'},
+  {x=380,  y=105, label='o', shifted='O', fn_label='9'},
+  {x=420,  y=105, label='p', shifted='P', fn_label='0'},
+
+  {x=460,  y=105, w=28, label='[', shifted='{', fn_label='-'},
+  {x=490,  y=105, w=28, label=']', shifted='}', fn_label='+'},
+
+  {x=525,  w=40, y=105, label='⌫', code='backspace'},
+
+  {x=20,   y=105, label='↹', code='tab', fn_label='esc'},
+  {x=70,   y=145, label='a', shifted='A', fn_label='!'},
+  {x=110,  y=145, label='s', shifted='S', fn_label='@'},
+  {x=150,  y=145, label='d', shifted='D', fn_label='#'},
+  {x=190,  y=145, label='f', shifted='F', fn_label='$'},
+  {x=230,  y=145, label='g', shifted='G', fn_label='%'},
+  {x=270,  y=145, label='h', shifted='H', fn_label='^'},
+  {x=310,  y=145, label='j', shifted='J', fn_label='&'},
+  {x=350,  y=145, label='k', shifted='K', fn_label='*'},
+  {x=390,  y=145, label='l', shifted='L', fn_label='('},
+  {x=430,  y=145, label=';', shifted=':', fn_label=')'},
+  {x=470,  y=145, label='\'', shifted='"', fn_label='_'},
+  {x=510, w=45, y=145, label='⏎', code='return' },
+
+  {x=20,   w=45, y=145, label='⇧', type='modal', isshift='true'},  --  XXX:  code relies on label
+  {x=40,  y=185, label='\\', shifted='|', fn_label='='},
+  {x=80,   y=185, label='z', shifted='Z', fn_label='Ø'},
+  {x=120,  y=185, label='x', shifted='X', fn_label='å'},
+  {x=160,  y=185, label='c', shifted='C', fn_label='ø'},
+  {x=200,  y=185, label='v', shifted='V', fn_label='Å'},
+  {x=240,  y=185, label='b', shifted='B', fn_label='æ'},
+  {x=280,  y=185, label='n', shifted='N', fn_label='Æ'},
+  {x=320,  y=185, label='m', shifted='M', fn_label='…'},
+  {x=360,  y=185, label=',', shifted='<', fn_label='“'},
+  {x=400,  y=185, label='.', shifted='>', fn_label='”'},
+  {x=440,  y=185, label='/', shifted='?', fn_label='€'},
+
+  {x=20, w=50, y=225, label='ctrl', type='modal'},
+  {x=75, w=40,  y=225, label='alt', type='modal'},
+  {x=120,  y=225, w=230, label=' ', code='space'},
+
+  {x=440,  y=225, label='←', code='left'},
+  {x=480,  y=225, label='↓', code='down'},
+  {x=480,  y=185, label='↑', code='up'},
+  {x=520,  y=225, label='→', code='right'},
+
+  {x=520,   y=185, label='`', shifted='~'},
+  {x=355,  y=225, w=45, label='⌨', type='keyboard'},
+  {x=405,  y=225, w=30, label='Fn', shifted='Fx', type='modal'},
+}
+
+local keys, y_start
+
+if false then
+  keys= quite_complete
+  y_start=42
+else
+  keys= minimal
+  y_start=82
+end
 
 local pan_y = 0
 local pan_x = 0
 local shifted = false
 local alted = false
 local ctrld = false
+local fnd = false
 
 M.draw_keyboard = function (mrg)
   local em = 20
   local cr = mrg:cr()
 
-  local dim = mrg:width() / 620
+  local dim = mrg:width() / 555
 
-  cr:set_font_size(em)
+  cr:set_font_size(em * 0.7)
 
   if not keyboard_visible then
     cr:rectangle (mrg:width() - 4 * em, mrg:height() - 4 * em, 4 * em, 4 * em)
@@ -982,6 +1077,12 @@ M.draw_keyboard = function (mrg)
     cr:translate(0,mrg:height()-250* dim)
     cr:scale(dim, dim)
     cr:translate(pan_x, pan_y)
+
+    cr:rectangle(0,y_start,620,200)
+    cr:set_source_rgba(0,0,0,0.4)
+    mrg:listen(M.COORD, function(e) e.stop_propagate=1 end)
+    cr:fill()
+
     for k,v in ipairs(keys) do
       cr:new_path()
       if not v.w then v.w = 34 end
@@ -993,12 +1094,12 @@ M.draw_keyboard = function (mrg)
       mrg:listen(M.TAP, function(event)
         if v.type == 'keyboard' then
           keyboard_visible = false
-        else
+        elseif not v.isshift then
           local keystr = v.label
           if shifted and v.shifted then keystr = v.shifted end
           if v.code then keystr = v.code end
           if alted  then keystr = 'alt-' .. keystr end
-          if ctrled then keystr = 'control-' .. keystr end
+          if ctrld then keystr = 'control-' .. keystr end
           mrg:key_press(0, keystr, 0)
         end
         mrg:queue_draw(nil)
@@ -1007,57 +1108,70 @@ M.draw_keyboard = function (mrg)
       if v.type == 'modal' then
 
         mrg:listen(M.TAP, function(event)
-          if v.label == 'shift' then
+          if v.isshift then
             shifted = not shifted
             mrg:queue_draw(nil)
           end
           if v.label == 'ctrl' then
-            ctrled = not ctrled
+            ctrld = not ctrld
             mrg:queue_draw(nil)
           end
           if v.label == 'alt' then
             alted = not alted
             mrg:queue_draw(nil)
           end
+          if v.label == 'Fn' then
+            fnd = not fnd
+            mrg:queue_draw(nil)
+          end
         end)
-        if (v.label == 'shift' and shifted) or
+        if (v.isshift and shifted) or
            (v.label == 'alt' and alted) or
-           (v.label == 'ctrl' and ctrled)
+           (v.label == 'Fn' and fnd) or
+           (v.label == 'ctrl' and ctrld)
           then
-          cr:set_source_rgba (0,0,0,0.5)
+          cr:set_source_rgba (1,1,0.5,0.8)
+          cr:set_line_width(4)
           cr:stroke_preserve()
         end
 
       end
-      cr:set_source_rgba (0.0,0.0,0.0,0.25)
+      cr:set_source_rgba (0.0,0.0,0.0,0.66)
       cr:fill ()
       cr:move_to (v.x - 6, v.y + 4)
       cr:set_source_rgba (1,1,1,1.0)
-      if shifted then
-        if v.shifted then
-          cr:show_text (v.shifted)
+
+      if fnd then
+        if v.fn_label then
+            cr:show_text (v.fn_label)
+        else
+            cr:show_text (v.label)
+        end
+      else
+        if shifted then
+          if v.shifted then
+            cr:show_text (v.shifted)
+          else
+            cr:show_text (v.label)
+          end
         else
           cr:show_text (v.label)
         end
-      else
-        cr:show_text (v.label)
       end
     end
 
-    cr:rectangle(50,5,470,35)
-    cr:set_source_rgba(0,0,1,0.2)
+    cr:rectangle(340,205,30,35)
+    --cr:set_source_rgba(0,0,1,0.2)
     mrg:listen(M.DRAG, function(event)
       pan_y = pan_y + event.delta_y
       --pan_x = pan_x + event.delta_x
       mrg:queue_draw(nil)
-      event.stop_propagate = 1
+      event.stop_propagate = 0
     end)
-    cr:fill()
+    --cr:fill()
+    cr:new_path()
   end
 end
-
-
-
 
 
 return M
