@@ -997,9 +997,9 @@ local minimal={
   {x=460,  y=105, w=28, label='[', shifted='{', fn_label='-'},
   {x=490,  y=105, w=28, label=']', shifted='}', fn_label='+'},
 
-  {x=525,  w=40, y=105, label='⌫', code='backspace'},
+  {x=525,  w=40, y=105, label='⌫', code='backspace', fn_label='del', fn_code='delete'},
 
-  {x=20,   y=105, label='↹', code='tab', fn_label='esc'},
+  {x=20,   y=105, label='↹', code='tab', fn_label='esc', fn_code='escape'},
   {x=70,   y=145, label='a', shifted='A', fn_label='!'},
   {x=110,  y=145, label='s', shifted='S', fn_label='@'},
   {x=150,  y=145, label='d', shifted='D', fn_label='#'},
@@ -1030,12 +1030,12 @@ local minimal={
   {x=75, w=40,  y=225, label='alt', type='modal'},
   {x=120,  y=225, w=230, label=' ', code='space'},
 
-  {x=440,  y=225, label='←', code='left'},
-  {x=480,  y=225, label='↓', code='down'},
-  {x=480,  y=185, label='↑', code='up'},
-  {x=520,  y=225, label='→', code='right'},
+  {x=440,  y=225, label='←', code='left', fn_label='pup', fn_code='page-up'},
+  {x=480,  y=225, label='↓', code='down', fn_label='end', fn_code='end'},
+  {x=480,  y=185, label='↑', code='up', fn_label='home', fn_code='home'},
+  {x=520,  y=225, label='→', code='right', fn_label='pdn', fn_code='page-down'},
 
-  {x=520,   y=185, label='`', shifted='~'},
+  {x=520,   y=185, label='`', shifted='~', fn_label='ins', fn_code='insert'},
   {x=355,  y=225, w=45, label='⌨', type='keyboard'},
   {x=405,  y=225, w=30, label='Fn', shifted='Fx', type='modal'},
 }
@@ -1078,7 +1078,7 @@ M.draw_keyboard = function (mrg)
     cr:scale(dim, dim)
     cr:translate(pan_x, pan_y)
 
-    cr:rectangle(0,y_start,620,200)
+    cr:rectangle(0,y_start,620,166)
     cr:set_source_rgba(0,0,0,0.4)
     mrg:listen(M.COORD, function(e) e.stop_propagate=1 end)
     cr:fill()
@@ -1094,10 +1094,13 @@ M.draw_keyboard = function (mrg)
       mrg:listen(M.TAP, function(event)
         if v.type == 'keyboard' then
           keyboard_visible = false
-        elseif not v.isshift then
+        elseif (not v.isshift) and (v.label ~= 'Fn') and (v.label ~= 'ctrl') then
           local keystr = v.label
           if shifted and v.shifted then keystr = v.shifted end
+          if fnd and v.fn_label then keystr = v.fn_label end
+
           if v.code then keystr = v.code end
+          if fnd and v.fn_code then keystr = v.fn_code end
           if alted  then keystr = 'alt-' .. keystr end
           if ctrld then keystr = 'control-' .. keystr end
           mrg:key_press(0, keystr, 0)
@@ -1161,14 +1164,13 @@ M.draw_keyboard = function (mrg)
     end
 
     cr:rectangle(340,205,30,35)
-    --cr:set_source_rgba(0,0,1,0.2)
     mrg:listen(M.DRAG, function(event)
-      pan_y = pan_y + event.delta_y
-      --pan_x = pan_x + event.delta_x
+      if pan_y + event.delta_y < 0  and event.device_y > 180 then
+        pan_y = pan_y + event.delta_y
+      end
       mrg:queue_draw(nil)
       event.stop_propagate = 0
     end)
-    --cr:fill()
     cr:new_path()
   end
 end
