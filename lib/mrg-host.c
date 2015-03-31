@@ -319,6 +319,7 @@ static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
 
   char buf[256];
   sprintf (buf, "mouse-press %f %f %i", event->x, event->y, event->device_no);
+  mrg_host_set_focused (host, client);
   if (host->focused)
     mrg_client_raise_top (host->focused);
   mmm_add_event (mmm, buf);
