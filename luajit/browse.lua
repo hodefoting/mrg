@@ -87,8 +87,9 @@ document {font-size: 20px; }
 /* .entry  {border: 1px solid green; } */
 #current { background: yellow; }
 .content {color: blue ; background: white; }
-.size { width: 4em; display: block; float: left; }
-.fname { display: block; float: left; width: 50%; }
+.size { width: 6em; display: block; float: left; }
+.size_unit { color: gray }
+.fname { display: block; float: left; width: 80%; }
 ]]
 
 function get_parent(path)
@@ -185,6 +186,18 @@ function collect_path (path)
     return dir
 end
 
+function human_size(size)
+  if size < 1024 then
+    return (string.format("%1.0f<span class='size_unit'>b</span>", (size)))
+  elseif size < 1024 * 1024 then
+    return (string.format("%1.1f<span class='size_unit'>kb</span>", (size/1024)))
+  elseif size < 1024 * 1024 * 1024 then
+    return (string.format("%1.1f<span class='size_unit'>mb</span>", (size/1024/1024)))
+  else
+    return (string.format("%1.1f<span class='size_unit'>gb</span>", (size/1024/1024/1024)))
+  end
+end
+
 function draw_folder(mrg, path, currpath, details)
     local cr = mrg:cr()
     cr:save()
@@ -199,19 +212,23 @@ function draw_folder(mrg, path, currpath, details)
            set_path (file.path)
            return 0;
          end)
-      local xml = "<div class='entry' "
+      local xml = "<div "
+      if file.isdir then
+        xml = xml .. "class='dentry' "
+      else
+        xml = xml .. "class='entry' "
+      end
       if ( file.path == currpath) then
         xml = xml .. " id='current' "
       end
       xml = xml .. "><span class='fname'>" .. file.name .. "</span>"
       if details then
           if file.isdir then
-            xml = xml .. "<span class='size'>[DIR]</span>"
           else
-            xml = xml .. "<span class='size'>" .. file.size .. "</span>"
+            xml = xml .. "<span class='size'>" .. human_size(file.size) .. "</span>"
           end
        end
-      xml = xml .. "</div> "
+      xml = xml .. "</div>\n "
       mrg:print_xml(xml)
       mrg:text_listen_done()
     end
