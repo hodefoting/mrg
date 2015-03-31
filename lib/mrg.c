@@ -50,7 +50,7 @@ void _mrg_init (Mrg *mrg, int width, int height)
   mrg_set_mrg_get_contents (mrg, mrg_get_contents_default, NULL);
   mrg->style_global = mrg_string_new ("");
 
-  mrg->tap_delay_min  = 80;
+  mrg->tap_delay_min  = 40;
   mrg->tap_delay_max  = 800;
   mrg->tap_delay_hold = 1000;
   mrg->tap_hysteresis = 8;  /* XXX: should be ppi dependent */
