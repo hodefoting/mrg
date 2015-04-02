@@ -26,6 +26,8 @@ struct _MrgGrab
   int      device_no;
   int      timeout_id;
   int      start_time;
+  float    x; // for tap and hold
+  float    y;
   MrgType  type;
 };
 
@@ -567,6 +569,12 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
   event.mrg = mrg;
   event.time = mrg_ms (mrg);
 
+  event.device_x = 
+  event.x = mrg->pointer_x[grab->device_no];
+  event.device_y = 
+  event.y = mrg->pointer_y[grab->device_no];
+
+  // XXX: x and y coordinates
   int ret = _mrg_emit_cb (mrg, list, &event, MRG_TAP_AND_HOLD,
       mrg->pointer_x[grab->device_no], mrg->pointer_y[grab->device_no]);
 
