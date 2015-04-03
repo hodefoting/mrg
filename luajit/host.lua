@@ -69,7 +69,7 @@ mrg:set_ui(
         host:set_focused(client)
         client:raise_top()
         mrg:queue_draw(NULL)
-        event.stop_propagate = 1
+        event:stop_propagate()
         return 0
       end)
       mrg:print(client:title())
@@ -94,7 +94,7 @@ mrg:set_ui(
         w, h = w + event.delta_x, h + event.delta_y;
         client:set_size(w, h)
         mrg:queue_draw(NULL)
-        event.stop_propagate = 1
+        event:stop_propagate()
       end)
       cr:fill()
 

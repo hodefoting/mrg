@@ -258,7 +258,7 @@ struct _MrgEvent {
   /* only valid for key-events */
   unsigned int unicode;
   const char *key_name; /* can be "up" "down" "a" "b" "ø" etc .. */
-  int stop_propagate;
+  int stop_propagate_do_not_use;
 };
 void mrg_event_stop_propagate (MrgEvent *event);
 
@@ -821,7 +821,7 @@ ffi.metatype('Mrg', {__index = {
 }})
 ffi.metatype('MrgEvent',     {__index = { 
 
-  stop_propagation = function (...) return C.mrg_event_stop_propagate (...) end,
+  stop_propagate = function (...) return C.mrg_event_stop_propagate (...) end,
 
 }})
 ffi.metatype('MrgColor',     {__index = { }})
@@ -833,6 +833,7 @@ ffi.metatype('MrgHost',      {__index = {
   focused         = function (...) return C.mrg_host_get_focused (...) end,
   monitor_dir     = function (...) C.mrg_host_monitor_dir (...) end,
   register_events = function (...) C.mrg_host_register_events (...) end,
+  destroy         = function (...) C.mrg_host_destroy (...) end,
   clients         = function (...) 
     local ret = {}
     local iter = C.mrg_host_clients (...)
@@ -1085,7 +1086,7 @@ M.draw_keyboard = function (mrg)
 
     cr:rectangle(0,y_start,620,166)
     cr:set_source_rgba(bg.r,bg.g,bg.b,0.6)
-    mrg:listen(M.COORD, function(e) e.stop_propagate=1 end)
+    mrg:listen(M.COORD, function(e) e:stop_propagate() end)
     cr:fill()
 
     for k,v in ipairs(keys) do
@@ -1111,7 +1112,7 @@ M.draw_keyboard = function (mrg)
           mrg:key_press(0, keystr, 0)
         end
         mrg:queue_draw(nil)
-        event.stop_propagate = 1
+        event:stop_propagate()
       end)
       if v.active then
         cr:set_source_rgba (bg.r,bg.g,bg.b,0.8)
@@ -1189,7 +1190,7 @@ M.draw_keyboard = function (mrg)
         pan_y = pan_y + event.delta_y
       end
       mrg:queue_draw(nil)
-      event.stop_propagate = 0
+      event.stop_propagate()
     end)
     cr:new_path()
   end

@@ -16,8 +16,6 @@ local DARK_player
 local LIGHT_player
 local in_menu
 
-
-
 local board = {}
 
 local piece_count
