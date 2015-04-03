@@ -12,6 +12,7 @@ Features:
   CSS styling/layout
   Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
   SDL/GTK/framebuffer/terminal backends.
+  png/jpg image caching
 
 microraptor gui is a C API for creating user interfaces, it can be used as an
 application writing environment or as an interactive canvas for part of a

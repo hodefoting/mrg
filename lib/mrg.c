@@ -481,7 +481,7 @@ void mrg_flush  (Mrg *mrg)
 
   if (mrg->got_edit && mrg->text_edit_blocked <= 0)
   {
-    mrg_text_edit_bindings (mrg);
+    //mrg_text_edit_bindings (mrg);
   }
 
   cairo_restore (mrg_cr (mrg));

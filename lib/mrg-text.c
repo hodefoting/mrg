@@ -1576,5 +1576,6 @@ void  mrg_edit_start       (Mrg *mrg,
 void  mrg_edit_end (Mrg *mrg)
 {
   mrg->text_edited = 0;
+  mrg_text_edit_bindings (mrg);
 }
 

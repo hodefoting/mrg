@@ -1,30 +1,122 @@
 #!/usr/bin/env luajit
-
-
-
 -- todo
---   scrolling of file view
---   more info in dir mode
---   persistance of state/design to crash
---   scrolling of edited text (from editor)
---   keybindings
---   image scaling
---   ask to save changes when trying to switch file
+--   rename
 --   text editing
+--   open context menu with keyboard shortcut
+--   ask to save changes when trying to switch file
+--   use gifplay as composited helper for gifs
 --   svg viewing/editing 
---   pdf viewing
---   video playback
---   next/prev item
+--   ffplay video playback
 
+--   image zoom/pan with gestures
+--   gegl based helper for images
+--   thumbnails
+
+--   cache dir array between draws, with identify info as well
+
+-- stick a .mrg file in each dir
+-- containing per filename extra information/cache
+-- order for custom order sort (useful for slideshows and playlists)
+-- position and size/rotation for 2d-view
+-- use hardlinks when copying .jpg or .png or .mp3 files on the same file system,..
+
+-- enter text for rename, first in a global blocking query..
 
 local S = require('syscall')
 
-S.setenv('MRG_RESTARTER','yes')
-S.setenv('MRG_BACKEND','mmm')
+--S.setenv('MRG_RESTARTER','yes')
+--S.setenv('MRG_BACKEND','mmm')
+
+local Mrg = require('mrg')
+local mrg = Mrg.new(640, 480);
 
 --local path = '/home/pippin/src/mrg/luajit'
-local path = '/home/'
+local path = '/home/pippin/images'
 local folder_pan = 0;
+
+local in_context = false
+local context_x, context_y = 100, 100
+local context_choices={}
+
+local dir = {}
+
+function mrg_modal_draw(mrg)
+  local cr = mrg:cr()
+  -- block out all other events, making clicking outside cancel
+
+  cr:rectangle (0,0,mrg:width(),mrg:height())
+  cr:set_source_rgba(0,0,0,0.5)
+  mrg:listen(Mrg.COORD, function(event)
+    event.stop_propagate = 1
+  end)
+  mrg:listen(Mrg.TAP, function(event)
+    in_context = false
+  end)
+  cr:fill()
+  
+  cr:rectangle (context_x - 50, context_y - 50, 100, 100)
+  cr:set_source_rgba(0,0,0, 0.5)
+  mrg:listen(Mrg.COORD, function(event)
+    event.stop_propagate = 1
+  end)
+  cr:fill()
+
+  mrg:set_edge_left(context_x - 50)
+  mrg:set_edge_top(context_y - 50)
+  mrg:set_style('background:transparent; color: white; ')
+
+  for i,v in pairs(context_choices) do
+    mrg:text_listen(Mrg.TAP, function(event)
+      if v.cb and v.type ~= 'edit' then 
+        in_context = false
+        v.cb() 
+      end
+      mrg:queue_draw(nil)
+    end)
+
+    if v.type == 'edit' then
+      mrg:print('[')
+      mrg:edit_start(v.cb)
+    end
+    mrg:print(v.title .. "\n")
+
+    if v.type == 'edit' then
+      mrg:edit_end()  -- XXX: maybe this should register the edit
+                      --      bindings, so that later registrations
+                      --      take precedence
+
+      mrg:add_binding("return", NULL, NULL, 
+        function (event)
+          print ('return!!')
+          event.stop_propagate = 1
+        end)
+
+      mrg:print(']')
+    end
+
+    mrg:text_listen_done ()
+  end
+end
+
+
+function mrg_modal(mrg, x, y, choices)
+  if choices then
+    context_choices = choices
+  else
+    context_choices = {
+      {title='uh??'}
+    }
+  end
+  local w, h = 100, 100
+  if x < w/2 then x = w/2 end
+  if y < h/2 then y = h/2 end
+  if x > mrg:width()  - w/2 then x = mrg:width ()-w/2 end
+  if y > mrg:height() - h/2 then y = mrg:height()-h/2 end
+  context_x = x
+  context_y = y
+  in_context = true
+  mrg:queue_draw(nil)
+end
 
 -- local os = require('os')
 
@@ -75,8 +167,6 @@ restore_state()
 
 --local path = '/home/pippin/images'
 local io  = require('io')
-local Mrg = require('mrg')
-local mrg = Mrg.new(640, 480);
 
 
 local css = [[
@@ -91,6 +181,8 @@ document {font-size: 20px; }
 .size_unit { color: gray }
 .fname { display: block; float: left; width: 80%; }
 ]]
+
+
 
 function get_parent(path)
   local t = {}
@@ -111,6 +203,31 @@ function go_parent()
   mrg:queue_draw(null)
 end
 
+function go_next()
+  local cursor = nil
+  for i,file in pairs(dir) do
+    if cursor and cursor.path == path then
+      path = file.path
+      mrg:queue_draw(null)
+      return
+    end
+    cursor = file
+  end
+end
+
+function go_previous()
+  local cursor = nil
+  for i,file in pairs(dir) do
+    if file.path == path then
+      if cursor then
+        path = cursor.path
+        mrg:queue_draw(null)
+      end
+      return
+    end
+    cursor = file
+  end
+end
 function set_path(new_path)
   path = new_path
   mrg:queue_draw(null)
@@ -198,18 +315,62 @@ function human_size(size)
   end
 end
 
+function os.capture(cmd, raw)
+  local f = assert(io.popen(cmd, 'r'))
+  local s = assert(f:read('*a'))
+  f:close()
+  if raw then return s end
+  s = string.gsub(s, '^%s+', '')
+  s = string.gsub(s, '%s+$', '')
+  s = string.gsub(s, '[\n\r]+', ' ')
+  return s
+end
+
 function draw_folder(mrg, path, currpath, details)
     local cr = mrg:cr()
+
+
     cr:save()
     cr:translate (0, folder_pan)
     mrg:start('div.folder')
 
-    local dir = collect_path (path)
+    dir = collect_path (path)
 
     for i,file in pairs(dir) do
-      mrg:text_listen(Mrg.TAP,
+
+      mrg:text_listen(Mrg.TAP + Mrg.TAP_AND_HOLD,
          function(event,d1,d2)
-           set_path (file.path)
+           if event.type == Mrg.TAP then
+            -- default to set the path clicked
+              set_path (file.path)
+           else
+
+             -- per file context menu
+
+             mrg_modal(mrg, event.device_x, event.device_y,
+              {{title=file.name, type='edit',
+                  cb=function(new_text)
+                    print('new_text: ' .. new_text)
+                  end},
+               {title='open',
+                  cb=function()
+                    os.execute('xdg-open ' .. file.path .. ' &')
+                  end},
+               {title='remove', cb=function()
+                  mrg_modal(mrg, mrg:pointer_x(), mrg:pointer_y(), 
+                    {
+                      {title='really?'},
+                      {title='yes',
+                       cb=function() 
+                            os.execute('rm -f ' .. file.path)
+                          end},
+                      {title='no', cb=function() end},
+                    })
+                  end},
+               }
+             )
+             mrg:queue_draw(nil)
+           end
            return 0;
          end)
       local xml = "<div "
@@ -225,6 +386,8 @@ function draw_folder(mrg, path, currpath, details)
       if details then
           if file.isdir then
           else
+            --local id = os.capture('file ' .. file.path .. ' | cut -f 2 -d ":" ')
+            --xml = xml .. "<span class='size'>" .. id .. human_size(file.size) .. "</span>"
             xml = xml .. "<span class='size'>" .. human_size(file.size) .. "</span>"
           end
        end
@@ -270,6 +433,7 @@ function draw_image (mrg, x, y)
   cr:restore()
 end
 
+
 mrg:set_ui(
 function (mrg, data)
   local cr = mrg:cr()
@@ -291,6 +455,7 @@ function (mrg, data)
     path_bar(mrg, path)
 
   elseif stat.isreg then
+
     x, y = mrg:xy()
     local em = mrg:em()
     draw_folder(mrg, get_parent(path), path, false)
@@ -330,12 +495,18 @@ function (mrg, data)
   end
 
 
-  mrg:add_binding("control-q", NULL, NULL, function (event) mrg:quit() return 0 end)
-  mrg:add_binding("escape", NULL, NULL, function (event)
+  mrg:add_binding("control-q", NULL, NULL, function (event) mrg:quit() end)
+  mrg:add_binding("left",      NULL, NULL, function (event) go_parent() end)
+  mrg:add_binding("up",        NULL, NULL, function (event) go_previous() end)
+  mrg:add_binding("down",      NULL, NULL, function (event) go_next() end)
+  mrg:add_binding("escape",    NULL, NULL, function (event)
      go_parent()
      event.stop_propagate = 1
   end)
 
+  if in_context then
+    mrg_modal_draw (mrg)
+  end
 
 end)
 
