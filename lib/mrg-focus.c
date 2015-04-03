@@ -111,7 +111,7 @@ static void cmd_focus_up (MrgEvent *event, void *data, void *data2)
     float cx, cy;
     mrg_item_center (next, &cx, &cy);
     mrg_warp_pointer (mrg, cx, cy);
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
   }
 }
 
@@ -143,7 +143,7 @@ static void cmd_focus_down (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
   }
 }
 
@@ -176,7 +176,7 @@ static void cmd_focus_left (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
   }
 }
 
@@ -209,7 +209,7 @@ static void cmd_focus_right (MrgEvent *event, void *data, void *data2)
   if (next)
   {
     mrg_warp_pointer (mrg, (next->x0 + next->x1)/2, (next->y0 * 0.2 + next->y1 * 0.8) );
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
   }
 }
 

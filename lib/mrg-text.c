@@ -1206,7 +1206,7 @@ static void cmd_home (MrgEvent *event, void *data1, void *data2)
   Mrg *mrg = event->mrg;
   mrg->cursor_pos = 0;
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_end (MrgEvent *event, void *data1, void *data2)
@@ -1214,7 +1214,7 @@ static void cmd_end (MrgEvent *event, void *data1, void *data2)
   Mrg *mrg = event->mrg;
   mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str);
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_backspace (MrgEvent *event, void *data1, void *data2)
@@ -1239,7 +1239,7 @@ static void cmd_backspace (MrgEvent *event, void *data1, void *data2)
       mrg->cursor_pos--;
     }
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_delete (MrgEvent *event, void *data1, void *data2)
@@ -1257,7 +1257,7 @@ static void cmd_delete (MrgEvent *event, void *data1, void *data2)
   mrg->update_string (new, mrg->update_string_user_data);
   free (new);
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_up (MrgEvent *event, void *data1, void *data2)
@@ -1307,7 +1307,7 @@ static void cmd_up (MrgEvent *event, void *data1, void *data2)
   if (mrg->cursor_pos < 0)
     mrg->cursor_pos = 0;
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 int mrg_get_cursor_pos (Mrg *mrg)
@@ -1368,7 +1368,7 @@ static void cmd_down (MrgEvent *event, void *data1, void *data2)
   if (mrg->cursor_pos >= mrg_utf8_strlen (mrg->edited_str->str))
     mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str) - 1;
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_page_down (MrgEvent *event, void *data1, void *data2)
@@ -1376,7 +1376,7 @@ static void cmd_page_down (MrgEvent *event, void *data1, void *data2)
   int i;
   for (i = 0; i < 6; i++)
     cmd_down (event, data1, data2);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_page_up (MrgEvent *event, void *data1, void *data2)
@@ -1384,7 +1384,7 @@ static void cmd_page_up (MrgEvent *event, void *data1, void *data2)
   int i;
   for (i = 0; i < 6; i++)
     cmd_up (event, data1, data2);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_left (MrgEvent *event, void *data1, void *data2)
@@ -1394,7 +1394,7 @@ static void cmd_left (MrgEvent *event, void *data1, void *data2)
   if (mrg->cursor_pos < 0)
     mrg->cursor_pos = 0;
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_right (MrgEvent *event, void *data1, void *data2)
@@ -1411,7 +1411,7 @@ static void cmd_right (MrgEvent *event, void *data1, void *data2)
     mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str);
 
   mrg_queue_draw (mrg, NULL);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void add_utf8 (Mrg *mrg, const char *string)
@@ -1442,14 +1442,14 @@ static void cmd_unhandled (MrgEvent *event, void *data1, void *data2)
   if (!strcmp (event->key_name, "space"))
   {
     add_utf8 (event->mrg, " ");
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
   }
 
   if (mrg_utf8_strlen (event->key_name) != 1)
     return;
 
   add_utf8 (event->mrg, event->key_name);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 #if 0
@@ -1469,7 +1469,7 @@ static void cmd_return (MrgEvent *event, void *data1, void *data2)
     return;
 
   add_utf8 (event->mrg, "\n");
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void cmd_escape (MrgEvent *event, void *data, void *data2)

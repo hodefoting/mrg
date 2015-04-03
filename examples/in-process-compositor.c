@@ -43,7 +43,7 @@ typedef struct Compositor
 static void toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void render_client (Mrg *mrg, void *data)

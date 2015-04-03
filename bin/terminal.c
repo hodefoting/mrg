@@ -787,7 +787,7 @@ static void event_handler (MrgEvent *event, void *data1, void *data2)
 
   if (!str)
   {
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
     return;
   }
 
@@ -884,7 +884,7 @@ done:
   if (strlen (str))
     write (pty, str, strlen (str));
 
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void render_ui (Mrg *mrg, void *data)

@@ -173,35 +173,35 @@ static void edit_cb (MrgEvent *event, void *data1, void *data2)
   state->sub_state = edit_state_new (state->path);
   mrg_queue_draw (event->mrg, NULL);
 
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void go_next_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_next (data1);
   pos[0] = pos[1] = 0;
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void go_prev_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_prev (data1);
   pos[0] = pos[1] = 0;
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void go_parent_cb (MrgEvent *event, void *data1, void *data2)
 {
   go_parent (data1);
   pos[0] = pos[1] = 0;
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 #if 1
 static void toggle_fullscreen_cb (MrgEvent *event, void *data1, void *data2)
 {
   mrg_set_fullscreen (event->mrg, !mrg_is_fullscreen (event->mrg));
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 #endif
 
@@ -213,7 +213,7 @@ static void entry_pressed (MrgEvent *event, void *data1, void *data2)
   if (!strcmp (entry->d_name, ".."))
   {
     go_parent (state);
-    event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
     return;
   }
 
@@ -511,7 +511,7 @@ void resolve_renderer (State *state)
 static void eeek (MrgEvent *e, void *data1, void *data2)
 {
   system ("/tmp/test &");
-  e->stop_propagate = 1;
+  mrg_event_stop_propagate (e);
 }
 
 static void reresolve_cb (MrgEvent *e, void *data1, void *data2)

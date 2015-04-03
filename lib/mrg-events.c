@@ -960,5 +960,6 @@ void _mrg_debug_overlays (Mrg *mrg)
 
 void mrg_event_stop_propagate (MrgEvent *event)
 {
-  event->stop_propagate = 1;
+  if (event)
+    event->stop_propagate = 1;
 }

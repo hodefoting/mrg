@@ -115,7 +115,7 @@ static void compile_cb (MrgEvent *event, void *data1, void *data2)
 
   if (!strstr (state->path, ".c"))
   {
-    if (event) event->stop_propagate = 1;
+    mrg_event_stop_propagate (event);
     return;
   }
 
@@ -135,7 +135,7 @@ static void compile_cb (MrgEvent *event, void *data1, void *data2)
     mrg_string_append_str (state->compiler_output, "popen failed");
   }
   
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void save_cb (MrgEvent *event, void *data1, void *data2)
@@ -143,7 +143,7 @@ static void save_cb (MrgEvent *event, void *data1, void *data2)
   State *state = data1;
   file_set_contents (state->path, state->data, -1);
   fprintf (stderr, "saved\n");
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 #include <unistd.h>
@@ -153,8 +153,7 @@ static void run_cb (MrgEvent *event, void *data1, void *data2)
   compile_cb (event, data1, data2);
   system ("/tmp/mrg-tmp &");
   usleep (30000);
-  if (event)
-    event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void update_string (const char *new_string, void *user_data)

@@ -323,7 +323,7 @@ static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
   if (host->focused)
     mrg_client_raise_top (host->focused);
   mmm_add_event (mmm, buf);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void mrg_client_motion (MrgEvent *event, void *client_, void *host_)
@@ -337,7 +337,7 @@ static void mrg_client_motion (MrgEvent *event, void *client_, void *host_)
   else
     sprintf (buf, "mouse-motion %f %f %i", event->x, event->y, event->device_no);
   mmm_add_event (mmm, buf);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void mrg_client_release (MrgEvent *event, void *client_, void *host_)
@@ -347,7 +347,7 @@ static void mrg_client_release (MrgEvent *event, void *client_, void *host_)
   char buf[256];
   sprintf (buf, "mouse-release %f %f %i", event->x, event->y, event->device_no);
   mmm_add_event (mmm, buf);
-  event->stop_propagate = 1;
+  mrg_event_stop_propagate (event);
 }
 
 static void host_key_down_cb (MrgEvent *event, void *host_, void *data2)
@@ -356,7 +356,7 @@ static void host_key_down_cb (MrgEvent *event, void *host_, void *data2)
   if (host->focused && host->focused->mmm)
   {
     mmm_add_event (host->focused->mmm, event->key_name);
-    event->stop_propagate = 1; // XXX? needed?
+    mrg_event_stop_propagate (event); // XXX? needed?
   }
 }
 

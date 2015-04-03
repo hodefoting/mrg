@@ -47,7 +47,7 @@ function mrg_modal_draw(mrg)
   cr:rectangle (0,0,mrg:width(),mrg:height())
   cr:set_source_rgba(0,0,0,0.5)
   mrg:listen(Mrg.COORD, function(event)
-    event.stop_propagate = 1
+    event:stop_propagate()
   end)
   mrg:listen(Mrg.TAP, function(event)
     in_context = false
@@ -57,7 +57,7 @@ function mrg_modal_draw(mrg)
   cr:rectangle (context_x - 50, context_y - 50, 100, 100)
   cr:set_source_rgba(0,0,0, 0.5)
   mrg:listen(Mrg.COORD, function(event)
-    event.stop_propagate = 1
+    event:stop_propagate()
   end)
   cr:fill()
 
@@ -88,7 +88,7 @@ function mrg_modal_draw(mrg)
       mrg:add_binding("return", NULL, NULL, 
         function (event)
           print ('return!!')
-          event.stop_propagate = 1
+          event:stop_propagate()
         end)
 
       mrg:print(']')
@@ -501,7 +501,7 @@ function (mrg, data)
   mrg:add_binding("down",      NULL, NULL, function (event) go_next() end)
   mrg:add_binding("escape",    NULL, NULL, function (event)
      go_parent()
-     event.stop_propagate = 1
+     event:stop_propagate()
   end)
 
   if in_context then
