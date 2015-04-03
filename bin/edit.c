@@ -115,7 +115,7 @@ static void compile_cb (MrgEvent *event, void *data1, void *data2)
 
   if (!strstr (state->path, ".c"))
   {
-    event->stop_propagate = 1;
+    if (event) event->stop_propagate = 1;
     return;
   }
 
@@ -153,7 +153,8 @@ static void run_cb (MrgEvent *event, void *data1, void *data2)
   compile_cb (event, data1, data2);
   system ("/tmp/mrg-tmp &");
   usleep (30000);
-  event->stop_propagate = 1;
+  if (event)
+    event->stop_propagate = 1;
 }
 
 static void update_string (const char *new_string, void *user_data)
