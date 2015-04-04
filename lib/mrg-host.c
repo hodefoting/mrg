@@ -101,6 +101,8 @@ static void mrg_client_unref (void *ignored, void *ignored2, MrgClient *client)
   if (client->ref_count < 0)
   {
     char tmp[256];
+    if (client->host->focused == client)
+      client->host->focused = NULL;
     sprintf (tmp, "%s/%s", client->host->fbdir, client->filename);
     if (client->mmm)
     {
