@@ -217,7 +217,10 @@ MrgList *_mrg_detect_list (Mrg *mrg, float x, float y, MrgType type)
 
   if (type == MRG_KEY_DOWN ||
       type == MRG_KEY_UP ||
-      type == (MRG_KEY_DOWN|MRG_KEY_UP))
+      type == MRG_MESSAGE ||
+      type == (MRG_KEY_DOWN|MRG_MESSAGE) ||
+      type == (MRG_KEY_DOWN|MRG_KEY_UP) ||
+      type == (MRG_KEY_DOWN|MRG_KEY_UP|MRG_MESSAGE))
   {
     for (a = mrg->items; a; a = a->next)
     {
@@ -670,6 +673,7 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, uint32_t time)
   return 0;
 }
 
+
 void mrg_resized (Mrg *mrg, int width, int height, long time)
 {
   MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_KEY_DOWN);
@@ -874,6 +878,38 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time
   }
   mrg_list_free (&grablist);
   return 0;
+}
+
+
+void mrg_incoming_message (Mrg *mrg, const char *message, long time)
+{
+  MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_MESSAGE);
+  MrgEvent event = {0, };
+
+  if (!time)
+    time = mrg_ms (mrg);
+  
+  if (item)
+  {
+    int i;
+    event.mrg = mrg;
+    event.type = MRG_MESSAGE;
+    event.time = time;
+    event.key_name = message;
+
+    fprintf (stderr, "{%s|\n", message);
+
+      for (i = 0; i < item->cb_count; i++)
+      {
+        if (item->cb[i].types & (MRG_MESSAGE))
+        {
+          event.state = mrg->modifier_state;
+          item->cb[i].cb (&event, item->cb[i].data1, item->cb[i].data2);
+          if (event.stop_propagate)
+            return;// event.stop_propagate;
+        }
+      }
+  }
 }
 
 int mrg_key_press (Mrg *mrg, unsigned int keyval,

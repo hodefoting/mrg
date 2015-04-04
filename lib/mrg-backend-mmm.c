@@ -313,6 +313,10 @@ static void mrg_mmm_consume_events (Mrg *mrg, int block)
     {
       mrg_pointer_release (mrg, x, y, 1, 0);
     }
+    else if (!strcmp (event_type, "message"))
+    {
+      mrg_incoming_message (mrg, event + strlen ("message "), 0);
+    }
     else
     {
       mrg_key_press (mrg, 0, event, 0);
@@ -329,5 +333,18 @@ static void mrg_mmm_consume_events (Mrg *mrg, int block)
       mrg_set_size (mrg, w, h);
   }
 }
+
+void mrg_message (Mrg *mrg, const char *message)
+{
+  if (mrg_mmm (mrg))
+    mmm_add_message (mrg_mmm (mrg), message);
+}
+
+#else
+
+void mrg_message (Mrg *mrg, const char *message)
+{
+}
+
 
 #endif

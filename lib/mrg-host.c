@@ -162,21 +162,25 @@ float mrg_client_get_x (MrgClient *client)
 {
   if (client->mrg)
     return  client->int_x;
-  return mmm_get_x (client->mmm);
+  if (client->mmm)
+    return mmm_get_x (client->mmm);
+  return 0.0;
 }
 
 float mrg_client_get_y (MrgClient *client)
 {
   if (client->mrg)
     return  client->int_y;
-  return mmm_get_y (client->mmm);
+  if (client->mmm)
+    return mmm_get_y (client->mmm);
+  return 0.0;
 }
 
 void mrg_client_set_x (MrgClient *client, float x)
 {
   if (client->mrg)
     client->int_x = x;
-  else
+  else if (client->mmm)
     mmm_set_x (client->mmm, x);
 }
 
@@ -184,7 +188,7 @@ void mrg_client_set_y (MrgClient *client, float y)
 {
   if (client->mrg)
     client->int_y = y;
-  else
+  else if (client->mmm)
     mmm_set_y (client->mmm, y);
 }
 
@@ -516,6 +520,7 @@ static int host_idle_check (Mrg *mrg, void *data)
     int x, y, width, height;
     if (client->pid != -1)
     {
+      if (client->mmm)
       if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
       {
         MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
@@ -525,10 +530,13 @@ static int host_idle_check (Mrg *mrg, void *data)
         mrg_queue_draw (mrg, &rect);
       }
 
+#if 0
+      if (client->mmm)
       while (mmm_has_message (client->mmm))
       {
         fprintf (stderr, "%p: %s\n", client->mmm, mmm_get_message (client->mmm));
       }
+#endif
     }
     else
     {
@@ -561,4 +569,36 @@ void mrg_client_kill (MrgClient *client)
       kill (client->pid, 9);
       client->pid = -2;
     }
+}
+
+const char *
+mrg_client_get_message (MrgClient *client)
+{
+  if (client->mrg)
+    return NULL;
+  if (client->mmm)
+    return mmm_get_message (client->mmm);
+  return NULL;
+}
+
+int
+mrg_client_has_message (MrgClient *client)
+{
+  if (client->mrg)
+    return 0;
+  if (client->mmm)
+    return mmm_has_message (client->mmm);
+  return 0;
+}
+
+void
+mrg_client_send_message (MrgClient *client, const char *message)
+{
+  char *tmp = malloc (strlen (message) + strlen ("message  "));
+  if (client->mrg)
+    return;
+
+  sprintf (tmp, "message %s", message);
+  mmm_add_event (client->mmm, tmp);
+  free (tmp);
 }

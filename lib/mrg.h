@@ -125,6 +125,13 @@ int mrg_add_timeout_full (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_
                           MrgDestroyNotify destroy_notify,
                           void *destroy_data);
 
+
+
+/* send a message to the host, the host can communicate back
+ * through MESSAGE events
+ */
+void mrg_message (Mrg *mrg, const char *message);
+
 #include "mrg-events.h"
 #include "mrg-text.h"
 #include "mrg-style.h"

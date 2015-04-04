@@ -40,7 +40,7 @@ enum _MrgType {
   MRG_DRAG_RELEASE   = 1 << 9,
   MRG_KEY_DOWN       = 1 << 10,
   MRG_KEY_UP         = 1 << 11,
-  MRG_PERSIST        = 1 << 12, /* client should store state - preparing
+  MRG_MESSAGE        = 1 << 12, /* client should store state - preparing
                                  * for restart
                                  */
 
@@ -49,7 +49,7 @@ enum _MrgType {
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
-  MRG_MISC     = (MRG_PERSIST),
+  MRG_MISC     = (MRG_MESSAGE),
   MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC | MRG_TAPS), 
 };
 
@@ -105,7 +105,9 @@ struct _MrgEvent {
   /* only valid for key-events */
   unsigned int unicode;
   const char *key_name; /* can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */
-
+                        /* this is also where the message is delivered for
+                         * MESSAGE events
+                         */
   int stop_propagate; /* */
 };
 
@@ -177,9 +179,10 @@ void  mrg_warp_pointer (Mrg *mrg, float x, float y);
 float mrg_pointer_x    (Mrg *mrg);
 float mrg_pointer_y    (Mrg *mrg);
 
-int mrg_pointer_press    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
-int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, uint32_t time);
-int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
-int mrg_key_press        (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
+int mrg_pointer_press     (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_release   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_pointer_motion    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
+int mrg_key_press         (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
+void mrg_incoming_message (Mrg *mrg, const char *message, long time);
 
 #endif

@@ -67,6 +67,7 @@ enum _MrgType {
   MRG_DRAG_RELEASE   = 1 << 9,
   MRG_KEY_DOWN       = 1 << 10,
   MRG_KEY_UP         = 1 << 11,
+  MRG_MESSAGE        = 1 << 12,
 
   MRG_TAPS     = (MRG_TAP | MRG_TAP_AND_HOLD),
   MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE),
@@ -100,6 +101,7 @@ void  mrg_set_size      (Mrg *mrg, int width, int height);
 void  mrg_set_position  (Mrg *mrg, int x, int y);
 void  mrg_get_position  (Mrg *mrg, int *x, int *y);
 
+void mrg_message (Mrg *mrg, const char *message);
 void  mrg_set_title     (Mrg *mrg, const char *title);
 const char *mrg_get_title (Mrg *mrg);
 
@@ -644,6 +646,12 @@ void       mrg_client_set_y          (MrgClient *client, float y);
 void       mrg_client_get_size       (MrgClient *client, int *width, int *height);
 void       mrg_client_set_size       (MrgClient *client, int width,  int height);
 const char *mrg_client_get_title     (MrgClient *client);
+
+void        mrg_client_send_message  (MrgClient *client, const char *message);
+
+const char *mrg_client_get_message   (MrgClient *client);
+int         mrg_client_has_message   (MrgClient *client);
+
 void        host_add_client_mrg      (MrgHost     *host,
                                       Mrg         *mrg,
                                       float        x,
@@ -670,6 +678,7 @@ ffi.metatype('Mrg', {__index = {
   warp_pointer     = function (...) C.mrg_warp_pointer(...) end,
   quit             = function (...) C.mrg_quit(...) end,
   image            = function (...) C.mrg_image(...) end,
+  message          = function (...) C.mrg_message(...) end,
 
   image_size       = function (mrg, path)
     local rw = ffi.new'int[1]'
@@ -854,6 +863,15 @@ ffi.metatype('MrgClient',    {__index = {
   pid           = function (...) return C.mrg_client_get_pid (...) end,
   kill          = function (...) C.mrg_client_kill (...) end,
   raise_top     = function (...) C.mrg_client_raise_top (...) end,
+  send_message  = function (...) C.mrg_client_send_message (...) end,
+  has_message   = function (...) return C.mrg_client_has_message (...) end,
+  get_message   = function (...)
+    local f = C.mrg_client_get_message (...)
+    if f ~= NULL then
+      return ffi.string(f)
+    end
+    return ''
+  end,
   maximize      = function (...) C.mrg_client_maximize (...) end,
   title         = function (...) return C.mrg_client_get_title (...) end,
   x             = function (...) return C.mrg_client_get_x (...) end,
@@ -883,6 +901,7 @@ ffi.metatype('MrgClient',    {__index = {
   M.DRAG_MOTION = C.MRG_DRAG_MOTION;
   M.DRAG_PRESS = C.MRG_DRAG_PRESS;
   M.DRAG_RELEASE = C.MRG_DRAG_RELEASE;
+  M.MESSAGE= C.MRG_MESSAGE;
   M.DRAG = C.MRG_DRAG;
   M.ANY = C.MRG_ANY;
   M.KEY = C.MRG_KEY;

@@ -1014,5 +1014,4 @@ int mrg_in_dirty_rect (Mrg *mrg,
    return 1;
 }
 
-
 #undef usecs

@@ -32,6 +32,11 @@ void       mrg_client_get_size       (MrgClient *client, int *width, int *height
 void       mrg_client_set_size       (MrgClient *client, int width,  int height);
 const char *mrg_client_get_title     (MrgClient *client);
 
+void        mrg_client_send_message  (MrgClient *client, const char *message);
+const char *mrg_client_get_message   (MrgClient *client);
+int         mrg_client_has_message   (MrgClient *client);
+
+
 #define TITLE_BAR_HEIGHT 16
 
 #endif
