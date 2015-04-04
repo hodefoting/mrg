@@ -140,7 +140,7 @@ function menu(mrg, dim)
   cr:set_source_rgba(1,1,1,0.8)
   cr:rectangle(-mrg:width(),-mrg:height(),mrg:width()*2,mrg:height()*2)
     mrg:listen(Mrg.PRESS , function(event)
-      event.stop_propagate = 1
+      event:stop_propagate()
     end)
   cr:fill()
 
