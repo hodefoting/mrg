@@ -46,7 +46,7 @@ static time_t path_get_mtime (const char *path)
   /* XXX this is really ugly XXX but luajit crashes if the above is used */
   char buf[512], cmd[512]="";
   FILE *ls;
-  long ret;
+  long ret = 0;
   sprintf (cmd, "ls -la %s -l --time-style=+%%s | cut -f 6 -d ' '" , path);
   ls = popen(cmd, "r");
   while (fgets(buf, sizeof(buf), ls) != 0) {
@@ -99,6 +99,8 @@ void mrg_reexec (Mrg *mrg)
   {
     *strstr (path_exe, " (deleted") = 0;
   }
+  
+  /* XXX if lua do a test-run and see if we get an early quit - if so, do not restart  -  */
 
   if (mrg)
     {
