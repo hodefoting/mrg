@@ -70,6 +70,8 @@ struct _MrgClient
   int    premax_y;
   int    premax_width;
   int    premax_height;
+
+  int    ref_count;
 };
 
 const char *mrg_client_get_title (MrgClient *client)
@@ -88,6 +90,27 @@ struct _MrgHost
   MrgClient  *focused;
 };
 
+static void mrg_client_ref (MrgClient *client)
+{
+  client->ref_count++;
+}
+
+static void mrg_client_unref (void *ignored, void *ignored2, MrgClient *client)
+{
+  client->ref_count--;
+  if (client->ref_count < 0)
+  {
+    char tmp[256];
+    sprintf (tmp, "%s/%s", client->host->fbdir, client->filename);
+    if (client->mmm)
+    {
+      mmm_destroy (client->mmm);
+      client->mmm = NULL;
+    }
+    unlink (tmp);
+    free (client);
+  }
+}
 
 void mrg_client_raise_top (MrgClient *client)
 {
@@ -236,7 +259,7 @@ static void validate_client (MrgHost *host, const char *client_name)
          mmm_set_x (client->mmm, pos);
          mmm_set_y (client->mmm, 30+pos);
 
-         pos += 12;
+         // pos += 12;
       }
     }
     mrg_list_append (&host->clients, client);
@@ -275,18 +298,9 @@ again:
     MrgClient *client = l->data;
     if (!pid_is_alive (client->pid))
     {
-      char tmp[256];
-      sprintf (tmp, "%s/%s", host->fbdir, client->filename);
-      if (client->mmm)
-      {
-        mmm_destroy (client->mmm);
-        client->mmm = NULL;
-      }
 
-      unlink (tmp);
+      mrg_client_unref (NULL, NULL, client);
       mrg_queue_draw (host->mrg, NULL);
-
-      free (client);
       mrg_list_remove (&host->clients, client);
       goto again;
     }
@@ -330,6 +344,8 @@ static void mrg_client_motion (MrgEvent *event, void *client_, void *host_)
 {
   MrgClient *client = client_;
   Mmm    *mmm    = client->mmm;
+
+  /* should check if client is still valid */
 
   char buf[256];
   if (event->mrg->pointer_down[1])
@@ -407,12 +423,18 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
       cairo_save (cr);
       cairo_new_path (cr);
       cairo_rectangle (cr, 0, 0, width, height);
-      mrg_listen (mrg, MRG_PRESS,
-                       mrg_client_press, client, client->host);
-      mrg_listen (mrg, MRG_MOTION,
-                       mrg_client_motion, client, NULL);
-      mrg_listen (mrg, MRG_RELEASE, 
-                       mrg_client_release, client, NULL);
+      mrg_client_ref (client);
+      mrg_listen_full (mrg, MRG_PRESS,
+                       mrg_client_press, client, client->host,
+                       (void*)mrg_client_unref, client);
+      mrg_client_ref (client);
+      mrg_listen_full (mrg, MRG_MOTION,
+                       mrg_client_motion, client, NULL,
+                       (void*)mrg_client_unref, client);
+      mrg_client_ref (client);
+      mrg_listen_full (mrg, MRG_RELEASE, 
+                       mrg_client_release, client, NULL,
+                       (void*)mrg_client_unref, client);
       cairo_restore (cr);
 
       cairo_restore (cr);
