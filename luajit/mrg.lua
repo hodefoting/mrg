@@ -636,6 +636,9 @@ void       mrg_host_monitor_dir      (MrgHost *host);
 void       mrg_host_register_events  (MrgHost *host);
 MrgList   *mrg_host_clients          (MrgHost *host);
 
+void       mrg_host_set_default_size (MrgHost *host, int width, int height);
+void       mrg_host_get_default_size (MrgHost *host, int *width, int *height);
+
 void       mrg_client_render_sloppy  (MrgClient *client, float x, float y);
 int        mrg_client_get_pid        (MrgClient *client);
 void       mrg_client_kill           (MrgClient *client);
@@ -843,6 +846,8 @@ ffi.metatype('MrgStyle',     {__index = { }})
 ffi.metatype('MrgRectangle', {__index = { }})
 ffi.metatype('MrgList',      {__index = { }})
 ffi.metatype('MrgHost',      {__index = {
+  set_default_size = function (...) C.mrg_host_set_default_size (...) end,
+  -- get_default_size not bound until needed
   set_focused     = function (...) C.mrg_host_set_focused (...) end,
   focused         = function (...) return C.mrg_host_get_focused (...) end,
   monitor_dir     = function (...) C.mrg_host_monitor_dir (...) end,

@@ -88,6 +88,9 @@ struct _MrgHost
   char       *fbdir;
   MrgList    *clients;
   MrgClient  *focused;
+
+  int default_width;
+  int default_height;
 };
 
 static void mrg_client_ref (MrgClient *client)
@@ -259,6 +262,14 @@ static void validate_client (MrgHost *host, const char *client_name)
 
     if (client->pid != getpid ())
     {
+      if (mmm_get_width (client->mmm) < 0 ||
+          mmm_get_height (client->mmm) < 0)
+      {
+        int width = host->default_width, height = host->default_height;
+        if (width <= 0) width = mrg_width (host->mrg);
+        if (height <= 0) height = mrg_height (host->mrg);
+        mmm_host_set_size (client->mmm, width, height);
+      }
       if (mmm_get_x (client->mmm) == 0 &&
           mmm_get_y (client->mmm) == 0)
       {
@@ -554,8 +565,25 @@ MrgHost *mrg_host_new (Mrg *mrg, const char *path)
     path = "/tmp/mrg";
   init_env (host, path);
   host->mrg = mrg;
+
   mrg_add_idle (mrg, host_idle_check, host);
   return host;
+}
+
+void mrg_host_get_default_size (MrgHost *host, int *width, int *height)
+{
+  int w = host->default_width, h = host->default_height;
+  if (w <= 0) w = mrg_width (host->mrg);
+  if (h <= 0) h = mrg_height (host->mrg);
+
+  if (width)  *width = w;
+  if (height) *height = h;
+}
+
+void mrg_host_set_default_size (MrgHost *host, int width, int height)
+{
+  host->default_width  = width;
+  host->default_height = height;
 }
 
 int mrg_client_get_pid (MrgClient *client)

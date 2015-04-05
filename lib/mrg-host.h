@@ -17,6 +17,8 @@ MrgClient *mrg_host_get_focused      (MrgHost *host);
 void       mrg_host_monitor_dir      (MrgHost *host);
 void       mrg_host_register_events  (MrgHost *host);
 MrgList   *mrg_host_clients          (MrgHost *host);
+void mrg_host_get_default_size (MrgHost *host, int *width, int *height);
+void mrg_host_set_default_size (MrgHost *host, int width, int height);
 
 void       mrg_client_render_sloppy  (MrgClient *client, float x, float y);
 int        mrg_client_get_pid        (MrgClient *client);
