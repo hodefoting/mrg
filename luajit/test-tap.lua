@@ -19,8 +19,7 @@ mrg:set_ui(function()
     mrg:print('tap,       tap and hold\n')
     mrg:print('tap+tap and hold\n')
     mrg:print('press,     release\n')
-    mrg:print('\nthe rectangle pans all, but blocks only some')
-    mrg:print('\nthe tap and tap_and_hold not getting the events through the rectangle is a bug')
+    mrg:print('\nthe rectangle pans all, and block none, add a stop propagate to the rectangle and none of the things should work\n')
 
   cr:translate(pan_x, pan_y)
   for k,v in ipairs(shapes) do
@@ -34,7 +33,9 @@ mrg:set_ui(function()
         v.rad = v.rad + 3
       end
       mrg:queue_draw(NULL)
-      event.stop_propagate = v.stopPropagate
+      if v.stopPropagate then
+        event:stop_propagate()
+      end
     end)
     cr:fill ()
     --mrg:print ('x=' .. v.x .. ' y=' .. v.y .. ' rad=' .. v.rad .. '\n')

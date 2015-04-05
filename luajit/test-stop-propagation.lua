@@ -1,6 +1,7 @@
 #!/usr/bin/env luajit
 
 local Mrg = require('mrg')
+local ffi = require('ffi')
 local mrg = Mrg.new(512,384)
 
 local shapes={
@@ -38,19 +39,31 @@ mrg:set_ui(function()
       v.x = v.x + event.delta_x
       v.y = v.y + event.delta_y
       mrg:queue_draw(NULL)
-      event.stop_propagate = v.stopPropagate
+      if v.stopPropagate then
+        event:stop_propagate()
+      end
     end)
     if k == 2 then
       mrg:listen(Mrg.MOTION, function(event)
-        event.stop_propagate = v.stopPropagate
+        if v.stopPropagate then
+          event:stop_propagate()
+        end
       end)
     end
     end
     cr:fill ()
+  
+
     mrg:print ('x=' .. v.x .. ' y=' .. v.y .. ' rad=' .. v.rad .. '\n')
   end
+
+
+    mrg:listen(Mrg.MESSAGE, function(event)
+      print ('full circled:' .. ffi.string(event.key_name))
+    end)
 end)
 
+    mrg:message('all testing')
 mrg:main()
 
 

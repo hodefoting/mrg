@@ -85,7 +85,7 @@ function menu(mrg, dim)
   -- XXX: try wit Mrg.ALL here instead?
   
   mrg:listen(Mrg.DRAG_PRESS + Mrg.MOTION + Mrg.RELEASE+ Mrg.PRESS , function(event)
-    event.stop_propagate = 1
+    event:stop_propagate()
   end)
   cr:fill()
 
