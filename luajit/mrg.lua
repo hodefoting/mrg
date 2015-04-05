@@ -1046,20 +1046,22 @@ local minimal={
   {x=320,  y=185, label='m', shifted='M', fn_label='…'},
   {x=360,  y=185, label=',', shifted='<', fn_label='“'},
   {x=400,  y=185, label='.', shifted='>', fn_label='”'},
-  {x=440,  y=185, label='/', shifted='?', fn_label='€'},
+  {x=480,  y=185, label='/', shifted='?', fn_label='€'},
 
   {x=20,  y=225, w=30, label='Fn', shifted='Fx', type='modal'},
   {x=55, w=50, y=225, label='ctrl', type='modal'},
   {x=110, w=40,  y=225, label='alt', type='modal'},
   {x=155,  y=225, w=230, label=' ', code='space'},
 
-  {x=440,  y=225, label='←', code='left', fn_label='pup', fn_code='page-up'},
-  {x=480,  y=225, label='↓', code='down', fn_label='end', fn_code='end'},
-  {x=480,  y=185, label='↑', code='up', fn_label='home', fn_code='home'},
-  {x=520,  y=225, label='→', code='right', fn_label='pdn', fn_code='page-down'},
+  {x=400,  y=225, label='←', code='left', fn_label='pup', fn_code='page-up'},
+  {x=440,  y=225, label='↓', code='down', fn_label='end', fn_code='end'},
+  {x=440,  y=185, label='↑', code='up', fn_label='home', fn_code='home'},
+  {x=480 , y=225, label='→', code='right', fn_label='pdn', fn_code='page-down'},
+
 
   {x=520,   y=185, label='`', shifted='~', fn_label='ins', fn_code='insert'},
-  {x=390, w=45, y=225, label='⌨', type='keyboard'},
+
+  {x=520, w=45, y=225, label='⌨', type='keyboard'},
 }
 
 local keys, y_start
