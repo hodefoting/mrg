@@ -4,21 +4,43 @@
 -- windows
 
 
+-- redraw of single windows cause loss of events elsewhere
+
 local S      = require 'syscall'
-if true then
+
+
+if false then
+  -- using the restarter on the host is only advisable
+  -- when all clients already are launched, since the use
+  -- of environment variables by the restarter mechanism
+  -- interacts badly with launching clients of an mmm compositor.
+
   S.setenv('MRG_RESTARTER','yes')
   S.setenv('MRG_BACKEND','mmm')
 end
-local os     = require 'os'
-local string = require 'string'
-local Mrg    = require 'mrg'
-local mrg    = Mrg.new(-1, -1);
-local host   = mrg:host_new("/tmp/mrg")
 
+
+local os     = require('os')
+local string = require('string')
+local Mrg    = require('mrg')
+--local mrg    = Mrg.new(-1, -1);
+local mrg    = Mrg.new(640, 480);
+local host   = mrg:host_new("/tmp/mrg")
 
 local notifications = {
   {text='welcome to microraptor gui'},
 }
+
+local show_apps = false;
+
+local applications = {
+  {text='applications',  cb=function() show_apps=false mrg:queue_draw(nil) end },
+  {text='terminal',      command='mrg terminal&'},
+  {text='flipping game', command='./flipgame.lua &'},
+  {text='paddlewar',     command='./paddlewar.lua &'},
+  {text='filsystem',     command='./browse.lua `pwd` &'},
+}
+
 
 function string.has_prefix(String,Start)
      return string.sub(String,1,string.len(Start))==Start
@@ -35,14 +57,28 @@ notifications {
    width: 20em;
    margin-left: auto;
    margin-right: auto;
-};
-
+}
 notification {
    color: white;
    margin-bottom: 0.1em;
    display: block;
-};
+}
+apps {
+   background-color: #000d; 
+   padding: 0.5em;
+   padding-top: 0;
+   border: 2px solid white; 
+   width: 10em;
+   display: block; 
+}
+application {
+   color: white;
+   margin-bottom: 1.4em;
+   display: block;
+}
 ]];
+
+
 --[[
 local mrg2 = Mrg.new(200, 200, "mem")
 mrg2:set_title ("task list")
@@ -66,9 +102,11 @@ mrg:set_ui(
 
     mrg:start("applications")
     mrg:text_listen(Mrg.PRESS, function(event)
-      os.execute('mrg terminal&')
+      -- os.execute('mrg terminal&')
+      show_apps = true
+      mrg:queue_draw(nil)
     end)
-    mrg:print("terminal")
+    mrg:print("applications")
     mrg:text_listen_done()
     mrg:close()
 
@@ -99,18 +137,15 @@ mrg:set_ui(
       -- set up a coordevent blocker behind titlebar
       mrg:listen(Mrg.COORD, function(event) event:stop_propagate() end)
 
-      local loc_x, loc_y
+      local loc_x, loc_y = client:xy()
       mrg:listen(Mrg.DRAG_MOTION + Mrg.DRAG_PRESS,
         function(event) 
           if event.type == Mrg.DRAG_PRESS then
             host:set_focused(client)
             client:raise_top()
-            loc_x, loc_y = client:xy()
           elseif event.type == Mrg.DRAG_MOTION then
-            if not loc_x then -- XXX: hacky precaution
-              loc_x, loc_y = client:xy()
-            end
             loc_x, loc_y = loc_x + event.delta_x, loc_y + event.delta_y
+            if loc_y <= 1.2 * em then loc_y = 1.2 * em end
             client:set_xy(loc_x, loc_y)
           end
           mrg:queue_draw(NULL)
@@ -134,14 +169,9 @@ mrg:set_ui(
       mrg:close()
 
       cr:rectangle(x + w - 20, y + h - 20, 23, 23)
-      local loc_w, loc_h
+      local loc_w, loc_h = client:size()
       mrg:listen(Mrg.DRAG_PRESS + Mrg.DRAG_MOTION, function(event) 
-        if event.type == Mrg.DRAG_PRESS then
-          loc_w, loc_h = client:size()
-        elseif event.type == Mrg.DRAG_MOTION then
-          if not loc_w then -- XXX: hacky precation
-            loc_w, loc_h = client:size()
-          end
+        if event.type == Mrg.DRAG_MOTION then
           loc_w, loc_h = loc_w + event.delta_x, loc_h + event.delta_y;
           client:set_size(loc_w, loc_h)
         end
@@ -173,20 +203,44 @@ mrg:set_ui(
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
 
     if #notifications > 0 then
-    
-    mrg:set_xy(0,0)
-    mrg:start('notifications')
-    mrg:text_listen(Mrg.TAP, function(event)
-      notifications={}
-      mrg:queue_draw(nil)
-    end)
-    for i, notification in ipairs(notifications) do 
-      mrg:start('notification')
-      mrg:print(notification.text)
+      mrg:set_xy(0,0)
+      mrg:start('notifications')
+      mrg:text_listen(Mrg.TAP, function(event)
+        notifications={}
+        mrg:queue_draw(nil)
+      end)
+      for i, notification in ipairs(notifications) do 
+        mrg:start('notification')
+        mrg:print(notification.text)
+        mrg:close()
+      end
+      mrg:text_listen_done()
       mrg:close()
     end
-    mrg:text_listen_done()
-    mrg:close()
+    
+    if show_apps and #applications > 0 then
+      mrg:set_xy(0,0)
+      mrg:start('apps')
+      for i, application in ipairs(applications) do 
+        mrg:start('application')
+
+        mrg:text_listen(Mrg.TAP, function(event)
+          if application.cb then
+            application.cb()
+          elseif application.command then
+            os.execute (application.command)
+            S.nanosleep(0.1) -- XXX: eeek, avoiding construction race... needs fixing in mmm
+          end
+          mrg:queue_draw(nil)
+        end)
+
+        mrg:print(application.text)
+
+        mrg:text_listen_done()
+
+        mrg:close()
+      end
+      mrg:close()
     end
     
     mrg:close()
