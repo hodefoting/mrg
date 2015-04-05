@@ -3,18 +3,46 @@
 -- a traditional window manager, titlebar-draggable, maximizable and resizable
 -- windows
 
+
 local S      = require 'syscall'
+if true then
+  S.setenv('MRG_RESTARTER','yes')
+  S.setenv('MRG_BACKEND','mmm')
+end
 local os     = require 'os'
 local string = require 'string'
 local Mrg    = require 'mrg'
-local mrg    = Mrg.new(640, 480);
+local mrg    = Mrg.new(-1, -1);
 local host   = mrg:host_new("/tmp/mrg")
+
+
+local notifications = {
+  {text='welcome to microraptor gui'},
+}
 
 function string.has_prefix(String,Start)
      return string.sub(String,1,string.len(Start))==Start
 end
 
-local css = "document {background-color:#111; }";
+local css = [[
+document {background-color:#111;} 
+notifications {
+   background-color: #000d; 
+   padding: 0.5em;
+   padding-top: 0;
+   border: 2px solid white; 
+   display: block; 
+   width: 20em;
+   margin-left: auto;
+   margin-right: auto;
+};
+
+notification {
+   color: white;
+   margin-bottom: 0.1em;
+   display: block;
+};
+]];
 --[[
 local mrg2 = Mrg.new(200, 200, "mem")
 mrg2:set_title ("task list")
@@ -72,13 +100,16 @@ mrg:set_ui(
       mrg:listen(Mrg.COORD, function(event) event:stop_propagate() end)
 
       local loc_x, loc_y
-      mrg:listen(Mrg.DRAG,
+      mrg:listen(Mrg.DRAG_MOTION + Mrg.DRAG_PRESS,
         function(event) 
           if event.type == Mrg.DRAG_PRESS then
             host:set_focused(client)
             client:raise_top()
             loc_x, loc_y = client:xy()
           elseif event.type == Mrg.DRAG_MOTION then
+            if not loc_x then -- XXX: hacky precaution
+              loc_x, loc_y = client:xy()
+            end
             loc_x, loc_y = loc_x + event.delta_x, loc_y + event.delta_y
             client:set_xy(loc_x, loc_y)
           end
@@ -104,10 +135,13 @@ mrg:set_ui(
 
       cr:rectangle(x + w - 20, y + h - 20, 23, 23)
       local loc_w, loc_h
-      mrg:listen(Mrg.DRAG, function(event) 
+      mrg:listen(Mrg.DRAG_PRESS + Mrg.DRAG_MOTION, function(event) 
         if event.type == Mrg.DRAG_PRESS then
           loc_w, loc_h = client:size()
         elseif event.type == Mrg.DRAG_MOTION then
+          if not loc_w then -- XXX: hacky precation
+            loc_w, loc_h = client:size()
+          end
           loc_w, loc_h = loc_w + event.delta_x, loc_h + event.delta_y;
           client:set_size(loc_w, loc_h)
         end
@@ -128,12 +162,33 @@ mrg:set_ui(
            for i2, client2 in ipairs(clients) do 
              client2:send_message( message:sub(5,-1) )
            end
+        elseif message:has_prefix('notify ') then
+          table.insert(notifications, {text=message:sub(9.-1)})
+          mrg:queue_draw(nil)
         end
       end
 
     end
     host:register_events()
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
+
+    if #notifications > 0 then
+    
+    mrg:set_xy(0,0)
+    mrg:start('notifications')
+    mrg:text_listen(Mrg.TAP, function(event)
+      notifications={}
+      mrg:queue_draw(nil)
+    end)
+    for i, notification in ipairs(notifications) do 
+      mrg:start('notification')
+      mrg:print(notification.text)
+      mrg:close()
+    end
+    mrg:text_listen_done()
+    mrg:close()
+    end
+    
     mrg:close()
 
     Mrg.draw_keyboard(mrg)
