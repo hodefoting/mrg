@@ -413,7 +413,7 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
     {
       pixels = mmm_get_buffer_read (client->mmm, &width, &height, &rowstride);
       if (!pixels)
-        usleep (5000);
+        usleep (1000);
       count ++;
     } while (pixels == NULL && count < 10);
 
@@ -426,23 +426,24 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
       cairo_paint (cr);
       cairo_surface_destroy (surface);
       mmm_read_done (client->mmm);
-      cairo_save (cr);
+      
       cairo_new_path (cr);
       cairo_rectangle (cr, 0, 0, width, height);
       mrg_client_ref (client);
       mrg_listen_full (mrg, MRG_PRESS,
                        mrg_client_press, client, client->host,
                        (void*)mrg_client_unref, client);
+
       mrg_client_ref (client);
       mrg_listen_full (mrg, MRG_MOTION,
                        mrg_client_motion, client, NULL,
                        (void*)mrg_client_unref, client);
+      
       mrg_client_ref (client);
       mrg_listen_full (mrg, MRG_RELEASE, 
                        mrg_client_release, client, NULL,
                        (void*)mrg_client_unref, client);
-      cairo_restore (cr);
-
+      
       cairo_restore (cr);
     }
     else

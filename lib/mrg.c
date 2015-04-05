@@ -275,6 +275,7 @@ _mrg_rectangle_combine_bounds (MrgRectangle       *rect_dest,
 void mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 {
   MrgRectangle rect_copy = {0, };
+  rectangle = NULL; // XXX XXX XXX hack, which affects performance
   if (!rectangle)
   {
     rect_copy.x = 0;
@@ -456,11 +457,17 @@ void mrg_prepare (Mrg *mrg)
           mrg->dirty.height);
       cairo_clip (cr);
     }
+
+    /* XXX: this should be well documented, since a full screen fill
+     * is quite performance sensitive, thus knowing the best way
+     * to do it is good.
+     */
     mrg_cairo_set_source_color (cr, &mrg_style(mrg)->background_color);
     cairo_save (cr);
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint (cr);
     cairo_restore (cr);
+    mrg_cairo_set_source_color (cr, &mrg_style(mrg)->color);
   }
 
   mrg_listen (mrg, MRG_KEY_DOWN, _mrg_bindings_key_down, NULL, NULL);
@@ -471,6 +478,8 @@ void mrg_prepare (Mrg *mrg)
     mrg_focus_bindings (mrg);
 #endif
 }
+
+static long prev_frame_ticks = 10000;
 
 void mrg_flush  (Mrg *mrg)
 {
@@ -492,6 +501,8 @@ void mrg_flush  (Mrg *mrg)
   _mrg_set_clean (mrg);
   mrg->in_paint --;
   frame_end = _mrg_ticks ();
+
+  prev_frame_ticks = (frame_end - frame_start);
   //fprintf (stderr, "(%f)", (frame_end - frame_start) / 1000.0);
 }
 
@@ -753,12 +764,44 @@ float mrg_ddpx (Mrg *mrg)
   return mrg->ddpx;
 }
 
+static long prev_frame_present = 0;
+
+float mrg_prev_frame_time (Mrg *mrg)
+{
+  return prev_frame_ticks / 1000.0;
+}
+
+static float target_fps = 40;
+
+void mrg_set_target_fps (Mrg *mrg, float fps)
+{
+  target_fps = fps;
+}
+float mrg_get_target_fps (Mrg *mrg)
+{
+  return target_fps;
+}
+
 void  mrg_ui_update (Mrg *mrg)
 {
+  if (target_fps > 0 && prev_frame_present)
+  {
+    long target_tick = prev_frame_present + 1000000/ target_fps;
+    long now = _mrg_ticks ();
+    long delta = target_tick - now;
+
+    if (delta > prev_frame_ticks)
+    {
+       usleep ((delta - prev_frame_ticks) * 0.5);
+    }
+  }
+
   mrg_prepare (mrg);
   if (mrg->ui_update)
     mrg->ui_update (mrg, mrg->user_data);
   mrg_flush (mrg);
+
+  prev_frame_present = _mrg_ticks ();
 }
 
 static void mrg_mrg_press (MrgEvent *event, void *mrg, void *data2)
@@ -997,10 +1040,7 @@ void _mrg_log (Mrg        *mrg,
   free (buffer);
 }
 
-
-
 #endif
-
 
 int mrg_in_dirty_rect (Mrg *mrg,
                         int x, int y,

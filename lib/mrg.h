@@ -125,12 +125,16 @@ int mrg_add_timeout_full (Mrg *mrg, int ms, int (*idle_cb)(Mrg *mrg, void *idle_
                           MrgDestroyNotify destroy_notify,
                           void *destroy_data);
 
-
+float mrg_prev_frame_time (Mrg *mrg);
 
 /* send a message to the host, the host can communicate back
- * through MESSAGE events
+ * through MESSAGE eventsusing mrg_client_send_message
  */
 void mrg_message (Mrg *mrg, const char *message);
+
+/* set to negative to disable */
+void mrg_set_target_fps (Mrg *mrg, float fps);
+float mrg_get_target_fps (Mrg *mrg);
 
 #include "mrg-events.h"
 #include "mrg-text.h"
@@ -142,6 +146,7 @@ void mrg_message (Mrg *mrg, const char *message);
 
 GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                         void *user_data);
+
 
 #endif
 

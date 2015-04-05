@@ -189,6 +189,9 @@ int   mrg_print_get_xy     (Mrg *mrg, const char *str, int no, float *x, float *
 
 int mrg_print_xml (Mrg *mrg, const char *string);
 
+void mrg_set_target_fps (Mrg *mrg, float fps);
+float mrg_get_target_fps (Mrg *mrg);
+
 void mrg_listen      (Mrg     *mrg,
                       MrgType  types,
                       MrgCb    cb,
@@ -786,6 +789,8 @@ ffi.metatype('Mrg', {__index = {
   set_title        = function (...) C.mrg_set_title (...) end,
   get_title        = function (...) return C.mrg_get_title (...) end,
   set_font_size    = function (...) C.mrg_set_font_size (...) end,
+  set_target_fps   = function (...) C.mrg_set_target_fps (...) end,
+  target_fps       = function (...) return C.mrg_get_target_fps (...) end,
 
   pointer_press = function (...) C.mrg_pointer_press (...) end,
   pointer_release = function (...) C.mrg_pointer_release (...) end,

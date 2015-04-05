@@ -37,6 +37,6 @@ const char *mrg_client_get_message   (MrgClient *client);
 int         mrg_client_has_message   (MrgClient *client);
 
 
-#define TITLE_BAR_HEIGHT 16
+#define TITLE_BAR_HEIGHT 18
 
 #endif
