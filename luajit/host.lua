@@ -3,11 +3,16 @@
 -- a traditional window manager, titlebar-draggable, maximizable and resizable
 -- windows
 
+local S      = require 'syscall'
 local os     = require 'os'
 local string = require 'string'
 local Mrg    = require 'mrg'
 local mrg    = Mrg.new(640, 480);
 local host   = mrg:host_new("/tmp/mrg")
+
+function string.has_prefix(String,Start)
+     return string.sub(String,1,string.len(Start))==Start
+end
 
 local css = "document {background-color:#111; }";
 --[[
@@ -41,9 +46,9 @@ mrg:set_ui(
 
     mrg:close()
 
-    host:monitor_dir()
     local old_focused = host:focused()
     -- host:set_focused(nil)  -- (render_sloppy sets focused as part of rendering)
+    host:monitor_dir()
 
     local clients = host:clients()
     for i, client in ipairs(clients) do 
@@ -62,16 +67,25 @@ mrg:set_ui(
       mrg:start_with_style('title',
       string.format('left:%dpx;top:%dpx;width:%dpx;height:%dpx;border-width:1px', x-2, y- 1.5 * em, w-1, em * 1.0))
       cr:rectangle(x-2, y- 1.5 * em, w-1, em * 1.5)
-      mrg:listen(Mrg.DRAG, function(event) 
-        local x, y = client:xy()
-        x, y = x + event.delta_x, y + event.delta_y;
-        client:set_xy(x,y)
-        host:set_focused(client)
-        client:raise_top()
-        mrg:queue_draw(NULL)
-        event:stop_propagate()
-        return 0
-      end)
+
+      -- set up a coordevent blocker behind titlebar
+      mrg:listen(Mrg.COORD, function(event) event:stop_propagate() end)
+
+      local loc_x, loc_y
+      mrg:listen(Mrg.DRAG,
+        function(event) 
+          if event.type == Mrg.DRAG_PRESS then
+            host:set_focused(client)
+            client:raise_top()
+            loc_x, loc_y = client:xy()
+          elseif event.type == Mrg.DRAG_MOTION then
+            loc_x, loc_y = loc_x + event.delta_x, loc_y + event.delta_y
+            client:set_xy(loc_x, loc_y)
+          end
+          mrg:queue_draw(NULL)
+          event:stop_propagate()
+          return 0
+        end)
       mrg:print(client:title())
 
       mrg:start('close')
@@ -89,16 +103,34 @@ mrg:set_ui(
       mrg:close()
 
       cr:rectangle(x + w - 20, y + h - 20, 23, 23)
+      local loc_w, loc_h
       mrg:listen(Mrg.DRAG, function(event) 
-        local w, h = client:size()
-        w, h = w + event.delta_x, h + event.delta_y;
-        client:set_size(w, h)
+        if event.type == Mrg.DRAG_PRESS then
+          loc_w, loc_h = client:size()
+        elseif event.type == Mrg.DRAG_MOTION then
+          loc_w, loc_h = loc_w + event.delta_x, loc_h + event.delta_y;
+          client:set_size(loc_w, loc_h)
+        end
         mrg:queue_draw(NULL)
         event:stop_propagate()
       end)
       cr:fill()
 
       mrg:close()
+
+      if client:has_message() ~= 0 then
+        local message = client:get_message()
+
+        -- by having the all target, the compositor acts as a bus
+        -- and it is up to the clients to know that they are targetd
+
+        if message:has_prefix('all ') then
+           for i2, client2 in ipairs(clients) do 
+             client2:send_message( message:sub(5,-1) )
+           end
+        end
+      end
+
     end
     host:register_events()
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
