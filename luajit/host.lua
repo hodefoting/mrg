@@ -3,10 +3,9 @@
 -- a traditional window manager, titlebar-draggable, maximizable and resizable
 -- windows
 
-
 -- redraw of single windows cause loss of events elsewhere
 
-local S      = require 'syscall'
+local S = require 'syscall'
 
 
 if false then
@@ -38,6 +37,7 @@ local applications = {
   {text='terminal',      command='mrg terminal&'},
   {text='flipping game', command='./flipgame.lua &'},
   {text='paddlewar',     command='./paddlewar.lua &'},
+  {text='browser',       command='mrg browser &'},
   {text='filsystem',     command='./browse.lua `pwd` &'},
 }
 
@@ -102,7 +102,6 @@ mrg:set_ui(
 
     mrg:start("applications")
     mrg:text_listen(Mrg.PRESS, function(event)
-      -- os.execute('mrg terminal&')
       show_apps = true
       mrg:queue_draw(nil)
     end)
@@ -123,13 +122,14 @@ mrg:set_ui(
 
       client:render(mrg, x, y)
 
+      em = mrg:em()
+      if not client:get_value('borderless') then
       if old_focused == client then
       mrg:start_with_style('client.focused', string.format('left:%dpx;top:%dpx;width:%dpx;height:%dpx', x-1, y-1, w, h))
       else
       mrg:start_with_style('client', string.format('left:%dpx;top:%dpx;width:%dpx;height:%dpx', x-1, y-1, w, h))
       end
 
-      em = mrg:em()
       mrg:start_with_style('title',
       string.format('left:%dpx;top:%dpx;width:%dpx;height:%dpx;border-width:1px', x-2, y- 1.5 * em, w-1, em * 1.0))
       cr:rectangle(x-2, y- 1.5 * em, w-1, em * 1.5)
@@ -181,6 +181,7 @@ mrg:set_ui(
       cr:fill()
 
       mrg:close()
+      end
 
       if client:has_message() ~= 0 then
         local message = client:get_message()
@@ -229,6 +230,7 @@ mrg:set_ui(
             application.cb()
           elseif application.command then
             os.execute (application.command)
+            show_apps = false
             S.nanosleep(0.1) -- XXX: eeek, avoiding construction race... needs fixing in mmm
           end
           mrg:queue_draw(nil)
@@ -250,6 +252,4 @@ mrg:set_ui(
 )
 
 mrg:css_set(css)
-
 mrg:main()
-
