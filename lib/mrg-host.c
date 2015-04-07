@@ -182,12 +182,11 @@ void mrg_client_set_stack_order (MrgClient *client,
   }
   else
   {
-    //fprintf (stderr, "failed\n");
-    //mrg_list_free (&new);
     mrg_list_append (&new, client);
     mrg_list_free (&host->clients);
     host->clients = new;
   }
+  mrg_queue_draw (host->mrg, NULL);
 }
 
 void mrg_client_raise_top (MrgClient *client)

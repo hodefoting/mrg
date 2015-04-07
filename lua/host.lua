@@ -8,7 +8,7 @@
 local S = require 'syscall'
 
 
-if true then
+if false then
   -- using the restarter on the host is only advisable
   -- when all clients already are launched, since the use
   -- of environment variables by the restarter mechanism
