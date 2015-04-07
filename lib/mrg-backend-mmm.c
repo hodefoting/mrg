@@ -340,11 +340,20 @@ void mrg_message (Mrg *mrg, const char *message)
     mmm_add_message (mrg_mmm (mrg), message);
 }
 
+void mrg_window_set_value (Mrg *mrg, const char *name, const char *value)
+{
+  if (mrg_mmm (mrg))
+    mmm_set_value (mrg_mmm (mrg), name, value);
+}
+
 #else
 
 void mrg_message (Mrg *mrg, const char *message)
 {
 }
 
+void mrg_window_set_value (Mrg *mrg, const char *name, const char *value)
+{
+}
 
 #endif

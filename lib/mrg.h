@@ -132,6 +132,8 @@ float mrg_prev_frame_time (Mrg *mrg);
  */
 void mrg_message (Mrg *mrg, const char *message);
 
+void mrg_window_set_value (Mrg *mrg, const char *name, const char *value);
+
 /* set to negative to disable */
 void mrg_set_target_fps (Mrg *mrg, float fps);
 float mrg_get_target_fps (Mrg *mrg);

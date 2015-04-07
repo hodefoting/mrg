@@ -202,6 +202,8 @@ void mrg_client_get_size (MrgClient *client, int *width, int *height)
   if (client->pid != -1)
   {
     mmm_host_get_size (client->mmm, &w, &h);
+    if (w <= 0)
+      mmm_get_size (client->mmm, &w, &h);
   }
   else
   {
@@ -351,8 +353,8 @@ static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
   char buf[256];
   sprintf (buf, "mouse-press %f %f %i", event->x, event->y, event->device_no);
   mrg_host_set_focused (host, client);
-  if (host->focused)
-    mrg_client_raise_top (host->focused);
+  //if (host->focused)
+  //  mrg_client_raise_top (host->focused);
   mmm_add_event (mmm, buf);
   mrg_event_stop_propagate (event);
 }
@@ -535,24 +537,13 @@ static int host_idle_check (Mrg *mrg, void *data)
       if (client->mmm)
       if (mmm_get_damage (client->mmm, &x, &y, &width, &height))
       {
+        /* XXX: this damage calculation is only correct when clients are drawn
+         * where expected according to positioning
+         */
         MrgRectangle rect = {x + mmm_get_x (client->mmm), y + mmm_get_y (client->mmm), width, height};
-        if (!width)
-          return 1;
-        //assert (width);
-        mrg_queue_draw (mrg, &rect);
+        if (width > 0)
+          mrg_queue_draw (mrg, &rect);
       }
-
-#if 0
-      if (client->mmm)
-      while (mmm_has_message (client->mmm))
-      {
-        fprintf (stderr, "%p: %s\n", client->mmm, mmm_get_message (client->mmm));
-      }
-#endif
-    }
-    else
-    {
-      // XXX
     }
   }
   return 1;
@@ -631,3 +622,18 @@ mrg_client_send_message (MrgClient *client, const char *message)
   mmm_add_event (client->mmm, tmp);
   free (tmp);
 }
+
+const char *mrg_client_get_value (MrgClient *client, const char *name)
+{
+  if (client->mrg)
+    return NULL;
+  return mmm_get_value (client->mmm, name);
+}
+
+void mrg_client_set_value (MrgClient *client, const char *name, const char *value)
+{
+  if (client->mrg)
+    return;
+  mmm_set_value (client->mmm, name, value);
+}
+

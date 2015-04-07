@@ -441,11 +441,11 @@ _mrg_emit_cb_item (Mrg *mrg, MrgItem *item, MrgEvent *event, MrgType type, float
   if (!event)
   {
     event = &s_event;
-    event->mrg = mrg;
     event->type = type;
     event->x = x;
     event->y = y;
   }
+  event->mrg = mrg;
   transformed_event = *event;
   transformed_event.device_x = event->x;
   transformed_event.device_y = event->y;

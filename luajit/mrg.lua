@@ -103,6 +103,7 @@ void  mrg_get_position  (Mrg *mrg, int *x, int *y);
 
 void mrg_message (Mrg *mrg, const char *message);
 void  mrg_set_title     (Mrg *mrg, const char *title);
+void mrg_window_set_value (Mrg *mrg, const char *name, const char *value);
 const char *mrg_get_title (Mrg *mrg);
 
 int   mrg_width         (Mrg *mrg);
@@ -619,8 +620,6 @@ float mrg_edge_top        (Mrg *mrg);
 float mrg_edge_right      (Mrg *mrg);
 float mrg_edge_bottom     (Mrg *mrg);
 
-
-
 typedef struct _MrgHost   MrgHost;
 typedef struct _MrgClient MrgClient;
 
@@ -652,6 +651,8 @@ void       mrg_client_set_y          (MrgClient *client, float y);
 void       mrg_client_get_size       (MrgClient *client, int *width, int *height);
 void       mrg_client_set_size       (MrgClient *client, int width,  int height);
 const char *mrg_client_get_title     (MrgClient *client);
+const char *mrg_client_get_value     (MrgClient *client, const char *name);
+void        mrg_client_set_value     (MrgClient *client, const char *name, const char *value);
 
 void        mrg_client_send_message  (MrgClient *client, const char *message);
 
@@ -790,6 +791,7 @@ ffi.metatype('Mrg', {__index = {
   set_size         = function (...) C.mrg_set_size (...) end,
   set_position     = function (...) C.mrg_set_position(...) end,
   set_title        = function (...) C.mrg_set_title (...) end,
+  window_set_value = function (...) C.mrg_window_set_value (...) end,
   get_title        = function (...) return C.mrg_get_title (...) end,
   set_font_size    = function (...) C.mrg_set_font_size (...) end,
   set_target_fps   = function (...) C.mrg_set_target_fps (...) end,
@@ -809,6 +811,7 @@ ffi.metatype('Mrg', {__index = {
     notify_fun = ffi.cast ("MrgDestroyNotify", notify_cb)
     cb_fun = ffi.cast ("MrgIdleCb", cb)
     return C.mrg_add_idle_full (mrg, cb_fun, data1, notify_fun, NULL)
+    -- XXX: wrap the callback so that the return isn't mandatory?
   end,
 
   add_timeout = function (mrg, ms, cb, data1)
@@ -874,13 +877,21 @@ ffi.metatype('MrgClient',    {__index = {
   kill          = function (...) C.mrg_client_kill (...) end,
   raise_top     = function (...) C.mrg_client_raise_top (...) end,
   send_message  = function (...) C.mrg_client_send_message (...) end,
+  set_value     = function (...) C.mrg_client_set_value (...) end,
+  get_value     = function (...) 
+    local f = C.mrg_client_get_value (...)
+    if f ~= NULL then
+      return ffi.string(f)
+    end
+    return nil
+  end,
   has_message   = function (...) return C.mrg_client_has_message (...) end,
   get_message   = function (...)
     local f = C.mrg_client_get_message (...)
     if f ~= NULL then
       return ffi.string(f)
     end
-    return ''
+    return nil 
   end,
   maximize      = function (...) C.mrg_client_maximize (...) end,
   title         = function (...) return C.mrg_client_get_title (...) end,
@@ -918,8 +929,8 @@ ffi.metatype('MrgClient',    {__index = {
   M.COORD = C.MRG_COORD;
 
 
---local keyboard_visible = false
-local keyboard_visible = true
+local keyboard_visible = false
+--local keyboard_visible = true
 
 
 local quite_complete={
@@ -1102,14 +1113,18 @@ M.draw_keyboard = function (mrg)
 
   cr:set_font_size(em * 0.8)
 
+  cr:new_path()
   if not keyboard_visible then
-    cr:rectangle (mrg:width() - 4 * em, mrg:height() - 4 * em, 4 * em, 4 * em)
+    cr:rectangle (mrg:width() - 4 * em, mrg:height() - 3 * em, 4 * em, 3 * em)
     mrg:listen(M.TAP, function(event) 
       keyboard_visible = true
       mrg:queue_draw(nil)
     end)
-    cr:set_source_rgba(bg.r,bg.g,bg.b,0.6)
+    cr:set_source_rgba(bg.r,bg.g,bg.b,0.2)
     cr:fill()
+    mrg:set_style('background:transparent; color: rgba(0,0,0,0.5); font-size: 1.9em')
+    mrg:set_xy(mrg:width() - 3 * em, mrg:height() - 0.5 * em)
+    mrg:print('⌨')
   else
     cr:translate(0,mrg:height()-250* dim)
     cr:scale(dim, dim)

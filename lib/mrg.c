@@ -932,7 +932,7 @@ void  mrg_set_position  (Mrg *mrg, int x, int y)
 
 void  mrg_get_position  (Mrg *mrg, int *x, int *y)
 {
-  if (mrg->backend->mrg_get_position)
+  if (mrg->backend && mrg->backend->mrg_get_position)
     mrg->backend->mrg_get_position (mrg, x, y);
 }
 

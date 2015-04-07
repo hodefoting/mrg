@@ -357,6 +357,8 @@ static void mrg_gtk_get_position  (Mrg *mrg, int *x, int *y)
 {
   MrgGtk *mrg_gtk = mrg->backend_data;
   gint root_x, root_y;
+  if (!mrg_gtk)
+    return;
   if (!mrg_gtk->window)
     return;
   gtk_window_get_position (GTK_WINDOW (mrg_gtk->window), &root_x, &root_y);
