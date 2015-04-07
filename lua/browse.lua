@@ -38,7 +38,7 @@ end
 local Mrg = require('mrg')
 local mrg = Mrg.new(512, 512);
 
---local path = '/home/pippin/src/mrg/luajit'
+--local path = '/home/pippin/src/mrg/lua'
 local path = '/home/pippin/images'
 local folder_pan = 0;
 local dir = {}
@@ -483,7 +483,7 @@ function draw_text (mrg, x, y)
   local childpid = S.fork()
   mrg:add_timeout(100, function() mrg:queue_draw(nil) return 0 end)
   if (childpid == 0) then    -- in child
-    S.execve('/home/pippin/src/mrg/luajit/edit.lua', {'/usr/local/bin/mrg-edit', path}, {"PATH=/bin:/usr/bin:/usr/local/bin", "MMM_PATH=" .. comp_dir})
+    S.execve('/home/pippin/src/mrg/lua/edit.lua', {'/usr/local/bin/mrg-edit', path}, {"PATH=/bin:/usr/bin:/usr/local/bin", "MMM_PATH=" .. comp_dir})
     S.exit()
   else                       -- in parent
     oldpid = childpid

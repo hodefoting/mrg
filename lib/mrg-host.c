@@ -117,15 +117,79 @@ static void mrg_client_unref (void *ignored, void *ignored2, MrgClient *client)
   }
 }
 
-void mrg_client_raise_top (MrgClient *client)
+int  mrg_client_get_stack_order (MrgClient *client)
 {
+  MrgList *l;
   MrgHost *host;
+  int i = 0;
+  if (!client)
+    return 0;
+  host = client->host;
+  for (l = host->clients; l; l = l->next) i++;
+
+  for (l = host->clients; l; l = l->next)
+  {
+    if (l->data == client)
+      return i;
+    i--;
+  }
+  return 0;
+}
+
+void mrg_client_set_stack_order (MrgClient *client,
+                                 int        zpos)
+{
+  MrgList *new = NULL;
+  MrgList *l;
+  MrgHost *host;
+  int i = 0;
   if (!client)
     return;
   host = client->host;
+  
+  for (l = host->clients; l; l = l->next) i++;
+  
+  for (l = host->clients; l; l = l->next)
+  {
+    MrgClient *ic = l->data;
 
-  mrg_list_remove (&host->clients, client);
-  mrg_list_append (&host->clients, client);
+    if (ic == client)
+    {
+      if (i == zpos)
+      {
+        mrg_list_free (&new);
+        fprintf (stderr, "already there!\n");
+        return;
+      }
+    }
+    else
+    {
+      if (i == zpos)
+      {
+        mrg_list_append (&new, client);
+        client = NULL;
+      }
+      mrg_list_append (&new, ic);
+    }
+    i--;
+  }
+
+  if (client == NULL)
+  {
+    mrg_list_free (&host->clients);
+    host->clients = new;
+  }
+  else
+    mrg_list_free (&new);
+
+
+  return;
+}
+
+void mrg_client_raise_top (MrgClient *client)
+{
+  mrg_client_set_stack_order (client, 0);
+  return;
 }
 
 void mrg_client_maximize (MrgClient *client)

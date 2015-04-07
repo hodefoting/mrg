@@ -214,6 +214,8 @@ int mrg_pointer_release  (Mrg *mrg, float x, float y, int device_no, uint32_t ti
 int mrg_pointer_motion   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
 int mrg_key_press        (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
 
+
+
 /* these deal with pointer_no 0 only
  */
 void  mrg_warp_pointer (Mrg *mrg, float x, float y);
@@ -659,6 +661,8 @@ void        mrg_client_send_message  (MrgClient *client, const char *message);
 const char *mrg_client_get_message   (MrgClient *client);
 int         mrg_client_has_message   (MrgClient *client);
 
+void mrg_client_set_stack_order (MrgClient *client, int zpos);
+int  mrg_client_get_stack_order (MrgClient *client);
 void        host_add_client_mrg      (MrgHost     *host,
                                       Mrg         *mrg,
                                       float        x,
@@ -876,6 +880,8 @@ ffi.metatype('MrgClient',    {__index = {
   pid           = function (...) return C.mrg_client_get_pid (...) end,
   kill          = function (...) C.mrg_client_kill (...) end,
   raise_top     = function (...) C.mrg_client_raise_top (...) end,
+  set_stack_order = function (...) C.mrg_client_set_stack_order (...) end,
+  stack_order   = function (...) return C.mrg_client_get_stack_order (...) end,
   send_message  = function (...) C.mrg_client_send_message (...) end,
   set_value     = function (...) C.mrg_client_set_value (...) end,
   get_value     = function (...) 

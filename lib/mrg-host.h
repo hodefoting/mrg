@@ -23,7 +23,6 @@ void mrg_host_set_default_size (MrgHost *host, int width, int height);
 void       mrg_client_render_sloppy  (MrgClient *client, float x, float y);
 int        mrg_client_get_pid        (MrgClient *client);
 void       mrg_client_kill           (MrgClient *client);
-void       mrg_client_raise_top      (MrgClient *client);
 void       mrg_client_render         (MrgClient *client, Mrg *mrg, float x, float y);
 void       mrg_client_maximize       (MrgClient *client);
 float      mrg_client_get_x          (MrgClient *client);
@@ -39,6 +38,10 @@ const char *mrg_client_get_message   (MrgClient *client);
 int         mrg_client_has_message   (MrgClient *client);
 const char *mrg_client_get_value     (MrgClient *client, const char *name);
 void        mrg_client_set_value     (MrgClient *client, const char *name, const char *value);
+
+void       mrg_client_raise_top      (MrgClient *client); /* XXX: use set_stack_order(1) instead */
+void mrg_client_set_stack_order (MrgClient *client, int zpos);
+int  mrg_client_get_stack_order (MrgClient *client);
 
 #define TITLE_BAR_HEIGHT 18
 

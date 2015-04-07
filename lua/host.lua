@@ -263,7 +263,7 @@ mrg:set_ui(
              event:stop_propagate()
            end)
            mrg:listen(Mrg.TAP, function(event) 
-             client:raise_top()
+             client:set_stack_order(1)
            end)
            cr:fill()
 
