@@ -149,10 +149,12 @@ void mrg_client_set_stack_order (MrgClient *client,
   
   for (l = host->clients; l; l = l->next) i++;
   
+  i++;
   for (l = host->clients; l; l = l->next)
   {
     MrgClient *ic = l->data;
 
+    i--;
     if (ic == client)
     {
       if (i == zpos)
@@ -164,26 +166,28 @@ void mrg_client_set_stack_order (MrgClient *client,
     }
     else
     {
-      if (i == zpos)
+      if (i == zpos && client)
       {
         mrg_list_append (&new, client);
         client = NULL;
       }
       mrg_list_append (&new, ic);
     }
-    i--;
   }
-
+  
   if (client == NULL)
   {
     mrg_list_free (&host->clients);
     host->clients = new;
   }
   else
-    mrg_list_free (&new);
-
-
-  return;
+  {
+    //fprintf (stderr, "failed\n");
+    //mrg_list_free (&new);
+    mrg_list_append (&new, client);
+    mrg_list_free (&host->clients);
+    host->clients = new;
+  }
 }
 
 void mrg_client_raise_top (MrgClient *client)

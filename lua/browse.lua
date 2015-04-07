@@ -30,7 +30,7 @@
 local S = require('syscall')
 
 -- having this here, enables live-coding
-if true then
+if false then
   S.setenv('MRG_RESTARTER','yes')
   S.setenv('MRG_BACKEND','mmm')
 end
@@ -646,13 +646,9 @@ function (mrg, data)
 
   if child_focus then
     cr:rectangle(0,0, 8 * em, mrg:height())
-    cr:set_source_rgba(1,0,0,0.0)
     mrg:listen(Mrg.PRESS, function(event) child_focus = false end)
-    cr:fill()
+    cr:new_path()
 
-    cr:rectangle(8 * em, y, mrg:width() - 9 * em, mrg:height() - y)
-    cr:set_source_rgba(1,0,0,0.1)
-    cr:fill()
     host:register_events()
   else
     cr:rectangle(0,0, 8 * em, mrg:height())
@@ -660,9 +656,8 @@ function (mrg, data)
     cr:fill()
 
     cr:rectangle(8 * em, y, mrg:width() - 9 * em, mrg:height() - y)
-    cr:set_source_rgba(1,0,0,0.0)
     mrg:listen(Mrg.PRESS, function(event) child_focus = true  end)
-    cr:fill()
+    cr:new_path()
   end
 
   if in_modal then

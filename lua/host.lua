@@ -8,7 +8,7 @@
 local S = require 'syscall'
 
 
-if false then
+if true then
   -- using the restarter on the host is only advisable
   -- when all clients already are launched, since the use
   -- of environment variables by the restarter mechanism
@@ -248,6 +248,18 @@ mrg:set_ui(
            client:set_xy(x, y)
            client:set_size(w,h)
 
+           cr:new_path()
+           cr:rectangle(w - 2 * em,  
+                   mrg:height() - 120 + 12 + 12 - 4 * em,
+                  4 * em, 2.3 *em);
+           cr:set_source_rgba(0,0,1, 0.1)
+           mrg:listen(Mrg.TAP, function(event)
+             client:set_stack_order(0)
+             event:stop_propagate()
+             mrg:queue_draw(nil)
+           end)
+           cr:fill()
+
            w = 160
            h = 120 - 12
            x = 0
@@ -265,7 +277,8 @@ mrg:set_ui(
            mrg:listen(Mrg.TAP, function(event) 
              client:set_stack_order(1)
            end)
-           cr:fill()
+           --cr:fill()
+           cr:new_path()
 
            x = x + w
            if (x + w > mrg:width()) then
@@ -275,8 +288,6 @@ mrg:set_ui(
          end
       end
     end
-
-
 
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
 
