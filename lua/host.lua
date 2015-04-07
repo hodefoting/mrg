@@ -18,7 +18,7 @@ if false then
   S.setenv('MRG_BACKEND','mmm')
 end
 
-local tiled = true
+local tiled = false
 
 local os     = require('os')
 local string = require('string')
@@ -35,11 +35,12 @@ local show_apps = false;
 
 local applications = {
   {text='applications',  cb=function() show_apps=false mrg:queue_draw(nil) end },
+  {text='toggle tiled',  cb=function() tiled=not tiled mrg:queue_draw(nil) end },
+  {text='filesystem',    command='./browse.lua `pwd` &'},
+  {text='help',          command='mrg browser &'},
   {text='terminal',      command='mrg terminal&'},
   {text='flipping game', command='./flipgame.lua &'},
   {text='paddlewar',     command='./paddlewar.lua &'},
-  {text='browser',       command='mrg browser &'},
-  {text='filsystem',     command='./browse.lua `pwd` &'},
 }
 
 
@@ -103,6 +104,12 @@ end)
 host:add_client_mrg(mrg2, 40, 40)
 host:add_client_mrg(mrg2, 40, 140)
 ]]
+
+function toggle_fullscreen(event)
+  event.mrg:set_fullscreen(not event.mrg:is_fullscreen()) 
+  show_apps = false
+end
+
 mrg:set_ui(
   function()
     local cr = mrg:cr()
@@ -178,18 +185,20 @@ mrg:set_ui(
         end)
       mrg:print(client:title())
 
-      mrg:start('close')
-      mrg:text_listen(Mrg.PRESS, function(event) client:kill() end)
-      mrg:print('X')
-      mrg:text_listen_done()
-      mrg:close()
+      if not tiled then
+        mrg:start('close')
+        mrg:text_listen(Mrg.PRESS, function(event) client:kill() end)
+        mrg:print('X')
+        mrg:text_listen_done()
+        mrg:close()
 
-      mrg:start('max')
-      mrg:text_listen(Mrg.PRESS, function(event) client:maximize() end)
-      mrg:print('  ')
-      mrg:text_listen_done()
-      mrg:close()
-
+        mrg:start('max')
+        mrg:text_listen(Mrg.PRESS, function(event) client:maximize() end)
+        mrg:print('  ')
+        mrg:text_listen_done()
+        mrg:close()
+      end
+  
       mrg:close()
 
       cr:rectangle(x + w - 20, y + h - 20, 23, 23)
@@ -290,6 +299,7 @@ mrg:set_ui(
     end
 
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
+    mrg:add_binding("F11", nil, "fullscreen", toggle_fullscreen)
 
     if #notifications > 0 then
       mrg:set_xy(0,0)
