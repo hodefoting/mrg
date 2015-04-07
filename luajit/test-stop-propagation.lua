@@ -2,6 +2,7 @@
 
 local Mrg = require('mrg')
 local ffi = require('ffi')
+local cairo = require('cairo')
 local mrg = Mrg.new(512,384)
 
 local shapes={
@@ -13,6 +14,13 @@ local shapes={
 
 mrg:set_ui(function()
   local cr = mrg:cr()
+
+  cr:set_source_rgba(0,0,0,0)
+  cr:save()
+  cr:set_operator(cairo.CAIRO_OPERATOR_SOURCE) 
+  cr:paint()
+  cr:restore()
+
     mrg:print('the red one stops propagation, the blue doesnt, the green one grows on press\n')
   for k,v in ipairs(shapes) do
     cr:new_path()

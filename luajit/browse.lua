@@ -1,16 +1,21 @@
 #!/usr/bin/env luajit
 -- todo
---   rename
+--   creating new files
 --   text editing
+--     mark modified and unsaved files in file browser, keep clients open, permitting multitask editing with minimal ui.
+--     ask to save changes when trying to switch file or perhaps dir?
 --   open context menu with keyboard shortcut
---   ask to save changes when trying to switch file
---   use gifplay as composited helper for gifs
 --   svg viewing/editing 
+--   escape paths
+--   ffmpeg video recorder in mmm host -> gif animation
 --   ffplay video playback
+--   named key/value strings on mmm?
 
 --   image zoom/pan with gestures
 --   gegl based helper for images
 --   thumbnails
+
+-- ok so if I now add better focus, and onscreen keyboard to browse.lua it is the minimal needed, with no extra windowmanager. it is a single tasking solution. after that on the meta level multiple tasks tiled will be added.
 
 --   cache dir array between draws, with identify info as well
 
@@ -24,21 +29,61 @@
 
 local S = require('syscall')
 
---S.setenv('MRG_RESTARTER','yes')
---S.setenv('MRG_BACKEND','mmm')
+-- having this here, enables live-coding
+if true then
+  S.setenv('MRG_RESTARTER','yes')
+  S.setenv('MRG_BACKEND','mmm')
+end
 
 local Mrg = require('mrg')
-local mrg = Mrg.new(640, 480);
+local mrg = Mrg.new(512, 512);
 
 --local path = '/home/pippin/src/mrg/luajit'
 local path = '/home/pippin/images'
 local folder_pan = 0;
-
-local in_context = false
-local context_x, context_y = 100, 100
-local context_choices={}
-
 local dir = {}
+
+local child_focus = false
+
+local comp_dir = "/tmp/mrg-" .. S.getpid()
+
+
+local host = mrg:host_new(comp_dir)
+
+S.setenv("MMM_PATH","/tmp/mrg",1)
+
+------------------------------------------------------------------------
+
+local in_modal = false
+local modal_x, modal_y = 100, 100
+local modal_choices={}
+local modal_string=nil
+
+function mrg_modal(mrg, x, y, choices)
+  if choices then
+    modal_choices = choices
+  else
+    modal_choices = {
+      {title='uh??'}
+    }
+  end
+  local w, h = 100, 100
+  if x < w/2 then x = w/2 end
+  if y < h/2 then y = h/2 end
+  if x > mrg:width()  - w/2 then x = mrg:width ()-w/2 end
+  if y > mrg:height() - h/2 then y = mrg:height()-h/2 end
+  modal_x = x
+  modal_y = y
+  in_modal = true
+  modal_string = nil
+  mrg:set_cursor_pos(0)
+  mrg:queue_draw(nil)
+end
+
+function mrg_modal_end(mrg)
+  in_modal = false
+  mrg:queue_draw(nil)
+end
 
 function mrg_modal_draw(mrg)
   local cr = mrg:cr()
@@ -50,73 +95,62 @@ function mrg_modal_draw(mrg)
     event:stop_propagate()
   end)
   mrg:listen(Mrg.TAP, function(event)
-    in_context = false
+    mrg_modal_end (mrg)
   end)
   cr:fill()
   
-  cr:rectangle (context_x - 50, context_y - 50, 100, 100)
+  cr:rectangle (modal_x - 50, modal_y - 50, 100, 100)
   cr:set_source_rgba(0,0,0, 0.5)
   mrg:listen(Mrg.COORD, function(event)
     event:stop_propagate()
   end)
   cr:fill()
 
-  mrg:set_edge_left(context_x - 50)
-  mrg:set_edge_top(context_y - 50)
+  mrg:set_edge_left(modal_x - 50)
+  mrg:set_edge_top(modal_y - 50)
   mrg:set_style('background:transparent; color: white; ')
 
-  for i,v in pairs(context_choices) do
+  for i,v in pairs(modal_choices) do
     mrg:text_listen(Mrg.TAP, function(event)
       if v.cb and v.type ~= 'edit' then 
-        in_context = false
+        mrg_modal_end (mrg)
         v.cb() 
       end
       mrg:queue_draw(nil)
     end)
 
     if v.type == 'edit' then
-      mrg:print('[')
-      mrg:edit_start(v.cb)
-    end
-    mrg:print(v.title .. "\n")
+      mrg:edit_start(function(new_text)
+        modal_string = new_text
+      end)
+      
+      if modal_string then
+        mrg:print(modal_string)
+      else
+        mrg:print(v.title )
+      end
 
-    if v.type == 'edit' then
-      mrg:edit_end()  -- XXX: maybe this should register the edit
-                      --      bindings, so that later registrations
-                      --      take precedence
+      mrg:edit_end()  
 
       mrg:add_binding("return", NULL, NULL, 
         function (event)
-          print ('return!!')
+          if modal_string then
+            v.cb (modal_string) -- print ('return!!')
+            modal_string = nil
+          end
           event:stop_propagate()
         end)
-
-      mrg:print(']')
+    else
+      mrg:print(v.title )
     end
+    mrg:print("\n")
 
     mrg:text_listen_done ()
   end
 end
 
 
-function mrg_modal(mrg, x, y, choices)
-  if choices then
-    context_choices = choices
-  else
-    context_choices = {
-      {title='uh??'}
-    }
-  end
-  local w, h = 100, 100
-  if x < w/2 then x = w/2 end
-  if y < h/2 then y = h/2 end
-  if x > mrg:width()  - w/2 then x = mrg:width ()-w/2 end
-  if y > mrg:height() - h/2 then y = mrg:height()-h/2 end
-  context_x = x
-  context_y = y
-  in_context = true
-  mrg:queue_draw(nil)
-end
+-----------------------------------------------------------
 
 -- local os = require('os')
 
@@ -131,7 +165,7 @@ function serialize (o)
       --io.write("  ", k, " = ")
       io.write ("  [")
       serialize(k)
-      io.wite ("] = ")
+      io.write ("] = ")
       ---
 
       serialize(v)
@@ -142,6 +176,7 @@ function serialize (o)
     error("cannot serialize a " .. type(o))
   end
 end
+
 
 function store_state()
   -- the state of the browser is small enough to contain in environment
@@ -168,7 +203,6 @@ restore_state()
 --local path = '/home/pippin/images'
 local io  = require('io')
 
-
 local css = [[
 .pathbar { background: white; }
 document {font-size: 20px; }
@@ -177,12 +211,10 @@ document {font-size: 20px; }
 /* .entry  {border: 1px solid green; } */
 #current { background: yellow; }
 .content {color: blue ; background: white; }
-.size { width: 6em; display: block; float: left; }
+.size { width: 5em; display: block; float: left; }
 .size_unit { color: gray }
 .fname { display: block; float: left; width: 80%; }
 ]]
-
-
 
 function get_parent(path)
   local t = {}
@@ -228,9 +260,11 @@ function go_previous()
     cursor = file
   end
 end
+
 function set_path(new_path)
   path = new_path
   mrg:queue_draw(null)
+  mrg:set_title(new_path)
   store_state()
 end
 
@@ -344,17 +378,17 @@ function draw_folder(mrg, path, currpath, details)
             -- default to set the path clicked
               set_path (file.path)
            else
-
-             -- per file context menu
-
-             mrg_modal(mrg, event.device_x, event.device_y,
+           
+             local menu=
               {{title=file.name, type='edit',
                   cb=function(new_text)
-                    print('new_text: ' .. new_text)
+                    os.execute(string.format('mv "%s" "%s"', file.path, path .. '/' .. new_text))
+                    mrg_modal_end (mrg)
+                    mrg:queue_draw(nil)
                   end},
                {title='open',
                   cb=function()
-                    os.execute('xdg-open ' .. file.path .. ' &')
+                    os.execute(string.format('xdg-open "%s"&', file.path))
                   end},
                {title='remove', cb=function()
                   mrg_modal(mrg, mrg:pointer_x(), mrg:pointer_y(), 
@@ -368,7 +402,16 @@ function draw_folder(mrg, path, currpath, details)
                     })
                   end},
                }
-             )
+
+             menu[#menu+1]={title='run',
+                 cb=function()
+                   os.execute(string.format('%s &', file.path))
+                 end
+             }
+
+             -- per file context menu
+
+             mrg_modal(mrg, event.device_x, event.device_y, menu)
              mrg:queue_draw(nil)
            end
            return 0;
@@ -394,9 +437,68 @@ function draw_folder(mrg, path, currpath, details)
       xml = xml .. "</div>\n "
       mrg:print_xml(xml)
       mrg:text_listen_done()
+
+      if mrg:y() + folder_pan > mrg:height() then break end
     end
     mrg:close()
     cr:restore()
+end
+
+local oldpid = 0
+
+function cleanup_child()
+  if oldpid ~= 0 then
+    S.kill(oldpid, 9)
+    S.waitpid(oldpid)
+    oldpid = 0
+    mrg:queue_draw(nil)
+  end
+end
+
+local current_child = nil
+
+function draw_gif (mrg, x, y)
+  if current_child == path then
+    return
+  end
+  current_child = path
+  cleanup_child()
+  mrg:add_timeout(100, function() mrg:queue_draw(nil) return 0 end)
+  local childpid = S.fork()
+  if (childpid == 0) then    -- in child
+    S.execve('/usr/local/bin/gifplay', {'/usr/local/bin/gifplay', path}, {"PATH=/bin:/usr/bin", "MMM_PATH=" .. comp_dir})
+    S.exit()
+  else                       -- in parent
+    oldpid = childpid
+    S.nanosleep(0.1) -- XXX: eeek, avoiding construction race... needs fixing in mmm
+  end
+end
+
+function draw_text (mrg, x, y)
+  if current_child == path then
+    return
+  end
+  current_child = path
+  cleanup_child()
+  local childpid = S.fork()
+  mrg:add_timeout(100, function() mrg:queue_draw(nil) return 0 end)
+  if (childpid == 0) then    -- in child
+    S.execve('/home/pippin/src/mrg/luajit/edit.lua', {'/usr/local/bin/mrg-edit', path}, {"PATH=/bin:/usr/bin:/usr/local/bin", "MMM_PATH=" .. comp_dir})
+    S.exit()
+  else                       -- in parent
+    oldpid = childpid
+    S.nanosleep(0.1) -- XXX: eeek, avoiding construction race... needs fixing in mmm
+  end
+end
+
+function draw_text_old (mrg, x, y)
+  local em = mrg:em()
+  --local w, h = mrg:image_size(path)
+  local cr = mrg:cr()
+  cleanup_child()
+  local f = io.open(path, 'r')
+  mrg:print_xml ("<pre class='content' style='border:2px solid black;padding:0.4em;'>".. f:read("*all") .. "</pre> ")
+  f:close()
 end
 
 function draw_image (mrg, x, y)
@@ -408,6 +510,7 @@ function draw_image (mrg, x, y)
 
   local dw, dh;
     
+  cleanup_child()
   scale = (mrg:width () - 8 * em) / w
   
   dw, dh = w * scale, h * scale
@@ -420,98 +523,154 @@ function draw_image (mrg, x, y)
     scale = (mrg:height() - y) / h
     dw, dh = w * scale, h * scale
   end
-
   cr:save()
   cr:translate(8*em + ((mrg:width()-8 * em) - dw)/2, 
               (y + ((mrg:height()-y) - dh)/2))
   cr:rectangle(0, 0, mrg:width() - 8 * em, mrg:height() - y)
   cr:clip()
-
-
   mrg:image(0, 0, dw, dh, path)
-
   cr:restore()
 end
 
 
+function draw_info (mrg, x, y)
+  local em = mrg:em()
+  --local w, h = mrg:image_size(path)
+  local cr = mrg:cr()
+  cleanup_child()
+  local info = os.capture('file "' .. path ..'"')
+  mrg:print_xml ("<pre class='content' style='border:2px solid black;padding:0.4em;'>".. info .. "</pre> ")
+end
+
+function string.has_suffix(String,End)
+   return End=='' or string.sub(String,-string.len(End))==End
+end
+
 mrg:set_ui(
 function (mrg, data)
   local cr = mrg:cr()
+  local em = mrg:em()
 
   local stat = S.stat(path)
-  local x, y
+  local x, y = 0, 0
 
-  if stat.isdir then
-    x, y = mrg:xy()
-    draw_folder(mrg, path, undefined, true)
-
-    cr:rectangle(0, y, mrg:width(), mrg:height())
-    mrg:listen(Mrg.DRAG, function(ev)
-       folder_pan = folder_pan + ev.delta_y
-       mrg:queue_draw(null)
-    end)
-    cr:new_path()
-    mrg:set_xy(0,0)
+  if not stat then
     path_bar(mrg, path)
+  else
+    if stat.isdir then
+      x, y = mrg:xy()
+  
+      cleanup_child()
+      
+      draw_folder(mrg, path, undefined, true)
 
-  elseif stat.isreg then
+      cr:rectangle(0, y, mrg:width(), mrg:height())
+      mrg:listen(Mrg.DRAG, function(ev)
+         folder_pan = folder_pan + ev.delta_y
+         mrg:queue_draw(null)
+      end)
+      cr:new_path()
+      mrg:set_xy(0,0)
+      path_bar(mrg, path)
 
-    x, y = mrg:xy()
-    local em = mrg:em()
-    draw_folder(mrg, get_parent(path), path, false)
+    elseif stat.isreg then
 
-    mrg:set_edge_right(mrg:width() - em)
-    mrg:set_edge_left(8 * em)
-    mrg:set_edge_top(y)
+      x, y = mrg:xy()
+      draw_folder(mrg, get_parent(path), path, false)
 
-    if string.find(path, ".png") or 
-       string.find(path, ".PNG") or
-       string.find(path, ".jpg") or
-       string.find(path, ".gif") or
-       string.find(path, ".hdr") or
-       string.find(path, ".HDR") or
-       string.find(path, ".GIF") or
-       string.find(path, ".jpeg") or
-       string.find(path, ".JPEG") or
-       string.find(path, ".JPG") 
-      then
-      draw_image(mrg,x, y)
-    else
-      local f = io.open(path, 'r')
-      mrg:print_xml ("<pre class='content'>".. f:read("*all") .. "</pre> ")
-      f:close()
+
+      mrg:set_edge_right(mrg:width() - em)
+      mrg:set_edge_left(8 * em)
+      mrg:set_edge_top(y)
+
+      if path:has_suffix(".gif") then
+        draw_gif(mrg,x, y)
+      elseif path:has_suffix(".png") or 
+         path:has_suffix(".PNG") or
+         path:has_suffix(".jpg") or
+         path:has_suffix(".gif") or
+         path:has_suffix(".hdr") or
+         path:has_suffix(".HDR") or
+         path:has_suffix(".GIF") or
+         path:has_suffix(".jpeg") or
+         path:has_suffix(".JPEG") or
+         path:has_suffix(".JPG") 
+        then
+        draw_image(mrg,x, y)
+      elseif path:has_suffix("README") or 
+         path:has_suffix(".txt") or
+         path:has_suffix("Makefile") or
+         path:has_suffix('.c') or 
+         path:has_suffix(".lua")
+        then
+        draw_text(mrg,x,y)
+      else
+        draw_info(mrg,x,y)
+      end
+
+      cr:rectangle(0, y, 8 * mrg:em(), mrg:height())
+      mrg:listen(Mrg.DRAG, function(ev)
+         folder_pan = folder_pan + ev.delta_y
+         mrg:queue_draw(null)
+      end)
+      cr:new_path()
+
+      mrg:set_xy(0,0)
+      path_bar(mrg, path)
+
     end
-
-    cr:rectangle(0, y, 8 * mrg:em(), mrg:height())
-    mrg:listen(Mrg.DRAG, function(ev)
-       folder_pan = folder_pan + ev.delta_y
-       mrg:queue_draw(null)
-    end)
-    cr:new_path()
-
-    mrg:set_xy(0,0)
-    path_bar(mrg, path)
-
   end
 
-
+  mrg:add_binding("tab", NULL, NULL, function (event) child_focus = not child_focus mrg:queue_draw(nil) end )
   mrg:add_binding("control-q", NULL, NULL, function (event) mrg:quit() end)
-  mrg:add_binding("left",      NULL, NULL, function (event) go_parent() end)
-  mrg:add_binding("up",        NULL, NULL, function (event) go_previous() end)
-  mrg:add_binding("down",      NULL, NULL, function (event) go_next() end)
-  mrg:add_binding("escape",    NULL, NULL, function (event)
-     go_parent()
-     event:stop_propagate()
-  end)
+  if not child_focus then
+    mrg:add_binding("left",      NULL, NULL, function (event) go_parent() end)
+    mrg:add_binding("up",        NULL, NULL, function (event) go_previous() end)
+    mrg:add_binding("down",      NULL, NULL, function (event) go_next() end)
+    mrg:add_binding("escape",    NULL, NULL, function (event)
+       go_parent()
+       event:stop_propagate()
+    end)
+  end
 
-  if in_context then
+  host:monitor_dir()
+
+  local clients = host:clients()
+  for i, client in ipairs(clients) do 
+    local w, h = client:size()
+    local cx, cy = client:xy()
+    client:render(mrg, 8 * mrg:em(), y)
+    client:set_xy(8 * mrg:em(), y)
+    client:set_size(mrg:width()-(8 * mrg:em()), mrg:height()-y)
+  end
+
+  if child_focus then
+    cr:rectangle(0,0, 8 * em, mrg:height())
+    cr:set_source_rgba(1,0,0,0.0)
+    mrg:listen(Mrg.PRESS, function(event) child_focus = false end)
+    cr:fill()
+
+    cr:rectangle(8 * em, y, mrg:width() - 9 * em, mrg:height() - y)
+    cr:set_source_rgba(1,0,0,0.1)
+    cr:fill()
+    host:register_events()
+  else
+    cr:rectangle(0,0, 8 * em, mrg:height())
+    cr:set_source_rgba(1,0,0,0.1)
+    cr:fill()
+
+    cr:rectangle(8 * em, y, mrg:width() - 9 * em, mrg:height() - y)
+    cr:set_source_rgba(1,0,0,0.0)
+    mrg:listen(Mrg.PRESS, function(event) child_focus = true  end)
+    cr:fill()
+  end
+
+  if in_modal then
     mrg_modal_draw (mrg)
   end
-
 end)
 
 mrg:css_set(css)
-
 restore_state()
 mrg:main()
-
+host:destroy()

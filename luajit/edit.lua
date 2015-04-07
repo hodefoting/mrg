@@ -10,7 +10,7 @@ local math   = require('math')
 local string = require('string')
 local io     = require('io')
 local Mrg    = require('mrg')
-local mrg    = Mrg.new(80 * 12, 40 * 18);
+local mrg    = Mrg.new(-1, -1);
 
 local path = 'microraptor-lua-editor'
 

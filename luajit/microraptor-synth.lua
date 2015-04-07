@@ -109,16 +109,16 @@ function draw_piano(mrg, shape)
         lyd:note(100, note_to_hz(note), 1.0, 0.1)
       end
       mrg:queue_draw(NULL)
-      event.stop_propagate = 1
+      event:stop_propagate()
     end)
     mrg:listen(Mrg.PRESS, function(event,a,b)
       lyd:note(100, note_to_hz(note), 1.0, 0.1)
-      event.stop_propagate = 1
+      event:stop_propagate()
     end)
     mrg:listen(Mrg.LEAVE, function(event,a,b)
       entered[note] = false;
       mrg:queue_draw(NULL)
-      event.stop_propagate = 1
+      event:stop_propagate()
     end)
 
     cr:set_source_rgba(1,1,1,1)

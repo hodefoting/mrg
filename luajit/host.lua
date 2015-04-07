@@ -18,6 +18,7 @@ if false then
   S.setenv('MRG_BACKEND','mmm')
 end
 
+local tiled = true
 
 local os     = require('os')
 local string = require('string')
@@ -27,7 +28,7 @@ local mrg    = Mrg.new(640, 480);
 local host   = mrg:host_new("/tmp/mrg")
 
 local notifications = {
-  {text='welcome to microraptor gui'},
+  -- {text='welcome to microraptor gui'},
 }
 
 local show_apps = false;
@@ -78,6 +79,20 @@ application {
 }
 ]];
 
+function table.copy(t)
+  local u = { }
+  for k, v in pairs(t) do u[k] = v end
+  return setmetatable(u, getmetatable(t))
+end
+
+function table.reverse(t)
+  local l = table.getn(t) -- table length
+  local j = l
+  for i = 1, l / 2 do
+    t[i], t[j] = t[j], t[i]
+    j = j - 1
+  end
+end
 
 --[[
 local mrg2 = Mrg.new(200, 200, "mem")
@@ -116,6 +131,15 @@ mrg:set_ui(
     host:monitor_dir()
 
     local clients = host:clients()
+
+    local x = 0
+    local y = 40
+
+    local w = 160
+    local h = 120
+
+    em = mrg:em()
+
     for i, client in ipairs(clients) do 
       local x, y = client:xy()
       local w, h = client:size()
@@ -201,6 +225,59 @@ mrg:set_ui(
 
     end
     host:register_events()
+
+    -- setting the positions with one frame lag,
+    -- but permits doing the interaction rects in the same go
+    --
+    if tiled then
+      local rclients = table.copy(clients)
+      table.reverse(rclients)
+      for i, client in ipairs(rclients) do 
+         if i == 1 then
+           w = mrg:width()/2
+           h = mrg:height() - 120 -y
+           x = mrg:width()/2
+
+           client:set_xy(x, y)
+           client:set_size(w,h)
+         elseif i == 2 then
+           w = mrg:width()/2
+           h = mrg:height() - 120 -y
+           x = 0
+
+           client:set_xy(x, y)
+           client:set_size(w,h)
+
+           w = 160
+           h = 120 - 12
+           x = 0
+           y = mrg:height() - h + 12
+
+         else
+           client:set_xy(x, y)
+           client:set_size(w,h)
+
+           cr:rectangle(x,y - 18,w,h + 18)
+           cr:set_source_rgba(0,0,1,0.1)
+           mrg:listen(Mrg.COORD, function(event) 
+             event:stop_propagate()
+           end)
+           mrg:listen(Mrg.TAP, function(event) 
+             client:raise_top()
+           end)
+           cr:fill()
+
+           x = x + w
+           if (x + w > mrg:width()) then
+             x = 0
+             y = y + h + 18
+           end
+         end
+      end
+    end
+
+
+
     mrg:add_binding("F10", nil, "quit", function() mrg:quit() end)
 
     if #notifications > 0 then
