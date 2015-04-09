@@ -41,7 +41,7 @@ destroy_notify, and a destroy_notify_data args*/
    case MRG_DRAG_PRESS: mrg_print (mrg, "MRG_DRAG_PRESS"); break;
    case MRG_DRAG_MOTION: mrg_print (mrg, "MRG_DRAG_MOTION"); break;
    case MRG_DRAG_RELEASE: mrg_print (mrg, "MRG_DRAG_RELEASE"); break;
-   case MRG_PRESS_AND_HOLD: mrg_print (mrg, "MRG_PRESS_AND_HOLD"); break;
+   case MRG_TAP_AND_HOLD: mrg_print (mrg, "MRG_TAP_AND_HOLD"); break;
    default: break;
 }
  mrg_print (mrg, "\n");
