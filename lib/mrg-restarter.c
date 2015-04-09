@@ -7,7 +7,7 @@
  * default and not only 
  *
  * todo:
- *    implement persistance of state in a couple of apps
+ *    should have a file monitoring based code path
  *
  */
 
@@ -110,8 +110,16 @@ void mrg_reexec (Mrg *mrg)
   execv (path_exe, argv);
 }
 
+/*
+static int timedout_reexec2 (Mrg *mrg, void *data)
+{
+  mrg_reexec (mrg);
+  return 0;
+}
+*/
 static int timedout_reexec (Mrg *mrg, void *data)
 {
+  mrg_incoming_message (mrg, "persist", 0);
   mrg_reexec (mrg);
   return 0;
 }
@@ -128,7 +136,9 @@ int mrg_restarter_cb (Mrg *mrg, void *data)
       entry->mtime = mtime;
       if (mrg_restart_id != 0)
         mrg_remove_idle (mrg, mrg_restart_id);
-      mrg_restart_id = mrg_add_timeout (mrg, 1000, timedout_reexec, mrg);        
+
+      /* 500 ms after restart,.. it really happens */
+      mrg_restart_id = mrg_add_timeout (mrg, 400, timedout_reexec, mrg);        
     }
   }
   return 1;

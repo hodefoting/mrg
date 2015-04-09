@@ -60,9 +60,6 @@ install: install-extra
 install-extra:
 	install mrg-host mrg-terminal mrg-edit mrg-browser $(DESTDIR)$(PREFIX)/bin/
 
-	install -d /usr/local/share/luajit-2.0.3
-	install lua/*.lua /usr/local/share/luajit-2.0.3
-
 luajit/mrg_h.lua: lib/*.h Makefile
 	echo "local ffi = require'ffi'" > $@
 	echo "ffi.cdef[[" >> $@

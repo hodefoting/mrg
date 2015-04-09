@@ -81,7 +81,6 @@ const char *mrg_client_get_title (MrgClient *client)
   return mmm_get_title (client->mmm);
 }
 
-
 struct _MrgHost
 {
   Mrg        *mrg;
