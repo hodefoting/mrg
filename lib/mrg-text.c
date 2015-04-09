@@ -838,6 +838,7 @@ static int mrg_print_wrap (Mrg        *mrg,
           EMIT_NL();
           gotspace = 0;
           break;
+        case '\t': // XXX: this collapses tabs to a single space
         case ' ':
           if (wl == 0)
             {
