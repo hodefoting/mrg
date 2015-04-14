@@ -990,11 +990,15 @@ int terminal_main (int argc, char **argv)
     unsetenv ("TERMCAP");
     unsetenv ("COLOR_TERM");
     setenv ("TERM", "vt100", 1);
+#if 0
     if (execlp(command, command, NULL))
     {
       fprintf (stderr, "failed to start shell\n");
       exit(-1);
     }
+#else
+    system(command);
+#endif
   }
   else if (pid < 0)
   {

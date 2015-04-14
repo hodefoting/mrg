@@ -404,7 +404,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   gtk_widget_add_events (mrg_gtk->eventbox, GDK_BUTTON_MOTION_MASK |
                                             GDK_BUTTON_PRESS_MASK |
                                             GDK_BUTTON_RELEASE_MASK |
-                                            // GDK_TOUCH_MASK |
+                                            GDK_TOUCH_MASK |
                                             GDK_POINTER_MOTION_MASK);
 
   gtk_widget_set_can_focus (mrg_gtk->eventbox, TRUE);
