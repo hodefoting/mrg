@@ -67,11 +67,14 @@ entry size { float: right; }
 
 editor { font-family: Monospace;
 
-  /* font-size: 35px;    used for presentations */
+  font-size: 35px;    
 
-  font-size: 15px;
+  /* font-size: 15px; */
 }
 
+document {
+  background-color: #ffc;
+}
 #compiler_output { position: fixed; top: 0; color: red;
                    font-weight: bold;
                    width: 512px; background-color: #ffff77bb;

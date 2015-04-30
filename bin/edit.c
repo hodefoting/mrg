@@ -316,7 +316,7 @@ static void gui (Mrg *mrg, void *data)
   mrg_printf_xml (mrg, "<div id='compiler_output'>%s</div> ",
                   state->compiler_output->str);
 
-  if (!state->compile_timeout && 0)
+  if (!state->compile_timeout)
   {
     state->compile_timeout = mrg_add_timeout (mrg, 500, 
       background_task, state);
