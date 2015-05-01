@@ -77,7 +77,8 @@ while [ "$1" ] ; do
 
   shift;
 done
-if [ "$#" -e 0 ]; then
+
+if [ -z "$1" ]; then
   auto
 fi
 
