@@ -37,7 +37,7 @@ struct _MrgRestarterEntry
 
 static time_t path_get_mtime (const char *path)
 {
-#if 0
+#if 1
   struct stat buf;
   if (!stat (path, &buf))
     return buf.st_mtime;
@@ -48,6 +48,8 @@ static time_t path_get_mtime (const char *path)
   FILE *ls;
   long ret = 0;
   sprintf (cmd, "ls -la %s -l --time-style=+%%s | cut -f 6 -d ' '" , path);
+  //sprintf (cmd, "ls -la %s | cut -b 24-38" , path);
+
   ls = popen(cmd, "r");
   while (fgets(buf, sizeof(buf), ls) != 0) {
     ret = atol (buf);

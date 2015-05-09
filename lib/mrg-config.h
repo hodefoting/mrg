@@ -8,7 +8,7 @@
   */
 
 #ifndef MRG_GTK
-#define MRG_GTK 0
+#define MRG_GTK 1
 #endif
 #ifndef MRG_SDL
 #define MRG_SDL 0
