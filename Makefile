@@ -5,6 +5,7 @@ PROJECT_DESCRIPTION=Microraptor GUI
 SYMBOL_PREFIX=
 CFLAGS += -Wall -Wextra -g -D_FILE_OFFSET_BITS=64
 
+LD= gcc
 LIB_LD_FLAGS=-lutil -lm 
 
 LIB_CFILES=$(wildcard lib/*.c)
