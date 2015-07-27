@@ -16,6 +16,7 @@ lib/mrg.h \
 lib/mrg-events.h \
 lib/mrg-style.h \
 lib/mrg-text.h \
+lib/mrg-list.h \
 lib/mrg-audio.h \
 lib/mrg-string.h \
 lib/mrg-host.h \
