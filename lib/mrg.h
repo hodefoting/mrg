@@ -80,6 +80,7 @@ void  mrg_ui_update (Mrg *mrg);
 MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
                            int *width,
                            int *height);
+cairo_surface_t *mrg_image_get_surface (MrgImage *image);
 
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
 

@@ -200,3 +200,8 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
   cairo_paint (cr);
   cairo_restore (cr);
 }
+
+cairo_surface_t *mrg_image_get_surface (MrgImage *image)
+{
+  return image->surface;
+}
