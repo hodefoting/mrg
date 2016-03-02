@@ -167,12 +167,6 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     else
     sprintf (buf, "control-%c", event->key.keyval);
     name = g_intern_string (buf);
-    if (event->key.state & GDK_SHIFT_MASK)
-    {
-      char buf[128];
-      sprintf (buf, "shift-%s", name);
-      name = g_intern_string (buf);
-    }
   }
   if (event->key.state & GDK_MOD1_MASK)
   {
@@ -182,13 +176,17 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     else
     sprintf (buf, "alt-%c", event->key.keyval);
     name = g_intern_string (buf);
-    if (event->key.state & GDK_SHIFT_MASK)
-    {
-      char buf[128];
-      sprintf (buf, "shift-%s", name);
-      name = g_intern_string (buf);
-    }
   }
+  if (event->key.state & GDK_SHIFT_MASK)
+  {
+    char buf[128];
+    if (name)
+    sprintf (buf, "shift-%s", name);
+    else
+    sprintf (buf, "shift-%c", event->key.keyval);
+    name = g_intern_string (buf);
+  }
+
   if (!name)
     name = event->key.string;
 
