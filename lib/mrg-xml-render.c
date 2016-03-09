@@ -1342,7 +1342,7 @@ void mrg_xml_render (Mrg *mrg,
           
           
           if (!dealt_with){
-            mrg_start (mrg, "dim", (void*)pos);
+            mrg_start (mrg, "dim", (void*)((size_t)pos));
             mrg_print (mrg, data);
             mrg_end (mrg);
           }
@@ -1463,7 +1463,7 @@ void mrg_xml_render (Mrg *mrg,
 
           //if (mrg_style(mrg)->id_ptr)
           { // XXX : perhaps do this a tiny bit differently?
-            MrgGeoCache *geo = _mrg_get_cache (ctx, (void*)tagpos);
+            MrgGeoCache *geo = _mrg_get_cache (ctx, (void*)(size_t)(tagpos));
             if (geo && geo->hover)
             {
               if (mrg->pointer_down[1])
@@ -1514,7 +1514,7 @@ void mrg_xml_render (Mrg *mrg,
             }
           }
           mrg_string_append_str (style, get_attr (ctx, "style"));
-          mrg_start_with_style (mrg, combined, (void*)(tagpos), style->str);
+          mrg_start_with_style (mrg, combined, (void*)((size_t)tagpos), style->str);
         }
 
         if (!strcmp (data, "g"))
