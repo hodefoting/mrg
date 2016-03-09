@@ -258,6 +258,18 @@ static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userda
   return FALSE;
 }
 
+
+static gboolean scroll_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
+{
+  Mrg    *mrg = userdata;
+  mrg_scrolled (mrg,
+        event->scroll.x,
+        event->scroll.y,
+        event->scroll.direction == GDK_SCROLL_DOWN?1:0,
+        event->scroll.time);
+  return FALSE;
+}
+
 static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
 {
   Mrg    *mrg = userdata;
@@ -403,6 +415,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                                             GDK_BUTTON_PRESS_MASK |
                                             GDK_BUTTON_RELEASE_MASK |
                                             GDK_TOUCH_MASK |
+                                            GDK_SCROLL_MASK |
                                             GDK_POINTER_MOTION_MASK);
 
   gtk_widget_set_can_focus (mrg_gtk->eventbox, TRUE);
@@ -417,6 +430,8 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
 
   g_signal_connect (mrg_gtk->eventbox, "touch-event",
                     G_CALLBACK (touch_event), mrg);
+  g_signal_connect (mrg_gtk->eventbox, "scroll-event",
+                    G_CALLBACK (scroll_event), mrg);
   g_signal_connect (mrg_gtk->eventbox, "button-press-event",
                     G_CALLBACK (button_press_event), mrg);
   g_signal_connect (mrg_gtk->eventbox, "button-release-event",

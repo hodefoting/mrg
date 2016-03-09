@@ -912,6 +912,85 @@ void mrg_incoming_message (Mrg *mrg, const char *message, long time)
   }
 }
 
+int mrg_scrolled (Mrg *mrg, float x, float y, int is_down, uint32_t time)
+{
+  fprintf (stderr, "scrolly %f %f %i %i\n", x, y, is_down, time);
+#if 0
+  MrgList *hitlist = NULL;
+  int device_no = 0;
+  mrg->pointer_x[device_no] = x;
+  mrg->pointer_y[device_no] = y;
+
+  MrgEvent *event = &mrg->drag_event[device_no];  /* XXX: might be in conflict */
+
+  if (time == 0)
+    time = mrg_ms (mrg);
+
+  event->x = event->start_x = event->prev_x = x;
+  event->y = event->start_y = event->prev_y = y;
+  event->delta_x = event->delta_y = 0;
+  event->device_no = device_no;
+  event->time      = time;
+  event->stop_propagate = 0;
+
+  if (mrg->pointer_down[device_no] == 1)
+  {
+    fprintf (stderr, "mrg thought device %i was already down\n", device_no);
+  }
+  /* doing just one of these two should be enough? */
+  mrg->pointer_down[device_no] = 1;
+  switch (device_no)
+  {
+    case 1:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON1;
+      break;
+    case 2:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON2;
+      break;
+    case 3:
+      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON3;
+      break;
+    default:
+      break;
+  }
+
+
+  MrgGrab *grab = NULL;
+  MrgList *l;
+
+  _mrg_update_item (mrg, device_no, x, y, 
+      MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
+
+  for (l = hitlist; l; l = l?l->next:NULL)
+  {
+    MrgItem *mrg_item = l->data;
+    if (mrg_item &&
+        ((mrg_item->types & MRG_DRAG)||
+         (mrg_item->types & MRG_TAP) ||
+         (mrg_item->types & MRG_TAP_AND_HOLD)))
+    {
+      grab = device_add_grab (mrg, device_no, mrg_item, mrg_item->types);
+      grab->start_time = time;
+
+      if (mrg_item->types & MRG_TAP_AND_HOLD)
+      {
+         grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
+      }
+    }
+    _mrg_emit_cb_item (mrg, mrg_item, event, MRG_PRESS, x, y);
+    if (!event->stop_propagate)
+      _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DRAG_PRESS, x, y);
+
+    if (event->stop_propagate)
+      l = NULL;
+  }
+
+  mrg_queue_draw (mrg, NULL); /* in case of style change, and more  */
+  mrg_list_free (&hitlist);
+#endif
+  return 0;
+}
+
 int mrg_key_press (Mrg *mrg, unsigned int keyval,
                    const char *string, uint32_t time)
 {

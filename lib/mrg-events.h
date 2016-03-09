@@ -40,7 +40,8 @@ enum _MrgType {
   MRG_DRAG_RELEASE   = 1 << 9,
   MRG_KEY_DOWN       = 1 << 10,
   MRG_KEY_UP         = 1 << 11,
-  MRG_MESSAGE        = 1 << 12, /* client should store state - preparing
+  MRG_SCROLL         = 1 << 12,
+  MRG_MESSAGE        = 1 << 13, /* client should store state - preparing
                                  * for restart
                                  */
 
@@ -179,6 +180,7 @@ void  mrg_warp_pointer (Mrg *mrg, float x, float y);
 float mrg_pointer_x    (Mrg *mrg);
 float mrg_pointer_y    (Mrg *mrg);
 
+int mrg_scrolled          (Mrg *mrg, float x, float y, int is_down, uint32_t time);
 int mrg_pointer_press     (Mrg *mrg, float x, float y, int device_no, uint32_t time);
 int mrg_pointer_release   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
 int mrg_pointer_motion    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
