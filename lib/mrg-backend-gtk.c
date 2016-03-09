@@ -264,7 +264,7 @@ static gboolean scroll_event (GtkWidget *widget, GdkEvent *event, gpointer userd
   mrg_scrolled (mrg,
         event->scroll.x,
         event->scroll.y,
-        event->scroll.direction == GDK_SCROLL_DOWN?1:0,
+        event->scroll.direction,
         event->scroll.time);
   return FALSE;
 }

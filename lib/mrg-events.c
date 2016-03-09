@@ -915,7 +915,7 @@ void mrg_incoming_message (Mrg *mrg, const char *message, long time)
   }
 }
 
-int mrg_scrolled (Mrg *mrg, float x, float y, int is_down, uint32_t time)
+int mrg_scrolled (Mrg *mrg, float x, float y, MrgScrollDirection scroll_direction, uint32_t time)
 {
   MrgList *hitlist = NULL;
   MrgList *l;
@@ -937,7 +937,7 @@ int mrg_scrolled (Mrg *mrg, float x, float y, int is_down, uint32_t time)
   event->device_no = device_no;
   event->time      = time;
   event->stop_propagate = 0;
-  event->scroll_direction = is_down;
+  event->scroll_direction = scroll_direction;
 
   _mrg_update_item (mrg, device_no, x, y, MRG_SCROLL, &hitlist);
 

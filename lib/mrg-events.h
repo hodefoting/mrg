@@ -78,6 +78,15 @@ enum _MrgModifierState
   MRG_MODIFIER_STATE_BUTTON3 = (1<<5)
 };
 
+typedef enum _MrgScrollDirection MrgScrollDirection;
+enum _MrgScrollDirection
+{
+  MRG_SCROLL_DIRECTION_UP,
+  MRG_SCROLL_DIRECTION_DOWN,
+  MRG_SCROLL_DIRECTION_LEFT,
+  MRG_SCROLL_DIRECTION_RIGHT
+};
+
 struct _MrgEvent {
   MrgType  type;
   Mrg     *mrg;
@@ -103,7 +112,7 @@ struct _MrgEvent {
   float   delta_x; /* x - prev_x, redundant - but often useful */
   float   delta_y; /* y - prev_y, redundant - ..  */
 
-  int     scroll_direction;
+  MrgScrollDirection scroll_direction;
 
   /* only valid for key-events */
   unsigned int unicode;
@@ -182,7 +191,7 @@ void  mrg_warp_pointer (Mrg *mrg, float x, float y);
 float mrg_pointer_x    (Mrg *mrg);
 float mrg_pointer_y    (Mrg *mrg);
 
-int mrg_scrolled          (Mrg *mrg, float x, float y, int is_down, uint32_t time);
+int mrg_scrolled (Mrg *mrg, float x, float y, MrgScrollDirection scroll_direction, uint32_t time);
 int mrg_pointer_press     (Mrg *mrg, float x, float y, int device_no, uint32_t time);
 int mrg_pointer_release   (Mrg *mrg, float x, float y, int device_no, uint32_t time);
 int mrg_pointer_motion    (Mrg *mrg, float x, float y, int device_no, uint32_t time);
