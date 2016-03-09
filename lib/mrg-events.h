@@ -103,6 +103,8 @@ struct _MrgEvent {
   float   delta_x; /* x - prev_x, redundant - but often useful */
   float   delta_y; /* y - prev_y, redundant - ..  */
 
+  int     scroll_direction;
+
   /* only valid for key-events */
   unsigned int unicode;
   const char *key_name; /* can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */

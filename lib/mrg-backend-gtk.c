@@ -258,7 +258,6 @@ static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userda
   return FALSE;
 }
 
-
 static gboolean scroll_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
 {
   Mrg    *mrg = userdata;

@@ -317,6 +317,7 @@ static void mrg_mmm_consume_events (Mrg *mrg, int block)
     {
       mrg_incoming_message (mrg, event + strlen ("message "), 0);
     }
+    /* XXX: scroll */
     else
     {
       mrg_key_press (mrg, 0, event, 0);

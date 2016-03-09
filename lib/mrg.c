@@ -819,6 +819,11 @@ static void mrg_mrg_release (MrgEvent *event, void *mrg, void *data2)
   mrg_pointer_release (mrg, event->x, event->y, event->device_no, 0);
 }
 
+static void mrg_mrg_scroll (MrgEvent *event, void *mrg, void *data2)
+{
+  mrg_scrolled (mrg, event->x, event->y, event->scroll_direction, 0);
+}
+
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
 {
   unsigned char *pixels = NULL;
@@ -843,6 +848,7 @@ void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y)
   cairo_new_path (cr);
   cairo_rectangle (cr, 0, 0, mrg_width (mrg), mrg_height (mrg));
 
+  mrg_listen (mrg2, MRG_SCROLL,  mrg_mrg_scroll, mrg, NULL);
   mrg_listen (mrg2, MRG_PRESS,   mrg_mrg_press, mrg, NULL);
   mrg_listen (mrg2, MRG_MOTION,  mrg_mrg_motion, mrg, NULL);
   mrg_listen (mrg2, MRG_RELEASE, mrg_mrg_release, mrg, NULL);

@@ -17,7 +17,6 @@
 
 #include "mrg-internal.h"
 
-
 typedef struct _MrgGrab MrgGrab;
 
 struct _MrgGrab
@@ -509,6 +508,11 @@ _mrg_emit_cb (Mrg *mrg, MrgList *items, MrgEvent *event, MrgType type, float x, 
   return 0;
 }
 
+/*
+ * update what is the currently hovered item and returns it.. and the list of hits
+ * a well.
+ *
+ */
 static MrgItem *_mrg_update_item (Mrg *mrg, int device_no, float x, float y, MrgType type, MrgList **hitlist)
 {
   MrgItem *current = NULL;
@@ -880,7 +884,6 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time
   return 0;
 }
 
-
 void mrg_incoming_message (Mrg *mrg, const char *message, long time)
 {
   MrgItem *item = _mrg_detect (mrg, 0, 0, MRG_MESSAGE);
@@ -914,72 +917,35 @@ void mrg_incoming_message (Mrg *mrg, const char *message, long time)
 
 int mrg_scrolled (Mrg *mrg, float x, float y, int is_down, uint32_t time)
 {
-  fprintf (stderr, "scrolly %f %f %i %i\n", x, y, is_down, time);
-#if 0
   MrgList *hitlist = NULL;
+  MrgList *l;
+
   int device_no = 0;
   mrg->pointer_x[device_no] = x;
   mrg->pointer_y[device_no] = y;
 
-  MrgEvent *event = &mrg->drag_event[device_no];  /* XXX: might be in conflict */
-
+  MrgEvent *event = &mrg->drag_event[device_no];  /* XXX: might
+                                       conflict with other code
+                                       create a sibling member
+                                       of drag_event?*/
   if (time == 0)
     time = mrg_ms (mrg);
 
-  event->x = event->start_x = event->prev_x = x;
-  event->y = event->start_y = event->prev_y = y;
-  event->delta_x = event->delta_y = 0;
+  event->x         = event->start_x = event->prev_x = x;
+  event->y         = event->start_y = event->prev_y = y;
+  event->delta_x   = event->delta_y = 0;
   event->device_no = device_no;
   event->time      = time;
   event->stop_propagate = 0;
+  event->scroll_direction = is_down;
 
-  if (mrg->pointer_down[device_no] == 1)
-  {
-    fprintf (stderr, "mrg thought device %i was already down\n", device_no);
-  }
-  /* doing just one of these two should be enough? */
-  mrg->pointer_down[device_no] = 1;
-  switch (device_no)
-  {
-    case 1:
-      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON1;
-      break;
-    case 2:
-      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON2;
-      break;
-    case 3:
-      mrg->modifier_state |= MRG_MODIFIER_STATE_BUTTON3;
-      break;
-    default:
-      break;
-  }
-
-
-  MrgGrab *grab = NULL;
-  MrgList *l;
-
-  _mrg_update_item (mrg, device_no, x, y, 
-      MRG_PRESS | MRG_DRAG_PRESS | MRG_TAP | MRG_TAP_AND_HOLD, &hitlist);
+  _mrg_update_item (mrg, device_no, x, y, MRG_SCROLL, &hitlist);
 
   for (l = hitlist; l; l = l?l->next:NULL)
   {
     MrgItem *mrg_item = l->data;
-    if (mrg_item &&
-        ((mrg_item->types & MRG_DRAG)||
-         (mrg_item->types & MRG_TAP) ||
-         (mrg_item->types & MRG_TAP_AND_HOLD)))
-    {
-      grab = device_add_grab (mrg, device_no, mrg_item, mrg_item->types);
-      grab->start_time = time;
 
-      if (mrg_item->types & MRG_TAP_AND_HOLD)
-      {
-         grab->timeout_id = mrg_add_timeout (mrg, mrg->tap_delay_hold, tap_and_hold_fire, grab);
-      }
-    }
-    _mrg_emit_cb_item (mrg, mrg_item, event, MRG_PRESS, x, y);
-    if (!event->stop_propagate)
-      _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DRAG_PRESS, x, y);
+    _mrg_emit_cb_item (mrg, mrg_item, event, MRG_SCROLL, x, y);
 
     if (event->stop_propagate)
       l = NULL;
@@ -987,7 +953,6 @@ int mrg_scrolled (Mrg *mrg, float x, float y, int is_down, uint32_t time)
 
   mrg_queue_draw (mrg, NULL); /* in case of style change, and more  */
   mrg_list_free (&hitlist);
-#endif
   return 0;
 }
 
