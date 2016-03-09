@@ -263,7 +263,7 @@ static void mrg_stylesheet_add_selector (Mrg *mrg, const char *selector, const c
  if (error)\
  {\
    char errbuf[128];\
-   sprintf (errbuf, "%i unexpected %c at %i'  %c%c%c", __LINE__, *p, (p-css),\
+   sprintf (errbuf, "%i unexpected %c at %i'  %c%c%c", __LINE__, *p, (int)(p-css),\
      p[0], p[1], p[2]);\
    *error = strdup (errbuf);\
  }
