@@ -19,6 +19,11 @@
 #include <stdlib.h>
 #include "mrg.h"
 
+static void scroll_cb (MrgEvent *event, void *data1, void *data2)
+{
+  fprintf (stderr, "foo %s\n", event->scroll_direction?"down":"up");
+}
+
 static void ui (Mrg *mrg, void *data)
 {
   mrg_image (mrg, 0, 10, 32, -1,    "hodefoting.png");
@@ -27,13 +32,17 @@ static void ui (Mrg *mrg, void *data)
   mrg_image (mrg, 196, 10, -1, 128, "hodefoting.png");
   mrg_image (mrg, 10, 196, -1, -1, "hodefoting.png");
 
+  mrg_text_listen (mrg, MRG_SCROLL, scroll_cb, NULL, NULL);
+  mrg_print (mrg, "scroll me");
+  mrg_text_listen_done (mrg);
+
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
 }
 
 int main (int argc, char **argv)
 {
-  //Mrg *mrg = mrg_new (640, 480, NULL);
-  Mrg *mrg = mrg_new (-1, -1, NULL);
+  Mrg *mrg = mrg_new (640, 480, NULL);
+  //Mrg *mrg = mrg_new (-1, -1, NULL);
   mrg_set_ui (mrg, ui, NULL);
   mrg_main (mrg);
   return 0;

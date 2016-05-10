@@ -1261,67 +1261,6 @@ static void cmd_delete (MrgEvent *event, void *data1, void *data2)
   mrg_event_stop_propagate (event);
 }
 
-static void cmd_up (MrgEvent *event, void *data1, void *data2)
-{
-  Mrg *mrg = event->mrg;
-  float e_x, e_y, e_s, e_e, e_em;
-  float cx, cy;
-  mrg_get_edit_state (mrg, &e_x, &e_y, &e_s, &e_e, &e_em);
-
-  mrg_set_edge_left (mrg, e_s - mrg->state->style.padding_left);
-  mrg_set_edge_right (mrg, e_e + mrg->state->style.padding_right);
-
-  mrg_set_xy (mrg, e_x, e_y);
-  mrg_print_get_xy (mrg, mrg->edited_str->str, mrg->cursor_pos, &cx, &cy);
-
-  {
-    int no;
-    int best = mrg->cursor_pos;
-    float best_y = cy;
-    float best_score = 1000000000000.0;
-    for (no = mrg->cursor_pos - 1; no>= mrg->cursor_pos - 256 && no > 0; no--)
-    {
-      float x, y;
-      float attempt_score = 0.0;
-      mrg_set_xy (mrg, e_x, e_y);
-      mrg_print_get_xy (mrg, mrg->edited_str->str, no, &x, &y);
-
-      if (y < cy && best_y == cy)
-        best_y = y;
-
-      if (y < cy)
-        attempt_score = (best_y - y);
-      else
-        attempt_score = 1000.0;
-
-      attempt_score += fabs(cx-x) / 10000000.0;
-
-      if (attempt_score < best_score)
-      {
-        best_score = attempt_score;
-        best = no;
-      }
-    }
-    mrg->cursor_pos = best;
-  }
-
-  if (mrg->cursor_pos < 0)
-    mrg->cursor_pos = 0;
-  mrg_queue_draw (mrg, NULL);
-  mrg_event_stop_propagate (event);
-}
-
-int mrg_get_cursor_pos (Mrg *mrg)
-{
-  return mrg->cursor_pos;
-}
-
-void mrg_set_cursor_pos (Mrg *mrg, int pos)
-{
-  mrg->cursor_pos = pos;
-  mrg_queue_draw (mrg, NULL);
-}
-
 static void cmd_down (MrgEvent *event, void *data1, void *data2)
 {
   Mrg *mrg = event->mrg;
@@ -1370,6 +1309,68 @@ static void cmd_down (MrgEvent *event, void *data1, void *data2)
     mrg->cursor_pos = mrg_utf8_strlen (mrg->edited_str->str) - 1;
   mrg_queue_draw (mrg, NULL);
   mrg_event_stop_propagate (event);
+}
+
+static void cmd_up (MrgEvent *event, void *data1, void *data2)
+{
+  Mrg *mrg = event->mrg;
+  float e_x, e_y, e_s, e_e, e_em;
+  float cx, cy;
+  mrg_get_edit_state (mrg, &e_x, &e_y, &e_s, &e_e, &e_em);
+
+  mrg_set_edge_left  (mrg, e_s - mrg->state->style.padding_left);
+  mrg_set_edge_right (mrg, e_e + mrg->state->style.padding_right);
+
+  mrg_set_xy (mrg, e_x, e_y);
+  mrg_print_get_xy (mrg, mrg->edited_str->str, mrg->cursor_pos, &cx, &cy);
+
+  /* XXX: abstract the finding of best cursor pos for x coord to a function */
+  {
+    int no;
+    int best = mrg->cursor_pos;
+    float best_y = cy;
+    float best_score = 1000000000000.0;
+    for (no = mrg->cursor_pos - 1; no>= mrg->cursor_pos - 256 && no > 0; no--)
+    {
+      float x, y;
+      float attempt_score = 0.0;
+      mrg_set_xy (mrg, e_x, e_y);
+      mrg_print_get_xy (mrg, mrg->edited_str->str, no, &x, &y);
+
+      if (y < cy && best_y == cy)
+        best_y = y;
+
+      if (y < cy)
+        attempt_score = (best_y - y);
+      else
+        attempt_score = 1000.0;
+
+      attempt_score += fabs(cx-x) / 10000000.0;
+
+      if (attempt_score < best_score)
+      {
+        best_score = attempt_score;
+        best = no;
+      }
+    }
+    mrg->cursor_pos = best;
+  }
+
+  if (mrg->cursor_pos < 0)
+    mrg->cursor_pos = 0;
+  mrg_queue_draw (mrg, NULL);
+  mrg_event_stop_propagate (event);
+}
+
+int mrg_get_cursor_pos (Mrg *mrg)
+{
+  return mrg->cursor_pos;
+}
+
+void mrg_set_cursor_pos (Mrg *mrg, int pos)
+{
+  mrg->cursor_pos = pos;
+  mrg_queue_draw (mrg, NULL);
 }
 
 static void cmd_page_down (MrgEvent *event, void *data1, void *data2)
