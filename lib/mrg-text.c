@@ -863,7 +863,7 @@ static int mrg_print_wrap (Mrg        *mrg,
                     }
                   else
                     {
-                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, " ", -1);
+                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, "-", -1);
                     }
                 }
             }

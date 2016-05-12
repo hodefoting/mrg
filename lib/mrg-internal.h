@@ -72,15 +72,6 @@ typedef struct MrgItemCb {
 
 } MrgItemCb;
 
-typedef struct MrgBinding {
-  char *nick;
-  char *command;
-  char *label;
-  MrgCb cb;
-  void *cb_data;
-  MrgDestroyNotify destroy_notify;
-  void  *destroy_data;
-} MrgBinding;
 
 typedef struct MrgItem {
   cairo_matrix_t  inv_matrix;  /* for event coordinate transforms */

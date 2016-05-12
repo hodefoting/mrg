@@ -107,12 +107,12 @@ int mrg_get_contents_default (const char  *referer,
  * calls and internal calls.
  */
 void mrg_set_mrg_get_contents (Mrg *mrg,
-  int (*mrg_get_contents) (const char  *referer,
+int (*mrg_get_contents) (const char  *referer,
                       const char  *input_uri,
                       char       **contents,
                       long        *length,
                       void        *get_contents_data),
-  void *get_contents_data);
+void *get_contents_data);
 
 void mrg_render_to_mrg (Mrg *mrg, Mrg *mrg2, float x, float y);
 int mrg_add_idle       (Mrg *mrg, int (*idle_cb)(Mrg *mrg, void *idle_data), void *idle_data);
@@ -146,13 +146,22 @@ float mrg_get_target_fps (Mrg *mrg);
 #include "mrg-audio.h"
 
 #ifdef __GTK_H__ /* This is only declared if mrg.h is included after gtk.h */
-
 GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                         void *user_data);
-
-
 #endif
 
 #include <stddef.h>
+
+typedef struct MrgBinding {
+  char *nick;
+  char *command;
+  char *label;
+  MrgCb cb;
+  void *cb_data;
+  MrgDestroyNotify destroy_notify;
+  void  *destroy_data;
+} MrgBinding;
+
+MrgBinding *mrg_get_bindings (Mrg *mrg);
 
 #endif
