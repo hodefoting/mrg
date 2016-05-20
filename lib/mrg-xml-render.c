@@ -1156,9 +1156,14 @@ again:
 
 
       case '-':case '.':case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7': case '8': case '9':
-      number[numbers] = mrg_parse_float (mrg, s, &s);
-      s--;
-      numbers++;
+      if (*s == '-')
+        number[numbers] = mrg_parse_float (mrg, s, &s);
+      else
+      {
+        number[numbers] = mrg_parse_float (mrg, s, &s);
+        s--;
+      }
+        numbers++;
 
       switch (command)
       {
