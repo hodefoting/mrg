@@ -70,7 +70,8 @@ int mrg_get_image_cache_mb (Mrg *mrg)
   return image_cache_max_size_mb;
 }
 
-MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
+MrgImage *mrg_query_image (Mrg *mrg,
+                           const char *path, 
                            int *width,
                            int *height)
 {
