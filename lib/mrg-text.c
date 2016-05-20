@@ -1483,19 +1483,19 @@ static void cmd_escape (MrgEvent *event, void *data, void *data2)
 
 void mrg_text_edit_bindings (Mrg *mrg)
 {
-  mrg_add_binding (mrg, "escape",    NULL, "Stop editing",        cmd_escape,      NULL);
-  mrg_add_binding (mrg, "return",    NULL, "insert newline",      cmd_return,    NULL);
-  mrg_add_binding (mrg, "home",      NULL, "Go to start of text", cmd_home, NULL);
-  mrg_add_binding (mrg, "end",       NULL, "Go to end of text",   cmd_end,    NULL);
-  mrg_add_binding (mrg, "left",      NULL, "Move cursor left",    cmd_left,    NULL);
-  mrg_add_binding (mrg, "right",     NULL, "Move cursor right",   cmd_right,  NULL);
-  mrg_add_binding (mrg, "up",        NULL, "Move cursor up",      cmd_up,        NULL);
-  mrg_add_binding (mrg, "down",      NULL, "Move cursor down",    cmd_down,    NULL);
-  mrg_add_binding (mrg, "page-up",   NULL, "Move cursor up",      cmd_page_up,     NULL);
-  mrg_add_binding (mrg, "page-down", NULL, "Move cursor down",    cmd_page_down, NULL);
-  mrg_add_binding (mrg, "backspace", NULL, "Remove character left of cursor", cmd_backspace, NULL);
-  mrg_add_binding (mrg, "delete",    NULL, "Remove selected character", cmd_delete, NULL);
-  mrg_add_binding (mrg, "unhandled", NULL, "Insert if key name is one char", cmd_unhandled, NULL);
+  mrg_add_binding (mrg, "escape",    NULL, "stop editing",    cmd_escape,      NULL);
+  mrg_add_binding (mrg, "return",    NULL, "add newline",     cmd_return,    NULL);
+  mrg_add_binding (mrg, "home",      NULL, "cursor to start", cmd_home, NULL);
+  mrg_add_binding (mrg, "end",       NULL, "cursor to end",   cmd_end,    NULL);
+  mrg_add_binding (mrg, "left",      NULL, "cursor left",    cmd_left,    NULL);
+  mrg_add_binding (mrg, "right",     NULL, "cursor right",   cmd_right,  NULL);
+  mrg_add_binding (mrg, "up",        NULL, "cursor up",      cmd_up,        NULL);
+  mrg_add_binding (mrg, "down",      NULL, "cursor down",    cmd_down,    NULL);
+  mrg_add_binding (mrg, "page-up",   NULL, "cursor up",      cmd_page_up,     NULL);
+  mrg_add_binding (mrg, "page-down", NULL, "cursor down",    cmd_page_down, NULL);
+  mrg_add_binding (mrg, "backspace", NULL, "remove preceding character", cmd_backspace, NULL);
+  mrg_add_binding (mrg, "delete",    NULL, "remove character under cursor", cmd_delete, NULL);
+  mrg_add_binding (mrg, "unhandled", NULL, "add if key name is 1 char long", cmd_unhandled, NULL);
 }
 
 #if 0
