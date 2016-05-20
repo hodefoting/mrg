@@ -398,7 +398,7 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
   if (mrg->text_listen_active)
   {
     float em = mrg_em (mrg);
-    int no = mrg->text_listen_count-1;
+    int no = mrg->text_listen_count;
     double x, y;
 
     cairo_get_current_point (cr, &x, &y);
