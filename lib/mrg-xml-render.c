@@ -1119,8 +1119,8 @@ mrg_parse_transform (Mrg *mrg, cairo_matrix_t *matrix, const char *str)
   }
 }
 
-static void
-mrg_parse_path (Mrg *mrg, const char *str)
+int
+mrg_parse_svg_path (Mrg *mrg, const char *str)
 {
   cairo_t *cr = mrg_cr (mrg);
   char  command = 'm';
@@ -1129,7 +1129,7 @@ mrg_parse_path (Mrg *mrg, const char *str)
   double number[12];
 
   if (!str)
-    return;
+    return -1;
   cairo_move_to (cr, 0, 0);
 
   s = (void*)str;
@@ -1231,6 +1231,7 @@ again:
         break;
     }
   }
+  return 0;
 }
 
 static void
@@ -1536,7 +1537,7 @@ void mrg_xml_render (Mrg *mrg,
 
         if (!strcmp (data, "path"))
         {
-          mrg_parse_path (mrg, get_attr (ctx, "d"));
+          mrg_parse_svg_path (mrg, get_attr (ctx, "d"));
           mrg_path_fill_stroke (mrg);
         }
 

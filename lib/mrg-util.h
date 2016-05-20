@@ -31,6 +31,7 @@ void mrg_restarter_add_path (Mrg *mrg, const char *path);
 
 /* returns ms since start */
 uint32_t mrg_ms (Mrg *mrg);
+int mrg_parse_svg_path (Mrg *mrg, const char *str);
 
 #define EM(value)           (value*mrg_em(mrg))
 #define PERCENT_X(value)    (value*mrg_width(mrg))
