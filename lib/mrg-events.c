@@ -98,7 +98,7 @@ void mrg_clear (Mrg *mrg)
   if (mrg->backend->mrg_clear)
     mrg->backend->mrg_clear (mrg);
 
-  _mrg_clear_bindings (mrg);
+  mrg_clear_bindings (mrg);
   _mrg_clear_text_closures (mrg);
 }
 

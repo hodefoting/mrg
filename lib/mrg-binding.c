@@ -91,7 +91,7 @@ void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
     }
 }
 
-void _mrg_clear_bindings (Mrg *mrg)
+void mrg_clear_bindings (Mrg *mrg)
 {
   int i;
   for (i = 0; mrg->bindings[i].nick; i ++)

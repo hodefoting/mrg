@@ -198,4 +198,6 @@ int mrg_pointer_motion    (Mrg *mrg, float x, float y, int device_no, uint32_t t
 int mrg_key_press         (Mrg *mrg, unsigned int keyval, const char *string, uint32_t time);
 void mrg_incoming_message (Mrg *mrg, const char *message, long time);
 
+void mrg_clear_bindings (Mrg *mrg);;
+
 #endif

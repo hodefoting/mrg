@@ -166,7 +166,6 @@ const char *mrg_utf8_skip (const char *string, int utf8_length);
 
 #define CPX 2
 void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2);
-void _mrg_clear_bindings (Mrg *mrg);
 MrgItem *_mrg_detect (Mrg *mrg, float x, float y, MrgType type);
 
 float _mrg_dynamic_edge_right (Mrg *mrg);
