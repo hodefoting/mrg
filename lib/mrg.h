@@ -164,4 +164,9 @@ typedef struct MrgBinding {
 
 MrgBinding *mrg_get_bindings (Mrg *mrg);
 
+int mrg_is_printing (Mrg *mrg);
+void mrg_new_page (Mrg *mrg);
+void mrg_render_pdf (Mrg *mrg, const char *pdf_path);
+void mrg_render_svg (Mrg *mrg, const char *svg_path);
+
 #endif

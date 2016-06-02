@@ -334,6 +334,9 @@ void mrg_main (Mrg *mrg)
 
 cairo_t *mrg_cr (Mrg *mrg)
 {
+  if (mrg->printing_cr)
+    return mrg->printing_cr;
+
   if (mrg->backend->mrg_cr)
     return mrg->backend->mrg_cr (mrg);
   else
@@ -427,7 +430,8 @@ void mrg_prepare (Mrg *mrg)
   mrg->state->fg = 0; /* XXX: move to terminal? what about reverse-video? */
   mrg->state->bg = 7;
 
-  frame_start = _mrg_ticks ();
+  if (!mrg->printing)
+    frame_start = _mrg_ticks ();
 
   mrg_string_set (mrg->edited_str, "");
   mrg->got_edit = 0;
@@ -438,8 +442,11 @@ void mrg_prepare (Mrg *mrg)
 
   mrg_style_defaults (mrg);
 
-  if (mrg->backend->mrg_prepare)
-    mrg->backend->mrg_prepare (mrg);
+  if (!mrg->printing)
+  {
+    if (mrg->backend->mrg_prepare)
+      mrg->backend->mrg_prepare (mrg);
+  }
 
   mrg_start (mrg, "document", NULL);
 
@@ -782,6 +789,52 @@ float mrg_get_target_fps (Mrg *mrg)
   return target_fps;
 }
 
+#include <cairo-pdf.h>
+#include <cairo-svg.h>
+
+void mrg_new_page (Mrg *mrg)
+{
+  if (mrg->printing)
+  {
+    cairo_show_page (mrg->printing_cr);
+  }
+  mrg_set_xy (mrg, mrg_x(mrg), mrg_em (mrg));
+}
+
+void mrg_render_pdf (Mrg *mrg, const char *pdf_path)
+{
+  cairo_surface_t *surface =
+    cairo_pdf_surface_create(pdf_path, mrg_width (mrg), mrg_height (mrg));
+  mrg->printing = 1;
+  mrg->printing_cr = cairo_create (surface);
+  mrg_prepare (mrg);
+  if (mrg->ui_update)
+    mrg->ui_update (mrg, mrg->user_data);
+  mrg_flush (mrg);
+ 
+  cairo_surface_destroy(surface);
+  cairo_destroy(mrg->printing_cr);
+  mrg->printing_cr = NULL;
+  mrg->printing = 0;
+}
+
+void mrg_render_svg (Mrg *mrg, const char *svg_path)
+{
+  cairo_surface_t *surface =
+    cairo_svg_surface_create(svg_path, mrg_width (mrg), mrg_height (mrg));
+  mrg->printing = 1;
+  mrg->printing_cr = cairo_create (surface);
+  mrg_prepare (mrg);
+  if (mrg->ui_update)
+    mrg->ui_update (mrg, mrg->user_data);
+  mrg_flush (mrg);
+ 
+  cairo_surface_destroy(surface);
+  cairo_destroy(mrg->printing_cr);
+  mrg->printing_cr = NULL;
+  mrg->printing = 0;
+}
+
 void  mrg_ui_update (Mrg *mrg)
 {
   if (target_fps > 0 && prev_frame_present)
@@ -1058,6 +1111,11 @@ int mrg_in_dirty_rect (Mrg *mrg,
        y + height < mrg->dirty.y)
      return 0;
    return 1;
+}
+
+int mrg_is_printing (Mrg *mrg)
+{
+  return mrg->printing;
 }
 
 #undef usecs

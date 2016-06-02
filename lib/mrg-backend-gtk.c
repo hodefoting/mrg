@@ -52,8 +52,8 @@ static void mrg_gtk_warp_pointer (Mrg *mrg, float x, float y)
 }
 
 static void mrg_gtk_main (Mrg *mrg,
-                   void (*ui_update)(Mrg *mrg, void *user_data),
-                   void *user_data)
+                          void (*ui_update)(Mrg *mrg, void *user_data),
+                          void *user_data)
 {
   /* the gtk mrg backend directly reuses the gtk main loop */
   gtk_main ();

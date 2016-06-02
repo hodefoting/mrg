@@ -378,6 +378,9 @@ struct _Mrg {
   long         tap_delay_hold;
 
   int          tap_hysteresis;
+
+  int          printing;
+  cairo_t     *printing_cr;
 };
 
 int _mrg_file_get_contents (const char  *path,
