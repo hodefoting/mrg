@@ -372,8 +372,8 @@ void mrg_listen_full (Mrg     *mrg,
       cairo_user_to_device (cr, &tx, &ty);
       if (ty > mrg->height * 2 ||
           tx > mrg->width * 2 ||
-          tx < -mrg->width * 2 ||
-          ty < -mrg->height * 2)
+          tx + width < 0 ||
+          ty + height < 0)
       {
         if (finalize)
           finalize (data1, data2, finalize_data);
