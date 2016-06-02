@@ -797,8 +797,8 @@ void mrg_new_page (Mrg *mrg)
   if (mrg->printing)
   {
     cairo_show_page (mrg->printing_cr);
+    mrg_set_xy (mrg, mrg_x(mrg), mrg_em (mrg));
   }
-  mrg_set_xy (mrg, mrg_x(mrg), mrg_em (mrg));
 }
 
 void mrg_render_pdf (Mrg *mrg, const char *pdf_path)
