@@ -24,7 +24,7 @@ symbols: Makefile $(LIB_OBJS)
 	@echo " gen" $@;  nm -a $(LIB_OBJS) | grep " T " | cut -f 3 -d ' ' | grep "^$(SYMBOL_PREFIX)" | grep -v "^_" | sort > $@
 
 $(LIBNAME).$(LIBEXT): $(LIB_OBJS) symbols
-	@echo "  LD" $@;$(LD) -shared $(LIB_OBJS) -o $@ $(LIB_LD_FLAGS)
+	@echo "  LD" $@;$(CC) --shared $(LIB_OBJS) -o $@ $(LIB_LD_FLAGS)
 
 # this rule is generic and could also belong with bin..
 # we try to be overly generic and throw in the cflags of both lib and bin..
