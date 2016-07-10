@@ -271,7 +271,6 @@ static Mrg *_mrg_mmm_new (int width, int height)
     usleep (50000);
     width = mmm_get_width (mmm);
     height = mmm_get_height (mmm);
-    fprintf (stderr, "%i: %ix%i\n", width, height);
   }
 
   mmm_set_size (mmm, width, height);
