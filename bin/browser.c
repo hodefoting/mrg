@@ -188,8 +188,8 @@ int browser_main (int argc, char **argv)
   if (mr->output_png)
     mrg = mrg_new (240, 320, "mem");
   else
-    mrg = mrg_new (320, 480, NULL);
-  //mrg = mrg_new (-1, -1, NULL);
+  //mrg = mrg_new (320, 480, NULL);
+    mrg = mrg_new (-1, -1, NULL);
 
   {
     char *tmp = realpath (argv[1]?argv[1]:argv[0], NULL);

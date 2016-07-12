@@ -608,10 +608,10 @@ int dir_main (int argc, char **argv)
   Mrg *mrg;
   
   //if (getenv ("DISPLAY"))
-  mrg = mrg_new (1024, 768, NULL);
- // else
- //   mrg = mrg_new (-1, -1, NULL);
-  //Mrg *mrg = mrg_new (1024, 768, NULL);
+  //mrg = mrg_new (1024, 768, NULL);
+  //  else
+    mrg = mrg_new (-1, -1, NULL);
+   //*mrg = mrg_new (1024, 768, NULL);
   //Mrg *mrg = mrg_new (800, 600, NULL);
 
   State *state = calloc (sizeof (State), 1);
