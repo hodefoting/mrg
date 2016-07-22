@@ -281,7 +281,7 @@ int host_main (int argc, char **argv)
 
   mrg_css_set (mrg, css);
 
-  if(1)
+  if(0)
   {
     Mrg *mrg = mrg_new (300, 300, "mem");
     mrg_set_ui (mrg, tasklist_ui, host);
