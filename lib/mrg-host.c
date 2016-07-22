@@ -492,9 +492,9 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
     {
       pixels = mmm_get_buffer_read (client->mmm, &width, &height, &rowstride);
       if (!pixels)
-        usleep (1000);
+        usleep (10000);
       count ++;
-    } while (pixels == NULL && count < 10);
+    } while (pixels == NULL && count < 100);
 
     if (pixels)
     {

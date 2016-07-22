@@ -85,7 +85,7 @@ static void render_client (Mrg *mrg, MrgHost *host, MrgClient *client)
   cairo_t *cr = mrg_cr (mrg);
   int width, height;
 
-  if (mrg_client_get_pid (client) == getpid ())
+  if (mrg_client_get_pid (client) == getpid ()) /* avoid recursion */
     return;
 
   int skip_draw = 0;
@@ -95,12 +95,15 @@ static void render_client (Mrg *mrg, MrgHost *host, MrgClient *client)
   x = mrg_client_get_x (client);
   y = mrg_client_get_y (client);
 
+   // XXX: this is broken - and makes things flicker, should be fixed to actually work
+#if 0
   if (!mrg_in_dirty_rect (mrg, x, y, width, height))
   {
     //    return; /* bailing earlier is better */
     skip_draw = 1;
   }
   else
+#endif
   {
     mrg_start_with_stylef (mrg, mrg_host_get_focused(host)==client?"client.focused":"client", NULL, 
     "left:%ipx;top:%ipx;width:%ipx;height:%ipx;", x-1, y-1-TITLE_BAR_HEIGHT, width, height + TITLE_BAR_HEIGHT);
