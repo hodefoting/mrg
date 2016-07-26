@@ -766,8 +766,8 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t tim
         if (delay > mrg->tap_delay_min &&
             delay < mrg->tap_delay_max &&
             
-            (event->start_x - event->x) * (event->start_x - event->x) < 8 &&
-            (event->start_y - event->y) * (event->start_y - event->y) < 8 
+            (event->start_x - event->x) * (event->start_x - event->x) < 32 &&
+            (event->start_y - event->y) * (event->start_y - event->y) < 32 
             )
         {
           _mrg_emit_cb_item (mrg, grab->item, event, MRG_TAP, x, y);
