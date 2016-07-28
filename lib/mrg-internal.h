@@ -377,7 +377,7 @@ struct _Mrg {
   long         tap_delay_max;
   long         tap_delay_hold;
 
-  int          tap_hysteresis;
+  double       tap_hysteresis;
 
   int          printing;
   cairo_t     *printing_cr;

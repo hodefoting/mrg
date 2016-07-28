@@ -52,8 +52,10 @@ void _mrg_init (Mrg *mrg, int width, int height)
 
   mrg->tap_delay_min  = 40;
   mrg->tap_delay_max  = 800;
+  mrg->tap_delay_max  = 8000000; /* quick reflexes needed making it hard for some is an argument against very short values  */
+
   mrg->tap_delay_hold = 1000;
-  mrg->tap_hysteresis = 8;  /* XXX: should be ppi dependent */
+  mrg->tap_hysteresis = 32;  /* XXX: should be ppi dependent */
 
   {
     const char *global_css_uri = "mrg:theme.css";

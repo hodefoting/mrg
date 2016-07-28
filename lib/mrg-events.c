@@ -614,7 +614,9 @@ int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 
   event->x = event->start_x = event->prev_x = x;
   event->y = event->start_y = event->prev_y = y;
+
   event->delta_x = event->delta_y = 0;
+
   event->device_no = device_no;
   event->time      = time;
   event->stop_propagate = 0;
@@ -763,13 +765,15 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t tim
       if (grab->item->types & MRG_TAP)
       {
         long delay = time - grab->start_time;
+
         if (delay > mrg->tap_delay_min &&
             delay < mrg->tap_delay_max &&
-            
-            (event->start_x - event->x) * (event->start_x - event->x) < 32 &&
-            (event->start_y - event->y) * (event->start_y - event->y) < 32 
+            sqrt(
+              (event->start_x - x) * (event->start_x - x) +
+              (event->start_y - y) * (event->start_y - y)) < mrg->tap_hysteresis
             )
         {
+            fprintf (stderr, "TAPTATP!\n");
           _mrg_emit_cb_item (mrg, grab->item, event, MRG_TAP, x, y);
         }
       }
@@ -802,9 +806,9 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t tim
 
 int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 {
-  MrgList   *hitlist = NULL;
-  MrgList   *grablist = NULL, *g;
-  MrgGrab   *grab;
+  MrgList *hitlist = NULL;
+  MrgList *grablist = NULL, *g;
+  MrgGrab *grab;
 
   if (device_no < 0) device_no = 0;
   if (device_no >= MRG_MAX_DEVICES) device_no = MRG_MAX_DEVICES-1;
@@ -852,12 +856,17 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time
     {
       if (
           sqrt (
-            (event->start_x - event->x) * (event->start_x - event->x) +
-            (event->start_y - event->y) * (event->start_y - event->y)) > 
+            (event->start_x - x) * (event->start_x - x) +
+            (event->start_y - y) * (event->start_y - y)) >
               mrg->tap_hysteresis
-          )
+         )
       {
+        fprintf (stderr, "-");
         mrg_list_prepend (&remove_grabs, grab);
+      }
+      else
+      {
+        fprintf (stderr, ":");
       }
     }
 
