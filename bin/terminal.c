@@ -55,11 +55,13 @@ struct _Cell {
 
 #include <string.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+
 #include <pty.h>
 #include "mrg.h"
 #include "mrg-string.h"
@@ -877,7 +879,7 @@ static void event_handler (MrgEvent *event, void *data1, void *data2)
     str = "";
 
     set_term_size (mrg, (int)(mrg_width (mrg) / cell_width)-2, (int)(mrg_height (mrg) / cell_height)-1);
-  //  trimlines (rows);
+    trimlines (rows);
   }
 
 done:
@@ -971,10 +973,26 @@ int terminal_main (int argc, char **argv)
   reset_device (mrg);
 
   mrg_set_ui (mrg, render_ui, NULL);
-  char *command = "sh";
+  char *command;
+  struct stat stat_buf;
 
-  if (argv[1])
-    command = argv[1];
+  command = argv[1];
+  {
+    int i;
+    static char *alts[][2] ={
+      {"/bin/bash",     "/bin/bash -i"},
+      {"/usr/bin/bash", "/usr/bin/bash -i"},
+      {"/bin/sh",       "/bin/sh -i"},
+      {"/usr/bin/sh",   "/usr/bin/sh -i"},
+      {NULL, NULL}
+    };
+    for (i = 0; alts[i][0] && !command; i++)
+    {
+      lstat (alts[i][0], &stat_buf);
+      if (S_ISREG(stat_buf.st_mode) || S_ISLNK(stat_buf.st_mode))
+        command = alts[i][1];
+    }
+  }
 
   /* XXX, command should be arg of -e ..., why not handle some more rxvt/xterm
    * like args?
@@ -1006,10 +1024,14 @@ int terminal_main (int argc, char **argv)
     return -1;
   }
 
+  sleep (1);
   signal (SIGCHLD, signal_child);
   fcntl(pty, F_SETFL, O_NONBLOCK);
   set_term_size (mrg, cols, rows);
   mrg_add_idle (mrg, pty_poll, NULL);
+  for (int i = 0; i < 100; i++)
+    feed_byte (mrg, '\n');
+
   mrg_main (mrg);
   mrg_destroy (mrg);
   return 0;
