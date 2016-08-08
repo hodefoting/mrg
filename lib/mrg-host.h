@@ -44,5 +44,6 @@ void mrg_client_set_stack_order (MrgClient *client, int zpos);
 int  mrg_client_get_stack_order (MrgClient *client);
 
 #define TITLE_BAR_HEIGHT 18
+//#define TITLE_BAR_HEIGHT 0
 
 #endif

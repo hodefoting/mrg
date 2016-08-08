@@ -12,7 +12,7 @@ Features:
 * CSS styling/layout
 * Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
 * SDL/GTK/framebuffer/terminal backends.
-* png/jpg image caching
+* PNG/JPG image caching
 
 microraptor gui is a C API for creating user interfaces, it can be used as an
 application writing environment or as an interactive canvas for part of a
@@ -90,8 +90,7 @@ Microraptor and GTK
 
 Microraptor can use GTK as a backend or microraptor can be used in GTK+
 applications, when used in gtk applications in widgets it is better to rely on
-native mainloop integration with `g_timeout` and `g_idle` instead of using the
-ones provided by microraptor gui.
+native mainloop integration with `g_timeout` and `g_idle` instead of similar library functionality provided by microraptor gui.
 
 An immediate mode UI compromise
 ===============================

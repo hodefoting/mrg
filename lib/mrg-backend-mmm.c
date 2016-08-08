@@ -79,38 +79,7 @@ static void mrg_mmm_flush (Mrg *mrg)
     mrg->cr = NULL;
   }
 }
-
-#if 0
-static void mrg_mmm_fullscreen (Mrg *mrg, int fullscreen)
-{
-  MMM_Surface *screen = mrg->backend_data;
-  int width = 640, height = 480;
-
-  if (fullscreen)
-  {
-    MMM_Rect **modes;
-    modes = MMM_ListModes(NULL, MMM_HWSURFACE|MMM_FULLSCREEN);
-    if (modes == (MMM_Rect**)0) {
-        fprintf(stderr, "No modes available!\n");
-        return;
-    }
-  
-    width = modes[0]->w;
-    height = modes[0]->h;
-
-    screen = MMM_SetVideoMode(width, height, 32,
-                              MMM_SWSURFACE | MMM_FULLSCREEN );
-    mrg->backend_data = screen;
-  }
-  else
-  {
-    screen = MMM_SetVideoMode(width, height, 32,
-                              MMM_SWSURFACE | MMM_RESIZABLE );
-    mrg->backend_data = screen;
-  }
-  mrg->fullscreen = fullscreen;
-}
-#endif
+static void *mmm_self = NULL;
 
 static void mrg_mmm_consume_events (Mrg *mrg, int block);
 
@@ -167,7 +136,6 @@ void  mrg_mmm_get_position  (Mrg *mrg, int *x, int *y)
     *y = mmm_get_y (mrg->backend_data);
 }
 
-static void *mmm_self = NULL;
 static void  mmm_atexit (void)
 {
   fprintf (stderr, "teardown time! %p\n", mmm_self);
@@ -197,7 +165,7 @@ MrgBackend mrg_backend_mmm = {
   NULL, /* mrg_queue_draw, */
   NULL, /* mrg_destroy */
   mrg_mmm_warp_pointer,
-  NULL, //mrg_mmm_fullscreen,
+  NULL, /* fullscreen */
   mrg_mmm_set_position,
   mrg_mmm_get_position,
   mrg_mmm_set_title,

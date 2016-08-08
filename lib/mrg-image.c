@@ -93,9 +93,10 @@ MrgImage *mrg_query_image (Mrg *mrg,
   }
   trim_cache ();
   {
+#if 0
     if (strstr (path, "png") || strstr (path, "PNG"))
     {
-      /* use cairo and thus the full libpng to try decoding png images 
+      /* use cairo and thus the full libpng for decoding PNG images
        */
       cairo_surface_t *surface = cairo_image_surface_create_from_png (path);
       if (surface)
@@ -112,7 +113,8 @@ MrgImage *mrg_query_image (Mrg *mrg,
         return mrg_query_image (mrg, path, width, height);
       }
     }
-    else /* some other type of file, try with stb image */
+    else /* some other type of file, try stb image */
+#endif
     {
       char *contents = NULL;
       long length;
@@ -121,7 +123,6 @@ MrgImage *mrg_query_image (Mrg *mrg,
       {
           int w, h, comp;
           unsigned char *data;
-
           data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
           if (data)
           {
@@ -158,7 +159,6 @@ MrgImage *mrg_query_image (Mrg *mrg,
   }
   return NULL;
 }
-
 
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path)
 {
