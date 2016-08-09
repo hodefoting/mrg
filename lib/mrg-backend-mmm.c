@@ -236,9 +236,16 @@ static Mrg *_mrg_mmm_new (int width, int height)
 
   if (fullscreen)
   {
-    usleep (50000);
-    width = mmm_get_width (mmm);
-    height = mmm_get_height (mmm);
+    if (getenv ("MMM_WIDTH"))
+    {
+      width = atoi ( getenv ("MMM_WIDTH"));
+      height = atoi ( getenv ("MMM_HEIGHT"));
+    }
+    else
+    {
+      width = mmm_get_width (mmm);
+      height = mmm_get_height (mmm);
+    }
   }
 
   mmm_set_size (mmm, width, height);
