@@ -240,7 +240,7 @@ static void set_cursor_key_to_cursor (Mrg *mrg, const char *sequence)
 static void reset_device (Mrg *mrg)
 {
   int i;
-  for (i = 0; i < rows + 4; i++)
+  for (i = 0; i < rows + 2; i++)
   {
     buffer = mrg_string_new ("");
     mrg_list_prepend (&lines, buffer);
@@ -911,13 +911,13 @@ static void render_ui (Mrg *mrg, void *data)
     int no = 1;
 
     if (mrg_list_length (lines) < rows)
-      y -= mrg_em(mrg) * 1.2 * (rows-mrg_list_length (lines));
+      y -= mrg_em(mrg) * 1.33 * (rows-mrg_list_length (lines));
 
     for (l = lines; l; l = l->next, no++)
     {
       mrg_set_xy (mrg, x, y);
       mrg_print (mrg, ((MrgString*)(l->data))->str);
-      y -= mrg_em (mrg) * 1.2;
+      y -= mrg_em (mrg) * 1.33;
     }
   }
 
@@ -931,10 +931,10 @@ static void render_ui (Mrg *mrg, void *data)
     cw = mrg_x (mrg) - cw;
 
     cell_width = cw;
-    cell_height = em * 1.2;
+    cell_height = em * 1.33;
 
     cy = mrg_height (mrg) - em;
-    cy -= (rows - cursor_y + 1) * 1.2 * em;
+    cy -= (rows - cursor_y + 1) * cell_height;
     mrg_end (mrg);
 
     mrg_start (mrg, "cursor", NULL);
@@ -942,7 +942,7 @@ static void render_ui (Mrg *mrg, void *data)
               (cursor_x-1) * cw + em,
               cy,
               cw,
-              1.2 * em);
+              1.33 * em);
     cairo_set_source_rgba (cr, 0.0, 1.0, 0.0, 0.15);
     cairo_fill (cr);
     cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.5);
@@ -952,7 +952,7 @@ static void render_ui (Mrg *mrg, void *data)
               (cursor_x-1) * cw + em,
               cy,
               cw,
-              1.2 * em);
+              1.33 * em);
     cairo_stroke (cr);
     mrg_end (mrg);
   }
@@ -968,7 +968,7 @@ signal_child (int a) {
 
 int terminal_main (int argc, char **argv)
 {
-  Mrg *mrg = mrg_new ((cols+1) * fontsize * 0.65, (rows+1) * fontsize * 1.2, NULL);
+  Mrg *mrg = mrg_new ((cols+1) * fontsize * 0.65, (rows+1) * fontsize * 1.33, NULL);
 
   reset_device (mrg);
 
@@ -1029,8 +1029,7 @@ int terminal_main (int argc, char **argv)
   fcntl(pty, F_SETFL, O_NONBLOCK);
   set_term_size (mrg, cols, rows);
   mrg_add_idle (mrg, pty_poll, NULL);
-  for (int i = 0; i < 100; i++)
-    feed_byte (mrg, '\n');
+  reset_device (mrg);
 
   mrg_main (mrg);
   mrg_destroy (mrg);

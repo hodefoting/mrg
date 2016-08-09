@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "mrg.h"
 #include <dirent.h>
 #include "mmm.h"
@@ -478,6 +479,9 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
   const unsigned char *pixels;
   int count = 0;
   int width, height;
+
+  x = floor (x);
+  y = floor (y);
 
   if (client->mrg)
   {
