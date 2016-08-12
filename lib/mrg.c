@@ -336,15 +336,17 @@ void mrg_main (Mrg *mrg)
 
 cairo_t *mrg_cr (Mrg *mrg)
 {
-  if (mrg->printing_cr)
-    return mrg->printing_cr;
+  cairo_t *cr = NULL;
 
-  if (mrg->backend->mrg_cr)
-    return mrg->backend->mrg_cr (mrg);
-  else
+  if (mrg->printing_cr)
+    cr = mrg->printing_cr;
+
+  if (!cr && mrg->backend->mrg_cr)
+    cr = mrg->backend->mrg_cr (mrg);
+
+  if (!cr)
   {
     unsigned char *pixels = NULL;
-    cairo_t *cr;
     cairo_surface_t *surface;
     int rowstride = 0;
     int width, height;
@@ -362,8 +364,11 @@ cairo_t *mrg_cr (Mrg *mrg)
     cr = cairo_create (surface);
     cairo_surface_destroy (surface);
     mrg->cr = cr;
-    return cr;
   }
+
+  cairo_set_antialias (cr, CAIRO_ANTIALIAS_FAST);
+
+  return cr;
 }
 
 static long  frame_start;
