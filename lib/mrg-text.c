@@ -1467,8 +1467,9 @@ static void cmd_space (MrgEvent *event, void *data1, void *data2)
 
 static void cmd_return (MrgEvent *event, void *data1, void *data2)
 {
-  if (!(mrg_utf8_strlen (event->key_name) == 1))
-    return;
+  // this check excludes terminal from working
+  //if (!(mrg_utf8_strlen (event->key_name) == 1))
+  //  return;
 
   add_utf8 (event->mrg, "\n");
   mrg_event_stop_propagate (event);
