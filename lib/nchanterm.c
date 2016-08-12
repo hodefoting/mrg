@@ -763,7 +763,7 @@ static const NcKeyCode keycodes[]={
   {"F10",       "F10",  "\033[[J"},
   {"F11",       "F11",  "\033[[K"},
   {"F12",       "F12",  "\033[[L"}, 
-  {NULL, NULL, NULL}
+  {NULL, NULL,  ""}
 };
 
 static struct termios orig_attr; /* in order to restore at exit */
