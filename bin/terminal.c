@@ -1,5 +1,5 @@
 /* mrg - MicroRaptor Gui
- * Copyright (c) 2014 Øyvind Kolås <pippin@hodefoting.com>
+ * Copyright (c) 2014, 2016 Øyvind Kolås <pippin@hodefoting.com>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,43 +15,22 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
+
+#include <sys/stat.h>
+#include <errno.h>
+
 /* this terminal implements a subset of ANSI/vt100,
  */
 
 /* TODO: 
  *   font size changes
- *   refactor to have a nicer API and encapsulated core..
  *   utf8 handling (make more use of mrgstring api)
- *   bold/reverse video 
  *   color
+ *   bold/reverse video 
  *   scrollback
  */
-#if 0
-
-typedef struct _Cell Cell;
-
-struct _Cell {
-  char c[5]; /* up to 4 utf8 and terminator */
-  int  bold:1;
-  int  reverse:1;
-  int  underline:1;
-};
-
-/* the whole core engine should be wrapped like this: */
-
- vt100_new        (vt100, w, h);
- vt100_set_size   (vt100, w, h);
- vt100_feed_char  (vt100, c);
- vt100_key_event  (vt100, str);
- vt100_cell       (vt100, char *utf8, int *bold, int *reverse, int *underline, int *fg, int *bg);
- vt100_clear_dirt (vt100);
- vt100_get_dirty  (vt100, int *lines);
- vt100_get_text   (vt100, int col, int row, int len, char *res);
-
-#endif
-
-#define _BSD_SOURCE
-#define _DEFAULT_SOURCE
 
 #include <string.h>
 #include <signal.h>
@@ -67,37 +46,92 @@ struct _Cell {
 #include "mrg-string.h"
 #include "mrg-list.h"
 
-static int        cursor_x       = 1;
-static int        cursor_y       = 1;
-static pid_t      pid;
-static int        pty;
-static MrgList   *lines          = NULL;
-static MrgString *buffer         = NULL; /* < buffer of current line */
-static int        cols           = 80;
-static int        rows           = 25;
-static int        scroll_top     = 1;
-static int        scroll_bottom  = 40;
-static double     fontsize       = 11.0;
-static int        cursor_key_application = 0;
-static int        line_wrap      = 0;
-static int        reverse_video  = 0;
-static int        bold           = 0;
-static int        cursor_visible = 1;
-static float      cell_width     = 11;
-static float      cell_height    = 11;
-static int        saved_x        = 1;
-static int        saved_y        = 1;
+typedef struct _Vt100 Vt100;
+struct _Vt100 {
+  int        pty;
+  pid_t      pid;
+  MrgList   *lines;
+  MrgString *buffer;
+  int        cursor_x;
+  int        cursor_y;
+  int        cursor_visible;
+  double     font_size;
+  double     line_spacing;
+  float      cell_width;
+  float      cell_height;
+  int        saved_x;
+  int        saved_y;
+  int        cols;
+  int        rows;
+  int        line_wrap;
+  int        reverse_video;
+  int        bold;
+  int        cursor_key_application;
+  int        scroll_top;
+  int        scroll_bottom;
+  void      *user_data;
+  char      *commandline;
+  char       argument_buf[64];
+  int        argument_buf_len;
+};
 
+static void vt100_feed_byte (Vt100 *vt100, int byte);
+static void vt100_set_term_size (Vt100 *vt100, int icols, int irows);
+static void vtcmd_reset_device (Vt100 *vt100, const char *sequence);
 
-#include <sys/stat.h>
-#include <errno.h>
+#define DEFAULT_ROWS      25
+#define DEFAULT_COLS      80
+#define DEFAULT_FONT_SIZE 11.0
+#define DEFAULT_LINE_SPACING 1.3
 
-static int trimlines (int max)
+static void vt100_run_command (Vt100 *vt100, const char *command);
+Vt100 *vt100_new (const char *command)
+{
+  Vt100 *vt100 = calloc (sizeof (Vt100), 1);
+  vt100->cursor_x               = 1;
+  vt100->cursor_y               = 1;
+  vt100->cursor_visible         = 1;
+  vt100->lines                  = NULL;
+  vt100->buffer                 = NULL;
+  vt100->saved_x                = 1;
+  vt100->saved_y                = 1;
+  vt100->cell_width             = DEFAULT_FONT_SIZE;
+  vt100->cell_height            = DEFAULT_FONT_SIZE * DEFAULT_LINE_SPACING;
+  vt100->cols                   = DEFAULT_COLS;
+  vt100->rows                   = DEFAULT_ROWS;
+  vt100->line_wrap              = 0;
+  vt100->reverse_video          = 0;
+  vt100->bold                   = 0;
+  vt100->cursor_key_application = 0;
+  vt100->scroll_top             = 1;
+  vt100->scroll_bottom          = 40;
+  vt100->font_size              = DEFAULT_FONT_SIZE;
+  vt100->line_spacing           = DEFAULT_LINE_SPACING;
+  vt100->argument_buf_len       = 0;
+  vt100->argument_buf[0]        = 0;
+  vt100->user_data              = NULL;
+  vt100->commandline            = NULL;
+
+  if (command)
+  {
+    vt100_run_command (vt100, command);
+    vt100->commandline = strdup (command);
+  }
+
+  vt100_set_term_size (vt100, vt100->cols, vt100->rows-2); // makes top few lines be visible - but bit of a hack
+  vtcmd_reset_device (vt100, NULL);
+  return vt100;
+}
+
+/* To get functional scrollback, tweak trimlines... and fix bugs/workarounds
+   relying on the behavior of continous trimming
+ */
+static int vt100_trimlines (Vt100 *vt100, int max)
 {
   MrgList *chop_point = NULL;
   MrgList *l;
   int i;
-  for (l = lines, i = 0; l && i < max-1; l = l->next, i++);
+  for (l = vt100->lines, i = 0; l && i < max-1; l = l->next, i++);
 
   if (l)
   {
@@ -113,43 +147,37 @@ static int trimlines (int max)
   return 0;
 }
 
-static void set_term_size (Mrg *mrg, int icols, int irows)
+static void vt100_set_term_size (Vt100 *vt100, int icols, int irows)
 {
   struct winsize ws;
-  //int width = icols * fontsize * 0.6;
-  //int height = irows * fontsize * 1.3;
-
-  rows = ws.ws_row = irows;
-  cols = ws.ws_col = icols;
+  vt100->rows = ws.ws_row = irows;
+  vt100->cols = ws.ws_col = icols;
   ws.ws_xpixel = ws.ws_col * 8;
   ws.ws_ypixel = ws.ws_row * 8;
-  ioctl(pty, TIOCSWINSZ, &ws);
+  ioctl(vt100->pty, TIOCSWINSZ, &ws);
 }
 
-static char argument_buf[64] = "";
-static int  argument_buf_len = 0;
-
-static void argument_buf_reset (const char *start)
+static void vt100_argument_buf_reset (Vt100 *vt100, const char *start)
 {
   if (start)
   {
-    strcpy (argument_buf, start);
-    argument_buf_len = strlen (start);
+    strcpy (vt100->argument_buf, start);
+    vt100->argument_buf_len = strlen (start);
   }
   else
-    argument_buf[argument_buf_len=0]=0;
+    vt100->argument_buf[vt100->argument_buf_len=0]=0;
 }
 
-static void argument_buf_add (int ch)
+static void vt100_argument_buf_add (Vt100 *vt100, int ch)
 {
-  if (argument_buf_len < 62)
+  if (vt100->argument_buf_len < 62)
   {
-    argument_buf[argument_buf_len] = ch;
-    argument_buf[++argument_buf_len] = 0;
+    vt100->argument_buf[vt100->argument_buf_len] = ch;
+    vt100->argument_buf[++vt100->argument_buf_len] = 0;
   }
 }
 
-static void move_to (Mrg *mrg, int y, int x)
+static void _vt100_move_to (Vt100 *vt100, int y, int x)
 {
   int i;
   if (x < 1)
@@ -157,108 +185,114 @@ static void move_to (Mrg *mrg, int y, int x)
   if (y < 1)
     y = 1;
 
-  cursor_x = x;
-  cursor_y = y;
+  vt100->cursor_x = x;
+  vt100->cursor_y = y;
 
-  i = rows - y;
+  i = vt100->rows - y;
   MrgList *l;
-  for (l = lines; l && i >= 1; l = l->next, i--);
+  for (l = vt100->lines; l && i >= 1; l = l->next, i--);
 
   if (l)
-    buffer = l->data;
+    vt100->buffer = l->data;
   else
-    buffer = lines->data;
+    vt100->buffer = vt100->lines?vt100->lines->data:NULL;
 
-  mrg_queue_draw (mrg, NULL);
+  if (vt100->user_data)
+    mrg_queue_draw (vt100->user_data, NULL);
 
-  trimlines (rows);
+  vt100_trimlines (vt100, vt100->rows);
 }
 
-static void add_byte (Mrg *mrg, int byte)
+static void _vt100_add_byte (Vt100 *vt100, int byte)
 {
-  if (cursor_x >= buffer->length)
+  if (vt100->cursor_x >= vt100->buffer->length)
     {
       int i;
-      for (i = 0; i < cursor_x - buffer->length; i++)
-        mrg_string_append_byte (buffer, ' ');
+      for (i = 0; i < vt100->cursor_x - vt100->buffer->length; i++)
+        mrg_string_append_byte (vt100->buffer, ' ');
     }
-  if (buffer->length > cursor_x - 1 && cursor_x >= 1)
+  if (vt100->buffer->length > vt100->cursor_x - 1 && vt100->cursor_x >= 1)
   {
-    buffer->str[cursor_x - 1] = byte;
+    vt100->buffer->str[vt100->cursor_x - 1] = byte;
   }
   else
   {
-    mrg_string_append_byte (buffer, byte);
+    mrg_string_append_byte (vt100->buffer, byte);
   }
-  cursor_x ++;
-  mrg_queue_draw (mrg, NULL);
+
+  vt100->cursor_x ++; /* this would depend on the validity of utf8.. */
+
+  if (vt100->user_data)
+    mrg_queue_draw (vt100->user_data, NULL);
 }
 
-static void backspace (Mrg *mrg)
+static void _vt100_backspace (Vt100 *vt100)
 {
-  if (buffer)
+  if (vt100->buffer)
   {
-    cursor_x --;
-    if (cursor_x < 1)
-      cursor_x = 1;
+    vt100->cursor_x --;
+    if (vt100->cursor_x < 1)
+      vt100->cursor_x = 1;
   }
-  mrg_queue_draw (mrg, NULL);
+  if (vt100->user_data)
+    mrg_queue_draw (vt100->user_data, NULL);
 }
 
-static void set_scroll_margins (Mrg *mrg, const char *sequence)
+static void vtcmd_set_scroll_margins (Vt100 *vt100, const char *sequence)
 {
   int top, bottom;
   if (strlen (sequence) == 2)
   {
-    top = 1; bottom = rows;
+    top = 1; bottom = vt100->rows;
   }
   else
   {
     sscanf (sequence, "[%i;%ir", &top, &bottom);
   }
-  //fprintf (stderr, "should set scroll margins top:%i bottom:%i\n", top, bottom);
-  scroll_top = top;
-  scroll_bottom = bottom;
+  vt100->scroll_top = top;
+  vt100->scroll_bottom = bottom;
 };
 
 typedef struct Sequence {
   const char *prefix;
   const char *suffix;
-  void (*handler) (Mrg *mrg, const char *sequence);
+  void (*vtcmd) (Vt100 *vt100, const char *sequence);
 } Sequence;
 
-static void set_cursor_key_to_application (Mrg *mrg, const char *sequence)
+static void vtcmd_set_cursor_key_to_application (Vt100 *vt100, const char *sequence)
 {
-  cursor_key_application = 1;
+  vt100->cursor_key_application = 1;
 };
 
-static void set_cursor_key_to_cursor (Mrg *mrg, const char *sequence)
+static void vtcmd_set_cursor_key_to_cursor (Vt100 *vt100, const char *sequence)
 {
-  cursor_key_application = 0;
+  vt100->cursor_key_application = 0;
 };
 
-static void reset_device (Mrg *mrg)
+static void vtcmd_reset_device (Vt100 *vt100, const char *sequence)
 {
-  int i;
-  for (i = 0; i < rows + 2; i++)
-  {
-    buffer = mrg_string_new ("");
-    mrg_list_prepend (&lines, buffer);
-  }
-  set_scroll_margins (mrg, "[r");
-  move_to (mrg, 1, 1);
-  cursor_key_application = 0;
-  line_wrap = 0;
-  bold = 0;
-  reverse_video = 0;
-  cursor_visible = 1;
+  if (vt100->buffer)
+    mrg_string_free (vt100->buffer, TRUE);
+  vt100->lines = NULL;
+
+  vtcmd_set_scroll_margins (vt100, "[r");
+  _vt100_move_to (vt100, 1, 1);
+  vt100->cursor_key_application = 0;
+  vt100->line_wrap = 0;
+  vt100->bold = 0;
+  vt100->reverse_video = 0;
+  vt100->cursor_visible = 1;
+  vt100->buffer = mrg_string_new ("");
+  mrg_list_prepend (&vt100->lines, vt100->buffer);
+  for (int i=0; i<vt100->rows * 10;i++)
+    vt100_feed_byte (vt100, '\n');
 }
 
-static void move_cursor (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor (Vt100 *vt100, const char *sequence)
 {
   int y = 0, x = 0;
   sscanf (sequence, "[%i;%i", &y, &x);
-  move_to (mrg, y, x);
+  _vt100_move_to (vt100, y, x);
 };
 
 static int parse_int (const char *arg, int def_val)
@@ -268,94 +302,95 @@ static int parse_int (const char *arg, int def_val)
   return atoi (arg+1);
 }
 
-static void goto_column (Mrg *mrg, const char *sequence)
+static void vtcmd_goto_column (Vt100 *vt100, const char *sequence)
 {
   int x = parse_int (sequence, 1);
-  move_to (mrg, cursor_y, x);
+  _vt100_move_to (vt100, vt100->cursor_y, x);
 }
 
-static void goto_row (Mrg *mrg, const char *sequence)
+static void vtcmd_goto_row (Vt100 *vt100, const char *sequence)
 {
   int y = parse_int (sequence, 1);
-  move_to (mrg, y, cursor_x);
+  _vt100_move_to (vt100, y, vt100->cursor_x);
 }
 
-static void move_cursor_right (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_right (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
-  move_to (mrg, cursor_y, cursor_x + n);
+  _vt100_move_to (vt100, vt100->cursor_y, vt100->cursor_x + n);
 }
 
-static void move_cursor_left (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_left (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
-  move_to (mrg, cursor_y, cursor_x - n);
+  _vt100_move_to (vt100, vt100->cursor_y, vt100->cursor_x - n);
 }
 
-static void move_cursor_up (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_up (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
-  move_to (mrg, cursor_y - n, cursor_x);
+  _vt100_move_to (vt100, vt100->cursor_y - n, vt100->cursor_x);
 }
 
-static void move_cursor_down (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_down (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
-  move_to (mrg, cursor_y + n, cursor_x);
+  _vt100_move_to (vt100, vt100->cursor_y + n, vt100->cursor_x);
 }
 
-static void move_cursor_down_and_first_col (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_down_and_first_col (Vt100 *vt100, const char *sequence)
 {
-  move_cursor_down (mrg, sequence);
-  move_to (mrg, cursor_y, 1);
+  vtcmd_move_cursor_down (vt100, sequence);
+  _vt100_move_to (vt100, vt100->cursor_y, 1);
 }
 
-static void move_cursor_up_and_first_col (Mrg *mrg, const char *sequence)
+static void vtcmd_move_cursor_up_and_first_col (Vt100 *vt100, const char *sequence)
 {
-  move_cursor_up (mrg, sequence);
-  move_to (mrg, cursor_y, 1);
+  vtcmd_move_cursor_up (vt100, sequence);
+  _vt100_move_to (vt100, vt100->cursor_y, 1);
 }
 
-static void clear_line (Mrg *mrg, const char *sequence)
+static void vtcmd_clear_line (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 0);
 
   switch (n)
   {
     case 0: // clear to end of line
-      buffer->str[cursor_x-1] = 0;
-      buffer->length = strlen (buffer->str);
+      vt100->buffer->str[vt100->cursor_x-1] = 0;
+      vt100->buffer->length = strlen (vt100->buffer->str);
       break;
     case 1: // clear from beginning to cursor
       {
         int i;
-        for (i = 0; i < cursor_x-1; i++)
+        for (i = 0; i < vt100->cursor_x-1; i++)
         {
-          if (i < buffer->length)
-            buffer->str[i] = ' ';
+          if (i < vt100->buffer->length)
+            vt100->buffer->str[i] = ' ';
         }
       }
       break;
     case 2: // clear entire line
-      mrg_string_set (buffer, "");
-      mrg_queue_draw (mrg, NULL);
+      mrg_string_set (vt100->buffer, "");
+      if (vt100->user_data)
+        mrg_queue_draw (vt100->user_data, NULL);
       break;
   }
 }
 
-static void clear_lines (Mrg *mrg, const char *sequence)
+static void vtcmd_clear_lines (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 0);
 
   switch (n)
   {
     case 0: // clear to end of screen
-      buffer->str[cursor_x-1] = 0;
-      buffer->length = strlen (buffer->str);
+      vt100->buffer->str[vt100->cursor_x-1] = 0;
+      vt100->buffer->length = strlen (vt100->buffer->str);
 
       {
         MrgList *l;
-        for (l = lines; l->data != buffer; l = l->next)
+        for (l = vt100->lines; l->data != vt100->buffer; l = l->next)
         {
           MrgString *buf = l->data;
           buf->str[0] = 0;
@@ -366,10 +401,10 @@ static void clear_lines (Mrg *mrg, const char *sequence)
     case 1: // clear from beginning to cursor
       {
         int i;
-        for (i = 0; i < cursor_x-1; i++)
+        for (i = 0; i < vt100->cursor_x-1; i++)
         {
-          if (i < buffer->length)
-            buffer->str[i] = ' ';
+          if (i < vt100->buffer->length)
+            vt100->buffer->str[i] = ' ';
         }
       }
       {
@@ -377,7 +412,7 @@ static void clear_lines (Mrg *mrg, const char *sequence)
         int there_yet = 0;
         int no = 0;
 
-        for (l = lines; l && no < rows; l = l->next, no ++)
+        for (l = vt100->lines; l && no < vt100->rows; l = l->next, no ++)
         {
           MrgString *buf = l->data;
           if (there_yet)
@@ -385,7 +420,7 @@ static void clear_lines (Mrg *mrg, const char *sequence)
             buf->str[0] = 0;
             buf->length = 0;
           }
-          if (buf == buffer)
+          if (buf == vt100->buffer)
           {
             there_yet = 1;
           }
@@ -394,35 +429,35 @@ static void clear_lines (Mrg *mrg, const char *sequence)
       break;
     case 2: // clear entire screen but keep cursor;
       {
-        int tx = cursor_x;
-        int ty = cursor_y;
-        reset_device (mrg);
-        move_to (mrg, tx, ty);  // XXX: some implementation moves cursor to home?!
+        int tx = vt100->cursor_x;
+        int ty = vt100->cursor_y;
+        vtcmd_reset_device (vt100, "");
+        _vt100_move_to (vt100, tx, ty);  // XXX: some implementation moves cursor to home?!
       }
       break;
   }
 }
 
-static void set_style (Mrg *mrg, const char *sequence)
+static void vtcmd_set_style (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 0); // works until color
   switch (n)
   {
     case 0:  // clear all style 
-      reverse_video = 0;
-      bold = 0;
+      vt100->reverse_video = 0;
+      vt100->bold = 0;
       break;
     case 7:  // Inverse video ON
-      reverse_video = 1;
+      vt100->reverse_video = 1;
       break;
     case 27: // Inverse Video OFF
-      reverse_video = 0;
+      vt100->reverse_video = 0;
       break;
     case 1:  // Alternate Intensity ON
-      bold = 1;
+      vt100->bold = 1;
       break;
     case 22: // Alternate Intensity OFF
-      bold = 0;
+      vt100->bold = 0;
       break;
     case 4:  // Underline ON
     case 24: // Underline OFF
@@ -432,152 +467,154 @@ static void set_style (Mrg *mrg, const char *sequence)
   }
 }
 
-static void reverse_scroll (Mrg *mrg, const char *sequence)
+static void vtcmd_reverse_scroll (Vt100 *vt100, const char *sequence)
 {
-  fprintf (stderr, "%s NYI\n", __FUNCTION__);
+  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
 }
 
-static void forward_scroll (Mrg *mrg, const char *sequence)
+static void vtcmd_forward_scroll (Vt100 *vt100, const char *sequence)
 {
-  fprintf (stderr, "%s NYI\n", __FUNCTION__);
+  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
 }
 
-static void ignore (Mrg *mrg, const char *sequence)
-{
-}
-
-static void clear_all_tabs (Mrg *mrg, const char *sequence)
+static void vtcmd_ignore (Vt100 *vt100, const char *sequence)
 {
 }
 
-static void set_tab_at_current_column (Mrg *mrg, const char *sequence)
+static void vtcmd_clear_all_tabs (Vt100 *vt100, const char *sequence)
 {
+  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
 }
 
-static void cursor_position_report (Mrg *mrg, const char *sequence)
+static void vtcmd_set_tab_at_current_column (Vt100 *vt100, const char *sequence)
+{
+  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
+}
+
+static void vtcmd_cursor_position_report (Vt100 *vt100, const char *sequence)
 {
   char buf[64];
-  sprintf (buf, "\033[%i;%iR", cursor_y, cursor_x);
-  write (pty, buf, strlen(buf));
+  sprintf (buf, "\033[%i;%iR", vt100->cursor_y, vt100->cursor_x);
+  write (vt100->pty, buf, strlen(buf));
 }
 
-static void status_report (Mrg *mrg, const char *sequence)
+static void vtcmd_status_report (Vt100 *vt100, const char *sequence)
 {
   char buf[64];
   sprintf (buf, "\033[0n"); // we're always OK :)
-  write (pty, buf, strlen(buf));
+  write (vt100->pty, buf, strlen(buf));
 }
 
-static void identify (Mrg *mrg, const char *sequence)
+static void vtcmd_identify (Vt100 *vt100, const char *sequence)
 {
   char *buf = "\033[?6c";          // identify as vt102
-  write (pty, buf, strlen(buf));
+  write (vt100->pty, buf, strlen(buf));
 }
 
-static void clear_current_tab (Mrg *mrg, const char *sequence)
+static void vtcmd_clear_current_tab (Vt100 *vt100, const char *sequence)
 {
 }
 
-static void enable_line_wrap (Mrg *mrg, const char *sequence)
+static void vtcmd_enable_line_wrap (Vt100 *vt100, const char *sequence)
 {
-  line_wrap = 1;
+  vt100->line_wrap = 1;
 }
 
-static void disable_line_wrap (Mrg *mrg, const char *sequence)
+static void vtcmd_disable_line_wrap (Vt100 *vt100, const char *sequence)
 {
-  line_wrap = 0;
+  vt100->line_wrap = 0;
 }
 
-
-static void show_cursor (Mrg *mrg, const char *sequence)
+static void vtcmd_show_cursor (Vt100 *vt100, const char *sequence)
 {
-  cursor_visible = 1;
+  vt100->cursor_visible = 1;
 }
 
-static void hide_cursor (Mrg *mrg, const char *sequence)
+static void vtcmd_hide_cursor (Vt100 *vt100, const char *sequence)
 {
-  cursor_visible = 0;
+  vt100->cursor_visible = 0;
 }
 
-static void save_cursor_position (Mrg *mrg, const char *sequence)
+static void vtcmd_save_cursor_position (Vt100 *vt100, const char *sequence)
 {
-  saved_x = cursor_x;
-  saved_y = cursor_y;
+  vt100->saved_x = vt100->cursor_x;
+  vt100->saved_y = vt100->cursor_y;
 }
 
-static void restore_cursor_position (Mrg *mrg, const char *sequence)
+static void vtcmd_restore_cursor_position (Vt100 *vt100, const char *sequence)
 {
-  move_to (mrg, saved_x, saved_y);
+  _vt100_move_to (vt100, vt100->saved_x, vt100->saved_y);
 }
 
-static void insert_n_tabs (Mrg *mrg, const char *sequence)
+static void vtcmd_insert_n_tabs (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
   
   while (n--)
   {
     do {
-      add_byte (mrg, ' ');
-    } while ( ((buffer->length) % 8));
+      _vt100_add_byte (vt100, ' ');
+    } while ( ((vt100->buffer->length) % 8));
   }
 }
 
-static void insert_blanks (Mrg *mrg, const char *sequence)
+static void vtcmd_insert_blanks (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
   while (n--)
-    add_byte (mrg, ' ');
+    _vt100_add_byte (vt100, ' ');
 }
 
-static void insert_blank_lines (Mrg *mrg, const char *sequence)
+static void vtcmd_insert_blank_lines (Vt100 *vt100, const char *sequence)
 {
   int n = parse_int (sequence, 1);
   while (n--)
   {
-    if (lines->data == buffer)
+    if (vt100->lines->data == vt100->buffer)
     {
-      mrg_list_prepend (&lines, mrg_string_new (""));
-      buffer = lines->data;
+      mrg_list_prepend (&vt100->lines, mrg_string_new (""));
+      vt100->buffer = vt100->lines->data;
     }
-    cursor_y ++;
+    vt100->cursor_y ++;
   }
-  move_to (mrg, cursor_y, 1); // XXX: the 1 should depend on a mode
+  _vt100_move_to (vt100, vt100->cursor_y, 1); // XXX: the 1 should depend on a mode
 }
 
-/* XXX: the sequnece matching is overkill,.. since the suffix is always 0 or 1
- * chars..
- */
-
 Sequence sequences[]={
-  {"[6n",  "",   cursor_position_report},
-  {"[5n",  "",   status_report},
-  {"[0g",  "",   clear_current_tab},
-  {"[3g",  "",   clear_all_tabs},
-  {"H" ,   "",   set_tab_at_current_column},
-  {"Z" ,   "",   identify},
-  {"[",    "f",  move_cursor},
-  {"[",    "r",  set_scroll_margins},
-  {"[",    "A",  move_cursor_up},
-  {"[",    "B",  move_cursor_down},
-  {"[",    "e",  move_cursor_down},
-  {"[",    "C",  move_cursor_right},
-  {"[",    "a",  move_cursor_right},
-  {"[",    "D",  move_cursor_left},
-  {"[",    "E",  move_cursor_down_and_first_col},
-  {"[",    "F",  move_cursor_up_and_first_col},
-  {"[",    "G",  goto_column},
-  {"[",    "`",  goto_column},
-  {"[",    "H",  move_cursor},
-  {"[",    "I",  insert_n_tabs},
-  {"[",    "J",  clear_lines},
-  {"[",    "K",  clear_line},
-  {"[",    "L",  insert_blank_lines},
-  {"[",    "@",  insert_blanks},
-  {"[",    "d",  goto_row},
-  {"[s",   "",   save_cursor_position},
-  {"7",    "",   save_cursor_position}, // ( + attr )
-  {"[r",   "",   restore_cursor_position},
-  {"8",    "",   restore_cursor_position}, // ( + attr )
+/*
+  The suffix is always 0 or 1 chars, and could be replaced with a char instead of a string - as an optimization.
+
+  Legend:
+  prefix   suffix command */
+  {"[6n",  "",    vtcmd_cursor_position_report},
+  {"[5n",  "",    vtcmd_status_report},
+  {"[0g",  "",    vtcmd_clear_current_tab},
+  {"[3g",  "",    vtcmd_clear_all_tabs},
+  {"H" ,   "",    vtcmd_set_tab_at_current_column},
+  {"Z" ,   "",    vtcmd_identify},
+  {"[",    "f",   vtcmd_move_cursor},
+  {"[",    "r",   vtcmd_set_scroll_margins},
+  {"[",    "A",   vtcmd_move_cursor_up},
+  {"[",    "B",   vtcmd_move_cursor_down},
+  {"[",    "e",   vtcmd_move_cursor_down},
+  {"[",    "C",   vtcmd_move_cursor_right},
+  {"[",    "a",   vtcmd_move_cursor_right},
+  {"[",    "D",   vtcmd_move_cursor_left},
+  {"[",    "E",   vtcmd_move_cursor_down_and_first_col},
+  {"[",    "F",   vtcmd_move_cursor_up_and_first_col},
+  {"[",    "G",   vtcmd_goto_column},
+  {"[",    "`",   vtcmd_goto_column},
+  {"[",    "H",   vtcmd_move_cursor},
+  {"[",    "I",   vtcmd_insert_n_tabs},
+  {"[",    "J",   vtcmd_clear_lines},
+  {"[",    "K",   vtcmd_clear_line},
+  {"[",    "L",   vtcmd_insert_blank_lines},
+  {"[",    "@",   vtcmd_insert_blanks},
+  {"[",    "d",   vtcmd_goto_row},
+  {"[s",   "",    vtcmd_save_cursor_position},
+  {"7",    "",    vtcmd_save_cursor_position}, // ( + attr )
+  {"[r",   "",    vtcmd_restore_cursor_position},
+  {"8",    "",    vtcmd_restore_cursor_position}, // ( + attr )
 
   /*  [ S - scroll N lines up
    *  [ T - scroll N lines down
@@ -592,23 +629,23 @@ Sequence sequences[]={
    *  S scroll up P lines (xterm)
    */
 
-  {"[",     "m", set_style},
-  {"M",     "",  reverse_scroll},
-  {"D",     "",  forward_scroll},
-  {"=",     "",  ignore}, // keypad mode change
-  {">",     "",  ignore}, // keypad mode change
-  {"c",     "",  (void*)reset_device},
-  {"!p",    "",  (void*)reset_device},
-  {"[?1h",  "",  set_cursor_key_to_application},
-  {"[?1l",  "",  set_cursor_key_to_cursor},
-  {"[?25h", "", show_cursor},
-  {"[?25l", "", hide_cursor},
-  {"[7h",   "",  enable_line_wrap},
-  {"[7l",   "",  disable_line_wrap},
+  {"[",     "m", vtcmd_set_style},
+  {"M",     "",  vtcmd_reverse_scroll},
+  {"D",     "",  vtcmd_forward_scroll},
+  {"=",     "",  vtcmd_ignore}, // keypad mode change
+  {">",     "",  vtcmd_ignore}, // keypad mode change
+  {"c",     "",  vtcmd_reset_device},
+  {"!p",    "",  vtcmd_reset_device},
+  {"[?1h",  "",  vtcmd_set_cursor_key_to_application},
+  {"[?1l",  "",  vtcmd_set_cursor_key_to_cursor},
+  {"[?25h", "",  vtcmd_show_cursor},
+  {"[?25l", "",  vtcmd_hide_cursor},
+  {"[7h",   "",  vtcmd_enable_line_wrap},
+  {"[7l",   "",  vtcmd_disable_line_wrap},
   {NULL, NULL, NULL}
 };
 
-static void handle_sequence (Mrg *mrg, const char *sequence)
+static void handle_sequence (Vt100 *vt100, const char *sequence)
 {
   int i;
   for (i = 0; sequences[i].prefix; i++)
@@ -630,7 +667,7 @@ static void handle_sequence (Mrg *mrg, const char *sequence)
         mismatch = 1;
       if (!mismatch)
       {
-        sequences[i].handler (mrg, sequence);
+        sequences[i].vtcmd (vt100, sequence);
         return;
       }
     }
@@ -639,17 +676,17 @@ static void handle_sequence (Mrg *mrg, const char *sequence)
 }
 
 typedef enum {
-  TERMINAL_STATE_NEUTRAL = 0,
-  TERMINAL_STATE_GOT_ESC = 1,
+  TERMINAL_STATE_NEUTRAL          = 0,
+  TERMINAL_STATE_GOT_ESC          = 1,
   TERMINAL_STATE_GOT_ESC_SQLPAREN = 2,
   TERMINAL_STATE_GOT_ESC_SQRPAREN = 3,
 } TerminalState;
 
-static void bell (Mrg *mrg)
+static void vt100_bell (Vt100 *vt100)
 {
 }
 
-static void feed_byte (Mrg *mrg, int byte)
+static void vt100_feed_byte (Vt100 *vt100, int byte)
 {
   static TerminalState state = TERMINAL_STATE_NEUTRAL;
   switch (state)
@@ -665,25 +702,25 @@ static void feed_byte (Mrg *mrg, int byte)
         case 5:    /* ENQuiry */
         case 6:    /* ACKnolwedge */
           break;
-        case '\a': /* BELl */ bell (mrg); break;
-        case '\b': /* BS */ backspace (mrg); break;
+        case '\a': /* BELl */ vt100_bell (vt100); break;
+        case '\b': /* BS */   _vt100_backspace (vt100); break;
         case '\t': /* HT tab */
           do {
-            add_byte (mrg, ' ');
-          } while ( ((buffer->length) % 8));
+            _vt100_add_byte (vt100, ' ');
+          } while ( ((vt100->buffer->length) % 8));
           break;
         case '\n': /* LF line ffed */
         case '\v': /* VT vertical tab */
         case '\f': /* VF form feed */
-          if (lines->data == buffer)
+          if (vt100->lines->data == vt100->buffer)
           {
-            mrg_list_prepend (&lines, mrg_string_new (""));
-            buffer = lines->data;
+            mrg_list_prepend (&vt100->lines, mrg_string_new (""));
+            vt100->buffer = vt100->lines->data;
           }
-          move_to (mrg, cursor_y + 1, 1); // XXX the col should depend on mode
+          _vt100_move_to (vt100, vt100->cursor_y + 1, 1); // XXX the col should depend on mode
           break;
         case '\r': /* CR carriage return */
-          move_to (mrg, cursor_y, 1); 
+          _vt100_move_to (vt100, vt100->cursor_y, 1); 
           break;
         case 14: /* SO shift in */
         case 15: /* SI shift out */
@@ -708,68 +745,69 @@ static void feed_byte (Mrg *mrg, int byte)
         case 31: /* US unit separator */
           break;
         default:
-          add_byte (mrg, byte);
+          _vt100_add_byte (vt100, byte);
           break;
       }
       break;
     case TERMINAL_STATE_GOT_ESC:
       if (byte == '[')
       {
-        argument_buf_reset("[");
+        vt100_argument_buf_reset(vt100, "[");
         state = TERMINAL_STATE_GOT_ESC_SQLPAREN;
       }
       else if (byte == ']')
       {
-        argument_buf_reset("]");
+        vt100_argument_buf_reset(vt100, "]");
         state = TERMINAL_STATE_GOT_ESC_SQRPAREN;
       }
       else
       {
         char tmp[3]=" ";
         tmp[0]=byte;
-        handle_sequence (mrg, tmp);
+        handle_sequence (vt100, tmp);
         state= TERMINAL_STATE_NEUTRAL;
       }
       break;
     case TERMINAL_STATE_GOT_ESC_SQLPAREN:
       if (byte >= '@' && byte <= '~')
       {
-        argument_buf_add (byte);
-        handle_sequence (mrg, argument_buf);
+        vt100_argument_buf_add (vt100, byte);
+        handle_sequence (vt100, vt100->argument_buf);
         state=0;
       }
       else
       {
-        argument_buf_add (byte);
+        vt100_argument_buf_add (vt100, byte);
       }
       break;
     case TERMINAL_STATE_GOT_ESC_SQRPAREN:
       if (byte == '\a')
       {
-        mrg_set_title (mrg, argument_buf + 3);
+        if (vt100->user_data)
+        {
+          mrg_set_title (vt100->user_data, vt100->argument_buf + 3);
+        }
         // XXX: use handle sequence here as well,.. for consistency
         state= TERMINAL_STATE_NEUTRAL;
       }
       else
       {
-        argument_buf_add (byte);
+        vt100_argument_buf_add (vt100, byte);
       }
       break;
   }
 }
 
-/* */
-
-static int pty_poll (Mrg *mrg, void *data)
+static void vt100_poll (Vt100 *vt100)
 {
   char buf[256];
-  int len = read(pty, buf, sizeof (buf));
+  int len = read(vt100->pty, buf, sizeof (buf));
   if (len > 0)
   {
     int i;
     for (i = 0; i < len; i++)
-      feed_byte (mrg, buf[i]);
-    pty_poll (mrg, NULL);
+      vt100_feed_byte (vt100, buf[i]);
+    vt100_poll (vt100);
   }
   else
   {
@@ -777,23 +815,21 @@ static int pty_poll (Mrg *mrg, void *data)
                             a (given the buf size, large) rate limit on the
                             terminal */
   }
-  if (cursor_y > rows)
-    cursor_y = rows;
+  if (vt100->cursor_y > vt100->rows)
+    vt100->cursor_y = vt100->rows;
+}
 
+/******/
+
+static int mrg_pty_poll (Mrg *mrg, void *data)
+{
+  vt100_poll (data);
   return 1;
 }
 
-static void event_handler (MrgEvent *event, void *data1, void *data2)
+static void vt100_feed_keystring (Vt100 *vt100, const char *str)
 {
-  const char *str = event->key_name;
-
-  if (!str)
-  {
-    mrg_event_stop_propagate (event);
-    return;
-  }
-
-  if (cursor_key_application)
+  if (vt100->cursor_key_application)
   {
     if (!strcmp (str, "up"))         { str = "\033OA"; goto done; }
     else if (!strcmp (str, "down"))  { str = "\033OB"; goto done; }
@@ -874,23 +910,89 @@ static void event_handler (MrgEvent *event, void *data1, void *data2)
   else if (!strcmp (str, "F10"))       str = "\033[21~";
   else if (!strcmp (str, "F11"))       str = "\033[22~";
   else if (!strcmp (str, "F12"))       str = "\033[23~";
-  else if (!strcmp (str, "resize-event")) {
-    Mrg *mrg = event->mrg;
-    str = "";
-
-    set_term_size (mrg, (int)(mrg_width (mrg) / cell_width)-2, (int)(mrg_height (mrg) / cell_height)-1);
-    trimlines (rows);
-  }
 
 done:
   if (strlen (str))
-    write (pty, str, strlen (str));
+    write (vt100->pty, str, strlen (str));
+}
+
+static const char *vt100_find_shell_command (Vt100 *vt100)
+{
+  int i;
+  const char *command = NULL;
+  struct stat stat_buf;
+  static char *alts[][2] ={
+    {"/bin/bash",     "/bin/bash -i"},
+    {"/usr/bin/bash", "/usr/bin/bash -i"},
+    {"/bin/sh",       "/bin/sh -i"},
+    {"/usr/bin/sh",   "/usr/bin/sh -i"},
+    {NULL, NULL}
+  };
+  for (i = 0; alts[i][0] && !command; i++)
+  {
+    lstat (alts[i][0], &stat_buf);
+    if (S_ISREG(stat_buf.st_mode) || S_ISLNK(stat_buf.st_mode))
+      command = alts[i][1];
+  }
+  return command;
+}
+
+static void vt100_run_command (Vt100 *vt100, const char *command)
+{
+  vt100->pid = forkpty (&vt100->pty, NULL, NULL, NULL);
+  if (vt100->pid == 0)
+  {
+    unsetenv ("TERM");
+    unsetenv ("COLUMNS");
+    unsetenv ("LINES");
+    unsetenv ("TERMCAP");
+    unsetenv ("COLOR_TERM");
+    setenv ("TERM", "vt100", 1);
+    system (command);
+  }
+  else if (vt100->pid < 0)
+  {
+    fprintf (stderr, "forkpty failed (%s)\n", command);
+  }
+  fcntl(vt100->pty, F_SETFL, O_NONBLOCK);
+}
+
+const char *vt100_get_commandline (Vt100 *vt100)
+{
+  return vt100->commandline;
+}
+
+/**************************/
+
+static void event_handler (MrgEvent *event, void *data1, void *data2)
+{
+  Vt100 *vt100 = data1;
+  const char *str = event->key_name;
+
+  if (!str)
+  {
+    mrg_event_stop_propagate (event);
+    return;
+  }
+
+  if (!strcmp (str, "resize-event")) {
+    Mrg *mrg = event->mrg;
+    str = "";
+
+    vt100_set_term_size (vt100, (int)(mrg_width (mrg) / vt100->cell_width)-2, (int)(mrg_height (mrg) / vt100->cell_height)-1);
+    vt100_trimlines (vt100, vt100->rows);
+  }
+  else vt100_feed_keystring (vt100, str);
 
   mrg_event_stop_propagate (event);
 }
 
-static void render_ui (Mrg *mrg, void *data)
+static Mrg *mrg_tmp;
+
+static void render_vt100 (Mrg *mrg, void *vt100_data)
 {
+  Vt100 *vt100 = vt100_data;
+  mrg_tmp = mrg;
   mrg_set_edge_left (mrg, mrg_em (mrg));
   mrg_set_edge_right (mrg, mrg_em (mrg));
   mrg_set_edge_top (mrg, mrg_em (mrg));
@@ -907,17 +1009,14 @@ static void render_ui (Mrg *mrg, void *data)
   {
     MrgList *l;
     float y = mrg_height (mrg) - mrg_em (mrg);  /* XXX: strip down to grid with no scrollback */
-    float x = mrg_em (mrg); /* ... and remove this logic */
+    float x = mrg_em (mrg); /* ... and remove this logic? */
     int no = 1;
 
-    if (mrg_list_length (lines) < rows)
-      y -= mrg_em(mrg) * 1.33 * (rows-mrg_list_length (lines));
-
-    for (l = lines; l; l = l->next, no++)
+    for (l = vt100->lines; l && y > -64.0; l = l->next, no++)
     {
       mrg_set_xy (mrg, x, y);
       mrg_print (mrg, ((MrgString*)(l->data))->str);
-      y -= mrg_em (mrg) * 1.33;
+      y -= mrg_em (mrg) * vt100->line_spacing;
     }
   }
 
@@ -930,107 +1029,57 @@ static void render_ui (Mrg *mrg, void *data)
     mrg_print (mrg, " ");
     cw = mrg_x (mrg) - cw;
 
-    cell_width = cw;
-    cell_height = em * 1.33;
+    vt100->cell_width = cw;
+    vt100->cell_height = em * vt100->line_spacing;
 
     cy = mrg_height (mrg) - em;
-    cy -= (rows - cursor_y + 1) * cell_height;
+    cy -= (vt100->rows - vt100->cursor_y + 1) * vt100->cell_height;
     mrg_end (mrg);
 
     mrg_start (mrg, "cursor", NULL);
     cairo_rectangle (mrg_cr (mrg),
-              (cursor_x-1) * cw + em,
+              (vt100->cursor_x-1) * cw + em,
               cy,
               cw,
-              1.33 * em);
+              vt100->line_spacing * em);
     cairo_set_source_rgba (cr, 0.0, 1.0, 0.0, 0.15);
     cairo_fill (cr);
     cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.5);
     cairo_set_line_width (cr, 1.0);
     cairo_translate (cr, 0.5, 0.5);
     cairo_rectangle (mrg_cr (mrg),
-              (cursor_x-1) * cw + em,
+              (vt100->cursor_x-1) * cw + em,
               cy,
               cw,
-              1.33 * em);
+              vt100->line_spacing * em);
     cairo_stroke (cr);
     mrg_end (mrg);
   }
 
   mrg_add_binding (mrg, "control-q", NULL, NULL, mrg_quit_cb, NULL);
-  mrg_listen (mrg, MRG_KEY_DOWN, event_handler, NULL, NULL);
+  mrg_listen (mrg, MRG_KEY_DOWN, event_handler, vt100, NULL);
 }
 
 void
 signal_child (int a) {
-  exit (0); /* XXX: make it less brutal */
+  if (mrg_tmp)
+    mrg_quit (mrg_tmp);
+  exit (0); /* XXX: make it less brutal? */
 }
+
 
 int terminal_main (int argc, char **argv)
 {
-  Mrg *mrg = mrg_new ((cols+1) * fontsize * 0.65, (rows+1) * fontsize * 1.33, NULL);
+  Mrg *mrg;
+  mrg = mrg_new ((DEFAULT_COLS+1) * DEFAULT_FONT_SIZE * 0.65,
+                 (DEFAULT_ROWS+1) * DEFAULT_FONT_SIZE * DEFAULT_LINE_SPACING, NULL);
 
-  reset_device (mrg);
-
-  mrg_set_ui (mrg, render_ui, NULL);
-  char *command;
-  struct stat stat_buf;
-
-  command = argv[1];
-  {
-    int i;
-    static char *alts[][2] ={
-      {"/bin/bash",     "/bin/bash -i"},
-      {"/usr/bin/bash", "/usr/bin/bash -i"},
-      {"/bin/sh",       "/bin/sh -i"},
-      {"/usr/bin/sh",   "/usr/bin/sh -i"},
-      {NULL, NULL}
-    };
-    for (i = 0; alts[i][0] && !command; i++)
-    {
-      lstat (alts[i][0], &stat_buf);
-      if (S_ISREG(stat_buf.st_mode) || S_ISLNK(stat_buf.st_mode))
-        command = alts[i][1];
-    }
-  }
-
-  /* XXX, command should be arg of -e ..., why not handle some more rxvt/xterm
-   * like args?
-   */
-  mrg_set_title (mrg, command);
-
-  pid = forkpty (&pty, NULL, NULL, NULL);
-
-  if (pid == 0)
-  {
-    unsetenv ("COLUMNS");
-    unsetenv ("LINES");
-    unsetenv ("TERMCAP");
-    unsetenv ("COLOR_TERM");
-    setenv ("TERM", "vt100", 1);
-#if 0
-    if (execlp(command, command, NULL))
-    {
-      fprintf (stderr, "failed to start shell\n");
-      exit(-1);
-    }
-#else
-    system(command);
-#endif
-  }
-  else if (pid < 0)
-  {
-    fprintf (stderr, "forkpty failed (%m)\n");
-    return -1;
-  }
-
-  sleep (1);
   signal (SIGCHLD, signal_child);
-  fcntl(pty, F_SETFL, O_NONBLOCK);
-  set_term_size (mrg, cols, rows);
-  mrg_add_idle (mrg, pty_poll, NULL);
-  reset_device (mrg);
-
+  Vt100 *vt100 = vt100_new (argv[1]?argv[1]:vt100_find_shell_command(NULL));
+  vt100->user_data = mrg;
+  mrg_set_ui (mrg, render_vt100, vt100);
+  mrg_add_idle (mrg, mrg_pty_poll, vt100);
+  mrg_set_title (mrg, vt100_get_commandline (vt100));
   mrg_main (mrg);
   mrg_destroy (mrg);
   return 0;
