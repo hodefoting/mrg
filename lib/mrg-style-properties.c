@@ -465,28 +465,28 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       switch (n_vals)
       {
         case 1:
-          s->margin_top = vals[0];
+          s->margin_top    = vals[0];
           s->margin_right  = vals[0];
           s->margin_bottom = vals[0];
-          s->margin_left = vals[0];
+          s->margin_left   = vals[0];
           break;
         case 2:
-          s->margin_top = vals[0];
+          s->margin_top    = vals[0];
           s->margin_right  = vals[1];
           s->margin_bottom = vals[0];
-          s->margin_left = vals[1];
+          s->margin_left   = vals[1];
           break;
         case 3:
-          s->margin_top = vals[0];
+          s->margin_top    = vals[0];
           s->margin_right  = vals[1];
           s->margin_bottom = vals[2];
-          s->margin_left = vals[1];
+          s->margin_left   = vals[1];
           break;
         case 4:
-          s->margin_top = vals[0];
+          s->margin_top    = vals[0];
           s->margin_right  = vals[1];
           s->margin_bottom = vals[2];
-          s->margin_left = vals[3];
+          s->margin_left   = vals[3];
           break;
       }
     }
@@ -535,28 +535,28 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       switch (n_vals)
       {
         case 1:
-          s->padding_top = vals[0];
+          s->padding_top    = vals[0];
           s->padding_right  = vals[0];
           s->padding_bottom = vals[0];
-          s->padding_left = vals[0];
+          s->padding_left   = vals[0];
           break;
         case 2:
-          s->padding_top = vals[0];
+          s->padding_top    = vals[0];
           s->padding_right  = vals[1];
           s->padding_bottom = vals[0];
-          s->padding_left = vals[1];
+          s->padding_left   = vals[1];
           break;
         case 3:
-          s->padding_top = vals[0];
+          s->padding_top    = vals[0];
           s->padding_right  = vals[1];
           s->padding_bottom = vals[2];
-          s->padding_left = vals[1];
+          s->padding_left   = vals[1];
           break;
         case 4:
-          s->padding_top = vals[0];
+          s->padding_top    = vals[0];
           s->padding_right  = vals[1];
           s->padding_bottom = vals[2];
-          s->padding_left = vals[3];
+          s->padding_left   = vals[3];
           break;
       }
     }
