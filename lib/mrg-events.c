@@ -773,7 +773,6 @@ int mrg_pointer_release (Mrg *mrg, float x, float y, int device_no, uint32_t tim
               (event->start_y - y) * (event->start_y - y)) < mrg->tap_hysteresis
             )
         {
-            fprintf (stderr, "TAPTATP!\n");
           _mrg_emit_cb_item (mrg, grab->item, event, MRG_TAP, x, y);
         }
       }

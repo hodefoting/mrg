@@ -483,12 +483,10 @@ static void vtcmd_ignore (Vt100 *vt100, const char *sequence)
 
 static void vtcmd_clear_all_tabs (Vt100 *vt100, const char *sequence)
 {
-  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
 }
 
 static void vtcmd_set_tab_at_current_column (Vt100 *vt100, const char *sequence)
 {
-  fprintf (stderr, "%s NYI %s\n", __FUNCTION__, sequence);
 }
 
 static void vtcmd_cursor_position_report (Vt100 *vt100, const char *sequence)
