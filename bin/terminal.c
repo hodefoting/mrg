@@ -27,8 +27,8 @@
 /* TODO: 
  *   font size changes
  *   utf8 handling (make more use of mrgstring api)
- *   color
  *   bold/reverse video 
+ *   color
  *   scrollback
  */
 
@@ -54,11 +54,12 @@ struct _Vt100 {
   MrgString *buffer;
   int        cursor_x;
   int        cursor_y;
-  int        cursor_visible;
   double     font_size;
   double     line_spacing;
   float      cell_width;
   float      cell_height;
+
+  int        cursor_visible;
   int        saved_x;
   int        saved_y;
   int        cols;
@@ -960,7 +961,7 @@ const char *vt100_get_commandline (Vt100 *vt100)
   return vt100->commandline;
 }
 
-/**************************/
+/***********************************************************************/
 
 static void event_handler (MrgEvent *event, void *data1, void *data2)
 {
@@ -1038,8 +1039,9 @@ static void render_vt100 (Mrg *mrg, void *vt100_data)
     cairo_rectangle (mrg_cr (mrg),
               (vt100->cursor_x-1) * cw + em,
               cy,
-              cw,
-              vt100->line_spacing * em);
+              vt100->cell_width,
+              vt100->cell_height);
+
     cairo_set_source_rgba (cr, 0.0, 1.0, 0.0, 0.15);
     cairo_fill (cr);
     cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.5);

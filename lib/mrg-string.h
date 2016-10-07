@@ -18,6 +18,8 @@
 #ifndef MRG_STRING_H
 #define MRG_STRING_H
 
+#include "mrg-utf8.h"
+
 typedef struct _MrgString MrgString;
 
 struct _MrgString
@@ -28,24 +30,19 @@ struct _MrgString
 }  __attribute((packed));
 
 MrgString   *mrg_string_new            (const char *initial);
-void         mrg_string_free           (MrgString *string, int freealloc);
-char        *mrg_string_dissolve       (MrgString *string);
-const char  *mrg_string_get            (MrgString *string);
-int          mrg_string_get_length     (MrgString *string);
-void         mrg_string_set            (MrgString *string, const char *new_string);
-void         mrg_string_clear          (MrgString *string);
-void         mrg_string_append_str     (MrgString *string, const char *str);
-void         mrg_string_append_byte    (MrgString *string, char  val);
-void         mrg_string_append_string  (MrgString *string, MrgString *string2);
-void         mrg_string_append_unichar (MrgString *string, unsigned int unichar);
-void         mrg_string_append_data    (MrgString *string, const char *data, int len);
-void         mrg_string_append_printf  (MrgString *string, const char *format, ...);
+void         mrg_string_free           (MrgString  *string, int freealloc);
+char        *mrg_string_dissolve       (MrgString  *string);
+const char  *mrg_string_get            (MrgString  *string);
+int          mrg_string_get_length     (MrgString  *string);
+void         mrg_string_set            (MrgString  *string, const char *new_string);
+void         mrg_string_clear          (MrgString  *string);
+void         mrg_string_append_str     (MrgString  *string, const char *str);
+void         mrg_string_append_byte    (MrgString  *string, char  val);
+void         mrg_string_append_string  (MrgString  *string, MrgString *string2);
+void         mrg_string_append_unichar (MrgString  *string, unsigned int unichar);
+void         mrg_string_append_data    (MrgString  *string, const char *data, int len);
+void         mrg_string_append_printf  (MrgString  *string, const char *format, ...);
 
-int          mrg_utf8_len          (const unsigned char first_byte);
-int          mrg_utf8_strlen       (const char *s);
-const char  *mrg_utf8_skip         (const char *string, int utf8_length);
-int          mrg_unichar_to_utf8   (unsigned int ch,
-                                    unsigned char*dest);
 
 #ifndef TRUE
 #define TRUE 1

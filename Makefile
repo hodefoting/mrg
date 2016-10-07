@@ -19,6 +19,7 @@ lib/mrg-text.h \
 lib/mrg-list.h \
 lib/mrg-audio.h \
 lib/mrg-string.h \
+lib/mrg-utf8.h \
 lib/mrg-host.h \
 lib/mrg-util.h
 

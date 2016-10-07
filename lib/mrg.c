@@ -259,16 +259,15 @@ _mrg_rectangle_combine_bounds (MrgRectangle       *rect_dest,
     rect_dest->width += (rect_dest->x - rect_other->x);
     rect_dest->x = rect_other->x;
   }
+  else if (rect_other->x + rect_other->width > rect_dest->x + rect_dest->width)
+  {
+    rect_dest->width = (rect_other->x + rect_other->width) - rect_dest->x;
+  }
   if (rect_other->y < rect_dest->y)
   {
     rect_dest->height += (rect_dest->y - rect_other->y);
     rect_dest->y = rect_other->y;
-  }
-  if (rect_other->x + rect_other->width > rect_dest->x + rect_dest->width)
-  {
-    rect_dest->width = (rect_other->x + rect_other->width) - rect_dest->x;
-  }
-  if (rect_other->y + rect_other->height > rect_dest->y + rect_dest->height)
+  } else if (rect_other->y + rect_other->height > rect_dest->y + rect_dest->height)
   {
     rect_dest->height = (rect_other->y + rect_other->height) - rect_dest->y;
   }
