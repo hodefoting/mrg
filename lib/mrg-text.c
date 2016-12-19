@@ -369,6 +369,7 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
     if (style->text_stroke_width > 0.01)
     {
       mrg_cairo_set_source_color (cr, &style->text_stroke_color);
+      cairo_new_path (cr);
       cairo_move_to   (cr, x, y - _mrg_text_shift (mrg));
       cairo_text_path (cr, string);
       cairo_set_line_width (cr, style->text_stroke_width);
