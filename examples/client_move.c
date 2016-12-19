@@ -60,6 +60,7 @@ static void render_ui (Mrg *mrg, void *data)
 int main (int argc, char **argv)
 {
   Mrg *mrg = mrg_new (320, 200, NULL);
+  printf ("note: this doesn't work as expected - a different style api might be needed\n");
   mrg_set_ui (mrg, render_ui, NULL);
   mrg_main (mrg);
   return 0;
