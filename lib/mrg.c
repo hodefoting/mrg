@@ -214,7 +214,9 @@ void mrg_destroy (Mrg *mrg)
 {
   if (mrg->backend->mrg_destroy)
     mrg->backend->mrg_destroy (mrg);
-  mrg_string_free (mrg->edited_str, 1);
+  if (mrg->edited_str)
+    mrg_string_free (mrg->edited_str, 1);
+  mrg->edited_str = NULL;
   free (mrg);
 }
 
@@ -439,7 +441,10 @@ void mrg_prepare (Mrg *mrg)
   if (!mrg->printing)
     frame_start = _mrg_ticks ();
 
-  mrg_string_set (mrg->edited_str, "");
+  if (mrg->edited_str == NULL)
+    mrg->edited_str = mrg_string_new ("");
+  else
+    mrg_string_set (mrg->edited_str, "");
   mrg->got_edit = 0;
   mrg_clear (mrg);
   mrg->in_paint ++;
