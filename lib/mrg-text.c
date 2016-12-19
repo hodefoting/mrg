@@ -690,7 +690,10 @@ static void emit_word (Mrg *mrg,
 
     if (mrg->x + wwidth >= _mrg_dynamic_edge_right (mrg))
     {
-      EMIT_NL2();
+      if (mrg->x > mrg_edge_left(mrg) || *wraps != 0)
+      {
+        EMIT_NL2();
+      }
     }
 
     if (mrg->x != mrg_edge_left(mrg) && gotspace)
@@ -771,6 +774,7 @@ static void emit_word (Mrg *mrg,
     }
     *pos += len;
     *wl = 0;
+
 }
 
 static int mrg_print_wrap (Mrg        *mrg,
@@ -863,7 +867,7 @@ static int mrg_print_wrap (Mrg        *mrg,
                     }
                   else
                     {
-                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, "-", -1);
+                      mrg->x+=mrg_addstr (mrg, mrg->x, mrg->y, " ", -1);
                     }
                 }
             }
