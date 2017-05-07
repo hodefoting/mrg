@@ -107,26 +107,7 @@ static void restore_path (cairo_t *cr, cairo_path_t *path)
   int i;
   cairo_path_data_t *data;
   cairo_new_path (cr);
-  for (i = 0; i <path->num_data; i += path->data[i].header.length)
-  {
-    data = &path->data[i];
-    switch (data->header.type) {
-      case CAIRO_PATH_MOVE_TO:
-        cairo_move_to (cr, data[1].point.x, data[1].point.y);
-        break;
-      case CAIRO_PATH_LINE_TO:
-        cairo_line_to (cr, data[1].point.x, data[1].point.y);
-        break;
-      case CAIRO_PATH_CURVE_TO:
-        cairo_curve_to (cr, data[1].point.x, data[1].point.y,
-                            data[2].point.x, data[2].point.y,
-                            data[3].point.x, data[3].point.y);
-        break;
-      case CAIRO_PATH_CLOSE_PATH:
-        cairo_close_path (cr);
-        break;
-    }
-  }
+  cairo_append_path (cr, path);
 }
 
 /* using bigger primes would be a good idea, this falls apart due to rounding
@@ -137,6 +118,8 @@ static double path_hash (cairo_path_t *path)
   int i;
   double ret = 0;
   cairo_path_data_t *data;
+  if (!path)
+    return 0.99999;
   for (i = 0; i <path->num_data; i += path->data[i].header.length)
   {
     data = &path->data[i];
@@ -182,6 +165,9 @@ path_equal (cairo_path_t *path,
   int i;
   cairo_path_data_t *data;
   cairo_path_data_t *data2;
+
+  if (!path || !path2)
+    return 0;
 
   if (path->num_data != path2->num_data)
     return 0;
