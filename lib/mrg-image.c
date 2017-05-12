@@ -93,7 +93,7 @@ MrgImage *mrg_query_image (Mrg *mrg,
   }
   trim_cache ();
   {
-#if 0
+#if 1
     if (strstr (path, "png") || strstr (path, "PNG"))
     {
       /* use cairo and thus the full libpng for decoding PNG images
