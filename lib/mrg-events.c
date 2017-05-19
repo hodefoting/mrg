@@ -104,8 +104,8 @@ void mrg_clear (Mrg *mrg)
 
 static void restore_path (cairo_t *cr, cairo_path_t *path)
 {
-  int i;
-  cairo_path_data_t *data;
+  //int i;
+  //cairo_path_data_t *data;
   cairo_new_path (cr);
   cairo_append_path (cr, path);
 }
@@ -676,7 +676,7 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
   
   event.mrg = mrg;
   event.time = time;
-  event.key_name = "resize-event"; /* gets delivered to clients as a key_down event 
+  event.string = "resize-event"; /* gets delivered to clients as a key_down event 
    */
 
   if (item)
@@ -892,7 +892,7 @@ void mrg_incoming_message (Mrg *mrg, const char *message, long time)
     event.mrg = mrg;
     event.type = MRG_MESSAGE;
     event.time = time;
-    event.key_name = message;
+    event.string = message;
 
     fprintf (stderr, "{%s|\n", message);
 
@@ -965,7 +965,7 @@ int mrg_key_press (Mrg *mrg, unsigned int keyval,
     event.mrg = mrg;
     event.type = MRG_KEY_DOWN;
     event.unicode = keyval; 
-    event.key_name = string;
+    event.string = string;
     event.stop_propagate = 0;
     event.time = time;
 

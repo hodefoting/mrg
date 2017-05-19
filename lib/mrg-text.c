@@ -1446,16 +1446,16 @@ static void add_utf8 (Mrg *mrg, const char *string)
 
 static void cmd_unhandled (MrgEvent *event, void *data1, void *data2)
 {
-  if (!strcmp (event->key_name, "space"))
+  if (!strcmp (event->string, "space"))
   {
     add_utf8 (event->mrg, " ");
     mrg_event_stop_propagate (event);
   }
 
-  if (mrg_utf8_strlen (event->key_name) != 1)
+  if (mrg_utf8_strlen (event->string) != 1)
     return;
 
-  add_utf8 (event->mrg, event->key_name);
+  add_utf8 (event->mrg, event->string);
   mrg_event_stop_propagate (event);
 }
 

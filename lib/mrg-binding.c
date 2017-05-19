@@ -68,7 +68,7 @@ void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
   max = i-1;
 
   for (i = max; i>=0; i--)
-    if (!strcmp (mrg->bindings[i].nick, event->key_name))
+    if (!strcmp (mrg->bindings[i].nick, event->string))
     {
       if (mrg->bindings[i].cb)
       {

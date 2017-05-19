@@ -457,7 +457,7 @@ static void host_key_down_cb (MrgEvent *event, void *host_, void *data2)
   MrgHost *host = host_;
   if (host->focused && host->focused->mmm)
   {
-    mmm_add_event (host->focused->mmm, event->key_name);
+    mmm_add_event (host->focused->mmm, event->string);
     mrg_event_stop_propagate (event); // XXX? needed?
   }
 }

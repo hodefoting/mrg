@@ -109,7 +109,7 @@ static void compile_cb (MrgEvent *event, void *data1, void *data2)
 {
   FILE *fp;
   State *state = data1;
-
+  return; // XXX: shor circuits demo that maybe works somewhere?
   int max_lines = 4;
   system ("rm -f /tmp/mrg-tmp");
 
@@ -134,7 +134,6 @@ static void compile_cb (MrgEvent *event, void *data1, void *data2)
   {
     mrg_string_append_str (state->compiler_output, "popen failed");
   }
-  
   mrg_event_stop_propagate (event);
 }
 
@@ -251,7 +250,6 @@ static void gui (Mrg *mrg, void *data)
 
   {
     float x, y;
-  
     mrg_print_get_xy (mrg, state->data, mrg_get_cursor_pos (mrg), &x, &y);
 
     y += pos[1];
@@ -304,7 +302,6 @@ static void gui (Mrg *mrg, void *data)
     mrg_set_xy (mrg, mrg_width (mrg) - mrg_em (mrg) * 4, mrg_height (mrg));
     mrg_printf (mrg, "%02i:%02i", ((tv.tv_sec/60/60)%24)+1,
                                   ((tv.tv_sec/60)%60));
-        
   }
   }
 

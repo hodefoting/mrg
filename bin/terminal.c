@@ -966,7 +966,7 @@ const char *vt100_get_commandline (Vt100 *vt100)
 static void event_handler (MrgEvent *event, void *data1, void *data2)
 {
   Vt100 *vt100 = data1;
-  const char *str = event->key_name;
+  const char *str = event->string;
 
   if (!str)
   {

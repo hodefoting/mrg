@@ -269,6 +269,20 @@ static gboolean scroll_event (GtkWidget *widget, GdkEvent *event, gpointer userd
   return FALSE;
 }
 
+void
+drag_data_received (GtkWidget *widget,
+                    GdkDragContext *context,
+                    gint x,
+                    gint y,
+                    GtkSelectionData * data,
+                    guint info, guint event_time)
+{
+  fprintf (stderr, "drag received %i %i len:%i format:%i info:%i\n", x, y,
+              gtk_selection_data_get_length (data),
+              gtk_selection_data_get_format (data), info);
+
+}
+
 static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
 {
   Mrg    *mrg = userdata;
@@ -399,6 +413,12 @@ MrgBackend mrg_backend_gtk = {
   NULL
 };
 
+static GtkTargetEntry target_table[] = {
+  {"text/clip", 0, 0},
+  {"text/uri-list", 0, 1},
+};
+
+
 GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                         void *user_data)
 {
@@ -441,6 +461,16 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                     G_CALLBACK (key_press_event), mrg);
 
   g_signal_connect (mrg_gtk->drawingarea, "draw", G_CALLBACK (draw), mrg);
+
+  gtk_drag_dest_set (mrg_gtk->eventbox, GTK_DEST_DEFAULT_ALL, target_table, sizeof(target_table)/sizeof(target_table[0]),
+                                         GDK_ACTION_COPY);
+  g_signal_connect (mrg_gtk->eventbox, "drag_data_received",
+                                         G_CALLBACK (drag_data_received), NULL);
+
+  //g_signal_connect (mrg_gtk->eventbox, "drag_motion",
+                                         //G_CALLBACK (clip_drag_motion), NULL);
+
+
 
   g_timeout_add (30, idle_iteration, mrg);
 

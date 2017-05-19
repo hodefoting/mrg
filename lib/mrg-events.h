@@ -41,17 +41,20 @@ enum _MrgType {
   MRG_KEY_DOWN       = 1 << 10,
   MRG_KEY_UP         = 1 << 11,
   MRG_SCROLL         = 1 << 12,
-  MRG_MESSAGE        = 1 << 13, /* client should store state - preparing
+  MRG_MESSAGE        = 1 << 13,
+  MRG_DROP           = 1 << 14,
+
+  /* client should store state - preparing
                                  * for restart
                                  */
 
-  MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE),
+  MRG_POINTER  = (MRG_PRESS | MRG_MOTION | MRG_RELEASE | MRG_DROP),
   MRG_TAPS     = (MRG_TAP | MRG_TAP_AND_HOLD),
   MRG_CROSSING = (MRG_ENTER | MRG_LEAVE),
   MRG_DRAG     = (MRG_DRAG_PRESS | MRG_DRAG_MOTION | MRG_DRAG_RELEASE),
   MRG_KEY      = (MRG_KEY_DOWN | MRG_KEY_UP),
   MRG_MISC     = (MRG_MESSAGE),
-  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC | MRG_TAPS), 
+  MRG_ANY      = (MRG_POINTER | MRG_DRAG | MRG_CROSSING | MRG_KEY | MRG_MISC | MRG_TAPS),
 };
 
 #define MRG_CLICK   MRG_PRESS   // SHOULD HAVE MORE LOGIC
@@ -114,11 +117,13 @@ struct _MrgEvent {
 
   MrgScrollDirection scroll_direction;
 
-  /* only valid for key-events */
-  unsigned int unicode;
-  const char *key_name; /* can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */
+  unsigned int unicode; /* only valid for key-events */
+
+  const char *string;   /* as key can be "up" "down" "space" "backspace" "a" "b" "ø" etc .. */
                         /* this is also where the message is delivered for
                          * MESSAGE events
+                         *
+                         * and the data for drop events are delivered
                          */
   int stop_propagate; /* */
 };
