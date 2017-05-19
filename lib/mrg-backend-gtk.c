@@ -275,8 +275,20 @@ drag_data_received (GtkWidget *widget,
                     gint x,
                     gint y,
                     GtkSelectionData * data,
-                    guint info, guint event_time)
+                    guint info, guint event_time, gpointer userdata)
 {
+  Mrg *mrg = userdata;
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  const guchar *string;
+  gint length;
+  string = gtk_selection_data_get_data_with_length (data, &length);
+
+  mrg_pointer_drop (mrg, x + mrg_gtk->xoffset,
+           y + mrg_gtk->yoffset,
+           0,
+           event_time, (gchar*)string); // XXX: maybe remove offsets?
+
+  if (0)
   fprintf (stderr, "drag received %i %i len:%i format:%i info:%i\n", x, y,
               gtk_selection_data_get_length (data),
               gtk_selection_data_get_format (data), info);
@@ -465,7 +477,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   gtk_drag_dest_set (mrg_gtk->eventbox, GTK_DEST_DEFAULT_ALL, target_table, sizeof(target_table)/sizeof(target_table[0]),
                                          GDK_ACTION_COPY);
   g_signal_connect (mrg_gtk->eventbox, "drag_data_received",
-                                         G_CALLBACK (drag_data_received), NULL);
+                                         G_CALLBACK (drag_data_received), mrg);
 
   //g_signal_connect (mrg_gtk->eventbox, "drag_motion",
                                          //G_CALLBACK (clip_drag_motion), NULL);

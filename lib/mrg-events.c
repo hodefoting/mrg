@@ -580,6 +580,55 @@ static int tap_and_hold_fire (Mrg *mrg, void *data)
   return ret;
 }
 
+int mrg_pointer_drop (Mrg *mrg, float x, float y, int device_no, uint32_t time,
+                      char *string)
+{
+  MrgList *l;
+  MrgList *hitlist = NULL;
+
+  mrg->pointer_x[device_no] = x;
+  mrg->pointer_y[device_no] = y;
+  if (device_no <= 3)
+  {
+    mrg->pointer_x[0] = x;
+    mrg->pointer_y[0] = y;
+  }
+
+  if (device_no < 0) device_no = 0;
+  if (device_no >= MRG_MAX_DEVICES) device_no = MRG_MAX_DEVICES-1;
+  MrgEvent *event = &mrg->drag_event[device_no];
+
+  if (time == 0)
+    time = mrg_ms (mrg);
+
+  event->x = x;
+  event->y = y;
+
+  event->delta_x = event->delta_y = 0;
+
+  event->device_no = device_no;
+  event->string    = string;
+  event->time      = time;
+  event->stop_propagate = 0;
+
+  _mrg_update_item (mrg, device_no, x, y, MRG_DROP, &hitlist);
+
+  for (l = hitlist; l; l = l?l->next:NULL)
+  {
+    MrgItem *mrg_item = l->data;
+    _mrg_emit_cb_item (mrg, mrg_item, event, MRG_DROP, x, y);
+
+    if (event->stop_propagate)
+      l = NULL;
+  }
+
+  mrg_queue_draw (mrg, NULL); /* in case of style change, and more  */
+  mrg_list_free (&hitlist);
+
+  return 0;
+}
+
+
 int mrg_pointer_press (Mrg *mrg, float x, float y, int device_no, uint32_t time)
 {
   MrgList *hitlist = NULL;
@@ -676,7 +725,7 @@ void mrg_resized (Mrg *mrg, int width, int height, long time)
   
   event.mrg = mrg;
   event.time = time;
-  event.string = "resize-event"; /* gets delivered to clients as a key_down event 
+  event.string = "resize-event"; /* gets delivered to clients as a key_down event, maybe message shouldbe used instead?
    */
 
   if (item)
