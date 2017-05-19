@@ -63,14 +63,14 @@ void _mrg_init (Mrg *mrg, int width, int height)
     if (getenv ("MRG_CSS"))
       global_css_uri = getenv ("MRG_CSS");
 
-      char *contents;
-      long length;
-      mrg_get_contents (mrg, NULL, global_css_uri, &contents, &length);
-      if (contents)
-      {
-        mrg_string_set (mrg->style_global, contents);
-        free (contents);
-      }
+    char *contents;
+    long length;
+    mrg_get_contents (mrg, NULL, global_css_uri, &contents, &length);
+    if (contents)
+    {
+      mrg_string_set (mrg->style_global, contents);
+      free (contents);
+    }
   }
 
   if (getenv ("MRG_RESTARTER"))
