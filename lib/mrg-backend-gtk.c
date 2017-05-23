@@ -180,7 +180,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
   if (event->key.state & GDK_SHIFT_MASK)
   {
     char buf[128];
-    if (name && strlen(name)>3)
+    if (name && mrg_utf8_strlen(name)>1)
     sprintf (buf, "shift-%s", name);
     else
     sprintf (buf, "%c", event->key.keyval);
