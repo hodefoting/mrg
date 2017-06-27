@@ -354,12 +354,15 @@ void mrg_listen_full (Mrg     *mrg,
     {
       double tx = x;
       double ty = y;
+      double tw = width;
+      double th = height;
 
       cairo_user_to_device (cr, &tx, &ty);
+      cairo_user_to_device_distance (cr, &tw, &th);
       if (ty > mrg->height * 2 ||
           tx > mrg->width * 2 ||
-          tx + width < 0 ||
-          ty + height < 0)
+          tx + tw < 0 ||
+          ty + th < 0)
       {
         if (finalize)
           finalize (data1, data2, finalize_data);
