@@ -147,6 +147,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     case GDK_KEY_F12:       name = "F12";       break;
     case GDK_KEY_Escape:    name = "escape";    break;
     case GDK_KEY_Tab:       name = "tab";       break;
+    case GDK_KEY_ISO_Left_Tab:  name = "tab";       break;
     case GDK_KEY_Up:        name = "up";        break;
     case GDK_KEY_Down:      name = "down";      break;
     case GDK_KEY_Left:      name = "left";      break;
@@ -181,9 +182,9 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
   {
     char buf[128];
     if (name && mrg_utf8_strlen(name)>1)
-    sprintf (buf, "shift-%s", name);
+      sprintf (buf, "shift-%s", name);
     else
-    sprintf (buf, "%c", event->key.keyval);
+      sprintf (buf, "%c", event->key.keyval);
     name = g_intern_string (buf);
   }
 
