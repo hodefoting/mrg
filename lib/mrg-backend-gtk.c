@@ -47,7 +47,7 @@ static void mrg_gtk_warp_pointer (Mrg *mrg, float x, float y)
   GdkDevice  *device;
   gint ox, oy;
   gdk_window_get_origin (gtk_widget_get_window (mrg_gtk->drawingarea), &ox, &oy);
-  device = gdk_device_manager_get_client_pointer (gdk_display_get_device_manager (display));
+  device = gdk_seat_get_pointer (gdk_display_get_default_seat (display));
   gdk_device_warp (device, gdk_display_get_default_screen (display), ox + x, oy + y);
 }
 
