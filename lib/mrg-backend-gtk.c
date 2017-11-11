@@ -21,14 +21,16 @@
 #include "mrg-internal.h"
 
 typedef struct MrgGtk {
+  GtkWidget        *window;
+  GtkWidget        *vbox;
+  GtkWidget        *hbox;
   GtkWidget        *eventbox;
   GtkWidget        *drawingarea;
-  GtkWidget        *window;
   int               xoffset;
   int               yoffset;
 
   GHashTable       *ht;
-  GdkEventSequence *fingers[MRG_MAX_DEVICES]; 
+  GdkEventSequence *fingers[MRG_MAX_DEVICES];
 } MrgGtk;
 
 static void mrg_gtk_flush (Mrg *mrg)
@@ -81,6 +83,8 @@ static gboolean button_press_event (GtkWidget *widget, GdkEvent *event, gpointer
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
 
+  gtk_widget_grab_focus (widget);
+
   if (gdk_device_get_source (gdk_event_get_source_device (event)) == GDK_SOURCE_TOUCHSCREEN)
     return 0;
 
@@ -115,7 +119,7 @@ static gboolean motion_notify_event (GtkWidget *widget, GdkEvent *event, gpointe
     return 0;
 
   return mrg_pointer_motion (mrg, event->motion.x + mrg_gtk->xoffset,
-                                  event->motion.y + mrg_gtk->yoffset, 
+                                  event->motion.y + mrg_gtk->yoffset,
       (event->motion.state&GDK_BUTTON1_MASK)?1:
       (event->motion.state&GDK_BUTTON2_MASK)?2:
       (event->motion.state&GDK_BUTTON3_MASK)?3:
@@ -147,7 +151,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     case GDK_KEY_F12:       name = "F12";       break;
     case GDK_KEY_Escape:    name = "escape";    break;
     case GDK_KEY_Tab:       name = "tab";       break;
-    case GDK_KEY_ISO_Left_Tab:  name = "tab";       break;
+    case GDK_KEY_ISO_Left_Tab:  name = "tab";   break;
     case GDK_KEY_Up:        name = "up";        break;
     case GDK_KEY_Down:      name = "down";      break;
     case GDK_KEY_Left:      name = "left";      break;
@@ -457,7 +461,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
   mrg->backend = &mrg_backend_gtk;
 
   _mrg_init (mrg, 10, 10);
-  
+
   mrg_set_ui (mrg, ui_update, user_data);
 
   g_signal_connect (mrg_gtk->eventbox, "touch-event",
@@ -502,6 +506,8 @@ Mrg *mrg_gtk_get_mrg (GtkWidget *widget)
 static Mrg *_mrg_gtk_new (int width, int height)
 {
   GtkWidget *window;
+  GtkWidget *hbox;
+  GtkWidget *vbox;
   GtkWidget *canvas;
   Mrg *mrg;
   MrgGtk *mrg_gtk;
@@ -518,6 +524,8 @@ static Mrg *_mrg_gtk_new (int width, int height)
   }
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_window_set_default_size (GTK_WINDOW(window), width, height);
   g_signal_connect (window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
   canvas = mrg_gtk_new (NULL, NULL);
@@ -526,15 +534,45 @@ static Mrg *_mrg_gtk_new (int width, int height)
   mrg = mrg_gtk_get_mrg (canvas);
   mrg_gtk = mrg->backend_data;
   mrg_set_size (mrg, width, height);
-  gtk_container_add (GTK_CONTAINER(window), canvas);
+  gtk_container_add (GTK_CONTAINER(window), vbox);
+
+  gtk_box_pack_end(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
+  gtk_box_pack_end(GTK_BOX(hbox), canvas, TRUE, TRUE, 0);
+
   gtk_widget_grab_focus (canvas);
   gtk_widget_show_all(window);
 
   mrg_gtk->window = window;
+  mrg_gtk->hbox = hbox;
+  mrg_gtk->vbox = vbox;
 
   if (fullscreen)
     mrg_set_fullscreen (mrg, fullscreen);
 
   return mrg;
 }
+
+gboolean  mrg_is_mrg_gtk (Mrg *mrg)
+{
+  if (!strcmp (mrg->backend->name, "gtk")) //!mrg_gtk)
+    return TRUE;
+  return FALSE;
+}
+
+GtkWidget *mrg_gtk_get_vbox (Mrg *mrg)
+{
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  if (!mrg_gtk)
+    return NULL;
+  return mrg_gtk->vbox;
+}
+
+GtkWidget *mrg_gtk_get_hbox (Mrg *mrg)
+{
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  if (!mrg_gtk)
+    return NULL;
+  return mrg_gtk->hbox;
+}
+
 #endif

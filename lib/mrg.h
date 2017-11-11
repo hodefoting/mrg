@@ -31,8 +31,8 @@
 #endif
 
 #define MRG_VERSION_MAJOR 0
-#define MRG_VERSION_MINOR 0
-#define MRG_VERSION_MICRO 1
+#define MRG_VERSION_MINOR 1
+#define MRG_VERSION_MICRO 2
 
 /* Mrg is fed with all press, release and motion events and synthesizes
  * generated callbacks as appropriate.
@@ -148,6 +148,11 @@ float mrg_get_target_fps (Mrg *mrg);
 #ifdef __GTK_H__ /* This is only declared if mrg.h is included after gtk.h */
 GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
                         void *user_data);
+
+gboolean  mrg_is_mrg_gtk (Mrg *mrg);
+GtkWidget *mrg_gtk_get_vbox (Mrg *mrg);
+GtkWidget *mrg_gtk_get_hbox (Mrg *mrg);
+
 #endif
 
 #include <stddef.h>
