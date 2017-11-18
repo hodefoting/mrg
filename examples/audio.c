@@ -77,6 +77,8 @@ int main (int argc, char **argv)
   Mrg *mrg = mrg_new (400, 300, NULL);
   mrg_set_ui (mrg, ui, argv[1]?argv[1]:"world");
   mrg_pcm_init (mrg);
+  mrg_pcm_set_sample_rate (mrg, 48000);
+
 #if 1
   pthread_t thread_id;
   pthread_create (&thread_id, NULL, audio_thread, mrg);

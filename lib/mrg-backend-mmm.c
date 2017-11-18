@@ -138,7 +138,6 @@ void  mrg_mmm_get_position  (Mrg *mrg, int *x, int *y)
 
 static void  mmm_atexit (void)
 {
-  fprintf (stderr, "teardown time! %p\n", mmm_self);
   mmm_destroy (mmm_self);
 }
 

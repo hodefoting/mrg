@@ -477,7 +477,24 @@ void mrg_host_audio_iteration (MrgHost *host)
           }
           else
           {
-            fprintf (stderr, "NYI:%s:%i\n", __FUNCTION__, __LINE__);
+            int request = remaining * factor;
+            {
+              uint8_t tempbuf[request*8];
+              int bpf = mmm_pcm_bytes_per_frame (client->mmm);
+              read = mmm_pcm_read (client->mmm, (void*)tempbuf, request);
+              if (read) {
+                int i;
+                uint8_t *tdst = (void*)dst;
+                for (i = 0; i < read / factor; i ++)
+                {
+                  int j;
+                  for (j = 0; j < bpf; j++)
+                    tdst[i * bpf + j] = tempbuf[((int)(i * factor)) * bpf +j];
+                }
+                remaining -= read/factor;
+                got_data ++;
+              }
+           }
           }
         } while ((read == requested) && remaining > 0);
      }
