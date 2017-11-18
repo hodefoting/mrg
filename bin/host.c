@@ -183,7 +183,7 @@ static void draw_calendar (Mrg *mrg)
 
 void mrg_host_render (Mrg *mrg, MrgHost *host)
 {
-  mrg_host_monitor_dir (host);
+  // mrg_host_monitor_dir (host);
 
   mrg_host_set_focused (host, NULL);
   for (MrgList *l = mrg_host_clients (host); l; l = l->next)
@@ -195,7 +195,6 @@ void mrg_host_render (Mrg *mrg, MrgHost *host)
 static void render_ui (Mrg *mrg, void *data)
 {
   MrgHost *host = data;
-  //mrg_host_audio_iteration (host);
   mrg_start (mrg, "host", NULL);
 
   mrg_set_xy (mrg, 0, 0);

@@ -396,6 +396,7 @@ again:
   for (l = host->clients; l; l = l->next)
   {
     MrgClient *client = l->data;
+    client->pid = mmm_client_pid (client->mmm);
     if (!pid_is_alive (client->pid))
     {
       mrg_client_unref (NULL, NULL, client);
@@ -654,6 +655,8 @@ void mrg_client_render_sloppy (MrgClient *client, float x, float y)
   mrg_host_sloppy_focus (host, client, x, y);
   Mrg *mrg = host->mrg;
 
+  client->pid = mmm_client_pid (client->mmm);
+
   if (client->pid == getpid ())
   {
     fprintf (stderr, "Wtf!\n");
@@ -689,6 +692,8 @@ static int host_idle_check (Mrg *mrg, void *data)
 {
   MrgHost *host = data;
   MrgList *l;
+
+  mrg_host_monitor_dir (host);
 
   for (l = host->clients; l; l = l->next)
   {
