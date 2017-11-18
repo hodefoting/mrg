@@ -937,7 +937,7 @@ void mrg_incoming_message (Mrg *mrg, const char *message, long time)
 
   if (!time)
     time = mrg_ms (mrg);
-  
+
   if (item)
   {
     int i;

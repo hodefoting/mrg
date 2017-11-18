@@ -17,6 +17,8 @@ MrgClient *mrg_host_get_focused      (MrgHost *host);
 void       mrg_host_monitor_dir      (MrgHost *host);
 void       mrg_host_register_events  (MrgHost *host);
 MrgList   *mrg_host_clients          (MrgHost *host);
+void       mrg_host_audio_iteration  (MrgHost *host);
+
 void mrg_host_get_default_size (MrgHost *host, int *width, int *height);
 void mrg_host_set_default_size (MrgHost *host, int width, int height);
 
@@ -39,9 +41,9 @@ int         mrg_client_has_message   (MrgClient *client);
 const char *mrg_client_get_value     (MrgClient *client, const char *name);
 void        mrg_client_set_value     (MrgClient *client, const char *name, const char *value);
 
-void       mrg_client_raise_top      (MrgClient *client); /* XXX: use set_stack_order(1) instead */
-void mrg_client_set_stack_order (MrgClient *client, int zpos);
-int  mrg_client_get_stack_order (MrgClient *client);
+void        mrg_client_raise_top      (MrgClient *client); /* XXX: use set_stack_order(1) instead */
+void        mrg_client_set_stack_order (MrgClient *client, int zpos);
+int         mrg_client_get_stack_order (MrgClient *client);
 
 #define TITLE_BAR_HEIGHT 18
 //#define TITLE_BAR_HEIGHT 0

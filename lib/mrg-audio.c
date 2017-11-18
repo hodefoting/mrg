@@ -26,3 +26,13 @@ int mrg_pcm_get_frame_chunk (Mrg *mrg)
   }
   return 0;
 }
+
+int mrg_pcm_get_sample_rate (Mrg *mrg)
+{
+  if (!strcmp (mrg->backend->name, "mmm") ||
+      !strcmp (mrg->backend->name, "mmm-client"))
+  {
+    return mmm_pcm_get_sample_rate (mrg->backend_data);
+  }
+  return 48000;
+}

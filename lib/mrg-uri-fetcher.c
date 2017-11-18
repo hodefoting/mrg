@@ -318,7 +318,7 @@ typedef struct {
 #include <cairo.h>
 #include <pixman.h>
 #if MRG_SDL
-#include <SDL.h>
+#include <SDL/SDL.h>
 #endif
 #if MRG_GTK
 #include <gtk/gtk.h>

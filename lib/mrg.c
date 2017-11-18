@@ -111,9 +111,6 @@ uint32_t mrg_ms (Mrg *mrg)
 extern MrgBackend mrg_backend_mmm;
 extern MrgBackend mrg_backend_mmm_client;
 #endif
-#if MRG_SDL
-extern MrgBackend mrg_backend_sdl;
-#endif
 #if MRG_NCT
 extern MrgBackend mrg_backend_nct;
 #endif
@@ -127,9 +124,6 @@ extern MrgBackend mrg_backend_gtk;
 static MrgBackend *backends[]={
 #if MRG_MMM
   &mrg_backend_mmm_client,
-#endif
-#if MRG_SDL
-  &mrg_backend_sdl,
 #endif
 #if MRG_GTK
   &mrg_backend_gtk,

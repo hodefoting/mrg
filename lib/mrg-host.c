@@ -15,7 +15,8 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* audio should be a separate daemon that reads client files */
+/* audio should be a separate daemon that reads client files
+ */
 
 /* daemons should have their process files in the same directory,
  * permitting all process of the system to be self-introspectable.
@@ -23,9 +24,11 @@
  * drag and drop configuration using filesystem as repository.
  *
  * desktop view,. listing contents of a specific folder, client windows
- * rendered on top. 
+ * rendered on top.
  *
- * how to determine that something is an mmm app?
+ * how to determine that something is an mmm app? storing an static inline
+ * binary cookie would be interesting, it could be escaped as concatenated
+ * strings to make .c source not run by default.
  */
 
 #define _BSD_SOURCE
@@ -43,6 +46,7 @@
 #include "mrg-host.h"
 #include <sys/types.h>
 #include <signal.h>
+#include <pthread.h>
 
 #if MRG_SDL
 #include <SDL/SDL.h>
@@ -57,7 +61,8 @@ struct _MrgClient
 
   /******************/
   long   pid;        /* magic hack, -1 means in-process,
-                       (isn't mmm vs mrg the same?) */
+                       (isn't mmm vs mrg the same? better remove double
+                        meanings or add function do clarify) */
   char  *filename;
   Mmm   *mmm;
   Mrg   *mrg;
@@ -81,6 +86,8 @@ const char *mrg_client_get_title (MrgClient *client)
     return mrg_get_title (client->mrg);
   return mmm_get_title (client->mmm);
 }
+
+static pthread_mutex_t host_mutex;
 
 struct _MrgHost
 {
@@ -145,10 +152,12 @@ void mrg_client_set_stack_order (MrgClient *client,
   int i = 0;
   if (!client)
     return;
+
   host = client->host;
-  
+  pthread_mutex_lock (&host_mutex);
+
   for (l = host->clients; l; l = l->next) i++;
-  
+
   i++;
   for (l = host->clients; l; l = l->next)
   {
@@ -161,6 +170,7 @@ void mrg_client_set_stack_order (MrgClient *client,
       {
         mrg_list_free (&new);
         fprintf (stderr, "already there!\n");
+        pthread_mutex_unlock (&host_mutex);
         return;
       }
     }
@@ -174,7 +184,7 @@ void mrg_client_set_stack_order (MrgClient *client,
       mrg_list_append (&new, ic);
     }
   }
-  
+
   if (client == NULL)
   {
     mrg_list_free (&host->clients);
@@ -186,6 +196,7 @@ void mrg_client_set_stack_order (MrgClient *client,
     mrg_list_free (&host->clients);
     host->clients = new;
   }
+  pthread_mutex_unlock (&host_mutex);
   mrg_queue_draw (host->mrg, NULL);
 }
 
@@ -305,7 +316,7 @@ static void validate_client (MrgHost *host, const char *client_name)
   for (l = host->clients; l; l = l->next)
   {
     MrgClient *client = l->data;
-    if (client->filename && 
+    if (client->filename &&
         !strcmp (client->filename, client_name))
     {
       return;
@@ -365,7 +376,9 @@ void mrg_host_add_client_mrg (MrgHost *host,
   client->mrg = mrg;
   client->host = host;
   pos += 12;
+  pthread_mutex_lock (&host_mutex);
   mrg_list_append (&host->clients, client);
+  pthread_mutex_unlock (&host_mutex);
 }
 
 static int pid_is_alive (long pid)
@@ -378,13 +391,13 @@ static int pid_is_alive (long pid)
 void mrg_host_monitor_dir (MrgHost *host)
 {
   MrgList *l;
+  pthread_mutex_lock (&host_mutex);
 again:
   for (l = host->clients; l; l = l->next)
   {
     MrgClient *client = l->data;
     if (!pid_is_alive (client->pid))
     {
-
       mrg_client_unref (NULL, NULL, client);
       mrg_queue_draw (host->mrg, NULL);
       mrg_list_remove (&host->clients, client);
@@ -397,18 +410,81 @@ again:
   static int iteration = 0;
 
   iteration ++;
-  
+
   while ((ent = readdir (dir)))
   {
     if (ent->d_name[0]!='.')
       validate_client (host, ent->d_name);
   }
   closedir (dir);
+  pthread_mutex_unlock (&host_mutex);
 }
 
 MrgList *mrg_host_clients (MrgHost *host)
 {
   return host->clients;
+}
+
+void mrg_host_audio_iteration (MrgHost *host)
+{
+   MrgList *l;
+   int frames = mrg_pcm_get_frame_chunk (host->mrg);
+   int16_t *data = NULL;
+   int data_len = 0;
+   int got_data = 0;
+   int16_t temp_audio[81920 * 2];
+
+   if (frames <= 0)
+     return;
+
+   if (!data || data_len < frames)
+   {
+     if (data) free (data);
+     data = malloc (frames * 4);
+     data_len = frames;
+   }
+
+   pthread_mutex_lock (&host_mutex);
+   for (l = host->clients; l; l = l->next)
+   {
+     MrgClient *client = l->data;
+     if (!client->mrg)
+     {
+        float factor = mmm_pcm_get_sample_rate (client->mmm) * 1.0 /
+                       mrg_pcm_get_sample_rate (host->mrg);
+        int read = 0;
+        int16_t *dst = (void*) data;
+        int remaining = frames;
+        int requested;
+
+        if (mmm_pcm_get_queued_frames (client->mmm) >= frames)
+        do {
+          int16_t *src = &temp_audio[0];
+          requested = remaining;
+          if (factor < 1.0001 && factor > 0.999)
+          {
+            read = mmm_pcm_read (client->mmm, (void*)src, remaining);
+            if (read)
+            {
+              int i;
+              remaining -= read;
+              for (i = 0; i < read; i ++)
+              {
+                 *(dst++) += *(src++);
+              }
+              got_data ++;
+            }
+          }
+          else
+          {
+            fprintf (stderr, "NYI:%s:%i\n", __FUNCTION__, __LINE__);
+          }
+        } while ((read == requested) && remaining > 0);
+     }
+   }
+   pthread_mutex_unlock (&host_mutex);
+   if (got_data)
+     mrg_pcm_write (host->mrg, (void *)data, frames);
 }
 
 static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
@@ -509,7 +585,7 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
       cairo_paint (cr);
       cairo_surface_destroy (surface);
       mmm_read_done (client->mmm);
-      
+
       cairo_new_path (cr);
       cairo_rectangle (cr, 0, 0, width, height);
       mrg_client_ref (client);
@@ -521,12 +597,12 @@ void mrg_client_render (MrgClient *client, Mrg *mrg, float x, float y)
       mrg_listen_full (mrg, MRG_MOTION,
                        mrg_client_motion, client, NULL,
                        (void*)mrg_client_unref, client);
-      
+
       mrg_client_ref (client);
-      mrg_listen_full (mrg, MRG_RELEASE, 
+      mrg_listen_full (mrg, MRG_RELEASE,
                        mrg_client_release, client, NULL,
                        (void*)mrg_client_unref, client);
-      
+
       cairo_restore (cr);
     }
     else
@@ -596,7 +672,7 @@ static int host_idle_check (Mrg *mrg, void *data)
 {
   MrgHost *host = data;
   MrgList *l;
-  
+
   for (l = host->clients; l; l = l->next)
   {
     MrgClient *client = l->data;
@@ -619,15 +695,29 @@ static int host_idle_check (Mrg *mrg, void *data)
   return 1;
 }
 
+static void *audio_thread (MrgHost *host)
+{
+  //int c;
+  for (;;) {
+    mrg_host_audio_iteration (host);
+    usleep (10000);
+  }
+  return NULL;
+}
+
 MrgHost *mrg_host_new (Mrg *mrg, const char *path)
 {
   MrgHost *host = calloc (sizeof (MrgHost), 1);
+  pthread_t tid;
+  pthread_mutex_init(&host_mutex, NULL);
   if (!path)
     path = "/tmp/mrg";
   init_env (host, path);
   host->mrg = mrg;
 
   mrg_add_idle (mrg, host_idle_check, host);
+
+  pthread_create (&tid, NULL,(void*)audio_thread, host);
   return host;
 }
 
@@ -706,4 +796,3 @@ void mrg_client_set_value (MrgClient *client, const char *name, const char *valu
     return;
   mmm_set_value (client->mmm, name, value);
 }
-

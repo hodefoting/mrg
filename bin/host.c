@@ -195,7 +195,7 @@ void mrg_host_render (Mrg *mrg, MrgHost *host)
 static void render_ui (Mrg *mrg, void *data)
 {
   MrgHost *host = data;
-
+  //mrg_host_audio_iteration (host);
   mrg_start (mrg, "host", NULL);
 
   mrg_set_xy (mrg, 0, 0);
@@ -277,7 +277,7 @@ int host_main (int argc, char **argv)
 
   mrg_set_ui (mrg, render_ui, host);
 
-  //system ("mrg-acoustics &");
+  system ("mrg acoustics &");
 
   mrg_css_set (mrg, css);
 

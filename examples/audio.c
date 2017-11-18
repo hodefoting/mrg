@@ -29,17 +29,33 @@ static void ui (Mrg *mrg, void *data)
 #include <stdio.h>
 #include <unistd.h>
 
+float hz = 440;
+float hz_dir = 0.0;
+
 static int audio_cb (Mrg *mrg, void *data)
 {
-  int count = 8192 * 4;
+  int count = 8192 * 10;
   int16_t buf[count * 2];
   int i;
-  count = mrg_pcm_get_frame_chunk (mrg)-2;
+  count = mrg_pcm_get_frame_chunk (mrg);
+
+  if (count <= 0)
+  {
+    return 1;
+  }
 
   for (i = 0; i < count; i++)
   {
+    float phase;
+    int   phasei;
     frames++;
-    buf[i] = sin(frames/ 44100.0 * 880 * M_PI) * 31000;
+    phase = frames / (48000.0 / hz);
+    phasei = phase;
+    phase = phase - phasei;
+
+    //buf[i] = phase < 0.5 ? -1000 : 1000;
+    buf[i] = sin(phase * M_PI * 2) * 2800;
+    //buf[i] = phase * 2000 - 1000;
   }
   mrg_pcm_write (mrg, (void*)buf, count);
   return 1;
@@ -49,8 +65,9 @@ void *audio_thread (void *mrg)
 {
   while (1)
   {
-    if (!audio_cb (mrg, NULL))
-      usleep (2000);
+    audio_cb (mrg, NULL);
+    usleep (100000); 
+    //usleep (1000);
   }
   return NULL;
 }
@@ -59,7 +76,8 @@ int main (int argc, char **argv)
 {
   Mrg *mrg = mrg_new (400, 300, NULL);
   mrg_set_ui (mrg, ui, argv[1]?argv[1]:"world");
-#if 0
+  mrg_pcm_init (mrg);
+#if 1
   pthread_t thread_id;
   pthread_create (&thread_id, NULL, audio_thread, mrg);
 #else

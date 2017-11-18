@@ -7,7 +7,8 @@ const char *css =
 
 static void ui (Mrg *mrg, void *data)
 {
-  make_big (mrg);
+  mrg_set_font_size (mrg, 42);
+  mrg_set_xy (mrg, 0, mrg_em (mrg) * 1.2);
   mrg_stylesheet_add (mrg, css, NULL, 0, NULL);
   mrg_start (mrg, ".parent", NULL);
   mrg_printf (mrg, "hello ");
@@ -27,8 +28,6 @@ int main ()
 
 void make_big (Mrg *mrg)
 {
-  mrg_set_font_size (mrg, 42);
-  mrg_set_xy (mrg, 0, mrg_em (mrg) * 1.2);
 }
 
 /* cp=64 off=-46 */

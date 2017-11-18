@@ -81,7 +81,6 @@ static void render_ui (Mrg *mrg, void *data)
     cairo_rectangle (cr, client->x, client->y - 20, mrg_width (client->mrg), 20);
     mrg_listen (mrg, MRG_DRAG_MOTION, client_drag, client, NULL);
     cairo_stroke (cr);
-
   }
 
   mrg_printf (mrg, "compositor %p", compositor);
@@ -168,7 +167,7 @@ int main (int argc, char **argv)
 {
   Mrg *mrg;
   Compositor *compositor;
-  
+
   compositor = compositor_new ();
   mrg = mrg_new (640, 480, NULL);
   compositor->mrg = mrg;

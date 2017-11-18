@@ -155,7 +155,7 @@ again:
 #include <time.h>
 
 static int  audio_muted = 100;
-static void monitor_audio (Acoustics *acoustics, uint8_t *buf, int frames)
+static inline void monitor_audio (Acoustics *acoustics, uint8_t *buf, int frames)
 {
   MrgList *l;
 
@@ -202,7 +202,7 @@ static void monitor_audio (Acoustics *acoustics, uint8_t *buf, int frames)
         if (read) {
           int i;
           int outpos = 0;
-          int bpf = mmm_pcm_bpf (client->mmm);
+          int bpf = mmm_pcm_bytes_per_frame (client->mmm);
 
           for (i = 0; i < read / bpf / factor; i++)
           {
@@ -284,7 +284,7 @@ void audio_callback (void *data, uint8_t *buf, int bytes)
 #define BIAS 0x84   /* define the add-in bias for 16 bit samples */
 #define CLIP 32635
 
-static unsigned char
+static inline unsigned char
 linear2ulaw(int sample)
 {
   static int exp_lut[256] = { 0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,
@@ -389,7 +389,7 @@ static int acoustics_idle_check (Mrg *mrg, void *data)
     }
   }
 
-#if !MRG_SDL
+#if !MRG_SDL && 0
   {
     static int prev_ticks = -1;
     int ticks, delta, i;
