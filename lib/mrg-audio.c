@@ -36,7 +36,7 @@ void mrg_pcm_set_sample_rate (Mrg *mrg, int sample_rate)
   }
 }
 
-void mrg_pcm_set_format (Mrg *mrg, MmmAudioFormat format)
+void mrg_pcm_set_format (Mrg *mrg, MrgAudioFormat format)
 {
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
@@ -45,7 +45,7 @@ void mrg_pcm_set_format (Mrg *mrg, MmmAudioFormat format)
   }
 }
 
-MmmAudioFormat mrg_pcm_get_format (Mrg *mrg)
+MrgAudioFormat mrg_pcm_get_format (Mrg *mrg)
 {
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))

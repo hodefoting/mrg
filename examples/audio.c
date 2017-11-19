@@ -35,7 +35,7 @@ float hz_dir = 0.0;
 static int audio_cb (Mrg *mrg, void *data)
 {
   int count = 8192 * 10;
-  int16_t buf[count * 2];
+  float buf[count * 2];
   int i;
   count = mrg_pcm_get_frame_chunk (mrg);
 
@@ -54,7 +54,8 @@ static int audio_cb (Mrg *mrg, void *data)
     phase = phase - phasei;
 
     //buf[i] = phase < 0.5 ? -1000 : 1000;
-    buf[i] = sin(phase * M_PI * 2) * 2800;
+    //buf[i] = sin(phase * M_PI * 2) * 2800;
+    buf[i] = sin(phase * M_PI * 2) * 0.5;
     //buf[i] = phase * 2000 - 1000;
   }
   mrg_pcm_write (mrg, (void*)buf, count);
@@ -77,7 +78,8 @@ int main (int argc, char **argv)
   Mrg *mrg = mrg_new (400, 300, NULL);
   mrg_set_ui (mrg, ui, argv[1]?argv[1]:"world");
   mrg_pcm_init (mrg);
-  mrg_pcm_set_sample_rate (mrg, 43000);
+  mrg_pcm_set_sample_rate (mrg, 44100);
+  mrg_pcm_set_format (mrg, MRG_f32);
 
 #if 1
   pthread_t thread_id;

@@ -458,46 +458,73 @@ void mrg_host_audio_iteration (MrgHost *host)
         int remaining = frames;
         int requested;
 
+        MmmAudioFormat client_format = mmm_pcm_get_format (client->mmm);
+        MmmAudioFormat host_format = mrg_pcm_get_format (host->mrg);
+
+        int cbpf = mmm_pcm_bytes_per_frame (client->mmm);
+        int cchannels = mmm_pcm_get_channels (client->mmm);
+        int cbps = cbpf / cchannels;
+
+        int hbpf = mmm_pcm_audio_format_bytes_per_frame (host_format);
+        int hchannels = mmm_pcm_audio_format_get_channels (host_format);
+        int hbps = hbpf / hchannels;
+
+        int cfloat = 0;
+
+        if (client_format == MMM_f32 ||
+          client_format == MMM_f32S)
+        cfloat = 1;
+
         if (mmm_pcm_get_queued_frames (client->mmm) >= frames)
-        do {
-          int16_t *src = &temp_audio[0];
-          requested = remaining;
-          if (factor < 1.0001 && factor > 0.999)
-          {
-            read = mmm_pcm_read (client->mmm, (void*)src, remaining);
-            if (read)
+          do {
+            requested = remaining;
             {
-              int i;
-              remaining -= read;
-              for (i = 0; i < read; i ++)
+              int request = remaining * factor;
               {
-                 *(dst++) += *(src++);
-              }
-              got_data ++;
-            }
-          }
-          else
-          {
-            int request = remaining * factor;
-            {
-              uint8_t tempbuf[request*8];
-              int bpf = mmm_pcm_bytes_per_frame (client->mmm);
-              read = mmm_pcm_read (client->mmm, (void*)tempbuf, request);
-              if (read) {
-                int i;
-                uint8_t *tdst = (void*)dst;
-                for (i = 0; i < read / factor; i ++)
+                uint8_t tempbuf[request * 8];
+                read = mmm_pcm_read (client->mmm, (void*)tempbuf, request);
+
+                if (read)
                 {
-                  int j;
-                  for (j = 0; j < bpf; j++)
-                    tdst[i * bpf + j] = tempbuf[((int)(i * factor)) * bpf +j];
+                  uint8_t *tdst = (void*)dst;
+
+                  if (cfloat)
+                  {
+                    int i;
+                    for (i = 0; i < read / factor; i ++)
+                    {
+                      int j;
+                      for (j = 0; j < hchannels; j ++)
+                      {
+                        int cchan = j >= cchannels ? cchannels-1 : j; // mono to stereo
+                        float val = *(float*)(&tempbuf[((int)(i * factor)) * cbpf + cchan * cbps]);
+                        int16_t ival = val * (1<<15);
+                        *(int16_t*)(&tdst[i * hbpf + j * hbps]) += ival;
+                      }
+                    }
+                  }
+                  else
+                  {
+                    int i;
+                    for (i = 0; i < read / factor; i ++)
+                    {
+                      int j;
+                      for (j = 0; j < hchannels; j ++)
+                      {
+                        int cchan = j >= cchannels ? cchannels-1 : j; // mono to stereo
+                        int16_t ival = *(int16_t*)(&tempbuf[((int)(i * factor)) * cbpf + cchan * cbps]);
+                        *(int16_t*)(&tdst[i * hbpf + j * hbps]) += ival;
+
+                      }
+                    }
+                  }
+
+                  remaining -= read / factor;
+                  got_data++;
                 }
-                remaining -= read/factor;
-                got_data ++;
               }
-           }
-          }
-        } while ((read == requested) && remaining > 0);
+            }
+          } while ((read == requested) && remaining > 0);
      }
    }
    pthread_mutex_unlock (&host_mutex);
