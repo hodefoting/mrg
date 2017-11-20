@@ -132,6 +132,7 @@ static void *alsa_audio_start(Mrg *mrg)
           data[i * 2 + 1] = right;
 
           pcm_cur_left--;
+          pcm_queued --;
           if (pcm_cur_left == 0)
           {
             void *old = pcm_list->data;
@@ -237,23 +238,12 @@ int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
 
 static long mrg_pcm_get_queued_frames (Mrg *mrg)
 {
-  MrgList *l;
-  long ret = 0;
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
   {
     return mmm_pcm_get_queued_frames (mrg->backend_data);
   }
-  ret += pcm_cur_left;
-
-  for (l = pcm_list; l; l = l->next)
-  {
-    uint32_t *packet_sizep = l->data;
-    uint32_t packet_size = *packet_sizep;
-    if (l != pcm_list)
-      ret += packet_size;
-  }
-  return ret;
+  return pcm_queued;
 }
 
 int mrg_pcm_get_frame_chunk (Mrg *mrg)
