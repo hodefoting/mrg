@@ -67,8 +67,8 @@ void *audio_thread (void *mrg)
   while (1)
   {
     audio_cb (mrg, NULL);
-    usleep (100000); 
-    //usleep (1000);
+    //usleep (100000); 
+    usleep (1000);
   }
   return NULL;
 }

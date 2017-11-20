@@ -511,7 +511,7 @@ void mrg_host_audio_iteration (MrgHost *host)
                       int j;
                       for (j = 0; j < hchannels; j ++)
                       {
-                        int cchan = j >= cchannels ? cchannels-1 : j; // mono to stereo
+                        int cchan = j >= cchannels ? cchannels-1 : j; // mono to stereo, FIXME: stereo to mono just gets first channel not a mix
                         int16_t ival = *(int16_t*)(&tempbuf[((int)(i * factor)) * cbpf + cchan * cbps]);
                         *(int16_t*)(&tdst[i * hbpf + j * hbps]) += ival;
 

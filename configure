@@ -41,10 +41,25 @@ enable_gtk()
     LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/gtk+-3.0//`
     LIB_PKGMODULES=$LIB_PKGMODULES" gtk+-3.0"
 }
+disable_alsa()
+{
+  echo disabling
+    cat lib/mrg-config.h | sed 's/define MRG_ALSA.*/define MRG_ALSA 0/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/alsa//`
+}
+enable_alsa()
+{
+    cat lib/mrg-config.h | sed 's/define MRG_ALSA.*/define MRG_ALSA 1/' > tmp
+    mv tmp lib/mrg-config.h
+    LIB_PKGMODULES=`echo $LIB_PKGMODULES | sed s/alsa//`
+    LIB_PKGMODULES=$LIB_PKGMODULES" alsa"
+}
 
 auto()
 {
   pkg-config gtk+-3.0 && enable_gtk || disable_gtk
+  pkg-config alsa && enable_alsa || disable_alsa
 }
 
 echo > config
@@ -53,11 +68,15 @@ while [ "$1" ] ; do
   if ( echo $1 | grep "^--disable-gtk" > /dev/null ); then
     disable_gtk
   fi
-
   if ( echo $1 | grep "^--enable-gtk"  > /dev/null ); then
     enable_gtk
   fi
-
+  if ( echo $1 | grep "^--disable-alsa" > /dev/null ); then
+    disable_alsa
+  fi
+  if ( echo $1 | grep "^--enable-alsa"  > /dev/null ); then
+    enable_alsa
+  fi
   if ( echo $1 | grep "^--prefix=" > /dev/null ); then
     echo PREFIX=`echo $1 | sed 's/^--prefix=//'` >> config
   fi

@@ -10,6 +10,9 @@
 #ifndef MRG_GTK
 #define MRG_GTK 1
 #endif
+#ifndef MRG_ALSA
+#define MRG_ALSA 1
+#endif
 #ifndef MRG_SDL
 #define MRG_SDL 0
 #endif
