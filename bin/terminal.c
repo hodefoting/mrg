@@ -865,6 +865,7 @@ static void vt100_feed_keystring (Vt100 *vt100, const char *str)
   else if (!strcmp (str, "page-down"))            str = "\033[6~";
   else if (!strcmp (str, "return"))               str = "\r";
   else if (!strcmp (str, "space"))                str = " ";
+  else if (!strcmp (str, "shift-space"))          str = " ";
   else if (!strcmp (str, "control-a")) str = "\001";
   else if (!strcmp (str, "control-b")) str = "\002";
   else if (!strcmp (str, "control-c")) str = "\003";

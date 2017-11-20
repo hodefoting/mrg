@@ -77,7 +77,6 @@ int main (int argc, char **argv)
 {
   Mrg *mrg = mrg_new (400, 300, NULL);
   mrg_set_ui (mrg, ui, argv[1]?argv[1]:"world");
-  mrg_pcm_init (mrg);
   mrg_pcm_set_sample_rate (mrg, 44100);
   mrg_pcm_set_format (mrg, MRG_f32);
 

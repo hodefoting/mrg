@@ -73,7 +73,6 @@ static void *alsa_audio_start(Mrg *mrg)
 {
 //  Lyd *lyd = aux;
   int c;
-  int16_t data[81920*4];
 
   /* The audio handler is implemented as a mixer that adds data on top
    * of 0s, XXX: it should be ensured that minimal work is there is
@@ -83,6 +82,7 @@ static void *alsa_audio_start(Mrg *mrg)
   {
     int client_channels = mmm_pcm_audio_format_get_channels (client_format);
     int is_float = 0;
+    int16_t data[81920*8]={0,};
 
     if (client_format == MRG_f32 ||
         client_format == MRG_f32S)
@@ -132,10 +132,12 @@ static void *alsa_audio_start(Mrg *mrg)
           data[i * 2 + 1] = right;
 
           pcm_cur_left--;
-          if (pcm_cur_left <= 0)
+          if (pcm_cur_left == 0)
           {
-            free (pcm_list->data);
+            void *old = pcm_list->data;
             mrg_list_remove (&pcm_list, pcm_list->data);
+            free (old);
+            pcm_cur_left = 0;
             if (pcm_list)
             {
               uint32_t *packet_sizep = (pcm_list->data);
@@ -156,7 +158,7 @@ static void *alsa_audio_start(Mrg *mrg)
           //printf ("%i", lyd->active);
           exit(0);
         }
-      fprintf (stderr, "alsa underun\n");
+      fprintf (stderr, "mrg alsa underun\n");
       //exit(0);
     }
   }
@@ -185,6 +187,7 @@ int mrg_pcm_init (Mrg *mrg)
 
 int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
 {
+  static int inited = 0;
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
   {
@@ -192,6 +195,11 @@ int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
   }
   else
   {
+    if (!inited)
+    {
+      mrg_pcm_init (mrg);
+      inited = 1;
+    }
     float factor = client_freq * 1.0 / host_freq;
     int   scaled_frames = frames / factor;
     int   bpf = mmm_pcm_audio_format_bytes_per_frame (client_format);
@@ -216,8 +224,9 @@ int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
         memcpy (packet + 16 + bpf * i, data + source_frame * bpf, bpf);
       }
     }
-    if (pcm_list == NULL)
-      pcm_cur_left = frames;
+    if (pcm_list == NULL)     // otherwise it is another frame at front
+      pcm_cur_left = scaled_frames;  // and current cur_left is valid
+
     mrg_list_append (&pcm_list, packet);
     pcm_queued += frames;
 
@@ -226,14 +235,40 @@ int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
   return 0;
 }
 
+static long mrg_pcm_get_queued_frames (Mrg *mrg)
+{
+  MrgList *l;
+  long ret = 0;
+  if (!strcmp (mrg->backend->name, "mmm") ||
+      !strcmp (mrg->backend->name, "mmm-client"))
+  {
+    return mmm_pcm_get_queued_frames (mrg->backend_data);
+  }
+  ret += pcm_cur_left;
+
+  for (l = pcm_list; l; l = l->next)
+  {
+    uint32_t *packet_sizep = l->data;
+    uint32_t packet_size = *packet_sizep;
+    if (l != pcm_list)
+      ret += packet_size;
+  }
+  return ret;
+}
+
 int mrg_pcm_get_frame_chunk (Mrg *mrg)
 {
+#if 1
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
   {
     return mmm_pcm_get_frame_chunk (mrg->backend_data);
   }
-  return 1000; // XXX: get queue length and do a cutoff
+#endif
+  if (mrg_pcm_get_queued_frames (mrg) > 1000)
+    return 0;
+  else
+    return 1000 - mrg_pcm_get_queued_frames (mrg);
 }
 
 void mrg_pcm_set_sample_rate (Mrg *mrg, int sample_rate)

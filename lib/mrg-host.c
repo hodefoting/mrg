@@ -430,20 +430,14 @@ void mrg_host_audio_iteration (MrgHost *host)
 {
    MrgList *l;
    int frames = mrg_pcm_get_frame_chunk (host->mrg);
-   int16_t *data = NULL;
-   int data_len = 0;
+   int16_t *data[8192 * 8]={0,};
    int got_data = 0;
-   int16_t temp_audio[81920 * 2];
 
    if (frames <= 0)
      return;
 
-   if (!data || data_len < frames)
-   {
-     if (data) free (data);
-     data = malloc (frames * 4);
-     data_len = frames;
-   }
+   for (int i = 0; i < frames * 2; i++)
+     data[i] = 0;
 
    pthread_mutex_lock (&host_mutex);
    for (l = host->clients; l; l = l->next)
@@ -482,6 +476,7 @@ void mrg_host_audio_iteration (MrgHost *host)
               int request = remaining * factor;
               {
                 uint8_t tempbuf[request * 8];
+
                 read = mmm_pcm_read (client->mmm, (void*)tempbuf, request);
 
                 if (read)
@@ -520,6 +515,7 @@ void mrg_host_audio_iteration (MrgHost *host)
                   }
 
                   remaining -= read / factor;
+   fprintf (stderr, ".");
                   got_data++;
                 }
               }
@@ -749,7 +745,7 @@ static void *audio_thread (MrgHost *host)
   //int c;
   for (;;) {
     mrg_host_audio_iteration (host);
-    usleep (10000);
+    usleep (200);
   }
   return NULL;
 }
