@@ -58,7 +58,7 @@ static int audio_cb (Mrg *mrg, void *data)
     buf[i] = sin(phase * M_PI * 2) * 0.5;
     //buf[i] = phase * 2000 - 1000;
   }
-  mrg_pcm_write (mrg, (void*)buf, count);
+  mrg_pcm_queue (mrg, (void*)buf, count);
   return 1;
 }
 

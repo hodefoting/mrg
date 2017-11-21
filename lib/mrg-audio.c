@@ -8,13 +8,13 @@
 
 #define DESIRED_PERIOD_SIZE 800
 
-static float          host_freq     = 48000;
-static MrgAudioFormat host_format   = MRG_s16S;
-static float          client_freq   = 48000;
-static MrgAudioFormat client_format = MRG_s16S;
-static int            pcm_queued    = 0;
-static int            pcm_cur_left  = 0;
-static MrgList       *pcm_list;
+static float    host_freq     = 48000;
+static MrgPCM   host_format   = MRG_s16S;
+static float    client_freq   = 48000;
+static MrgPCM   client_format = MRG_s16S;
+static int      pcm_queued    = 0;
+static int      pcm_cur_left  = 0;
+static MrgList *pcm_list;
 
 /* todo: only start audio thread on first write - enabling dynamic choice
  * of sample-rate? or is it better to keep to opening 48000 as a standard
@@ -80,7 +80,7 @@ static void *alsa_audio_start(Mrg *mrg)
    */
   for (;;)
   {
-    int client_channels = mmm_pcm_audio_format_get_channels (client_format);
+    int client_channels = mmm_pcm_channels (client_format);
     int is_float = 0;
     int16_t data[81920*8]={0,};
 
@@ -175,10 +175,10 @@ int mrg_pcm_init (Mrg *mrg)
   else
   {
      pthread_t tid;
-     h = alsa_open("default", host_freq, mmm_pcm_audio_format_get_channels (host_format));
+     h = alsa_open("default", host_freq, mmm_pcm_channels (host_format));
   if (!h) {
     fprintf(stderr, "mrg unable to open ALSA device (%d channels, %f Hz), dying\n",
-            mmm_pcm_audio_format_get_channels (host_format), host_freq);
+            mmm_pcm_channels (host_format), host_freq);
     return -1;
   }
   pthread_create(&tid, NULL, (void*)alsa_audio_start, mrg);
@@ -186,13 +186,13 @@ int mrg_pcm_init (Mrg *mrg)
   return 0;
 }
 
-int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
+int mrg_pcm_queue (Mrg *mrg, const int8_t *data, int frames)
 {
   static int inited = 0;
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
   {
-    return mmm_pcm_write (mrg->backend_data, data, frames);
+    return mmm_pcm_queue (mrg->backend_data, data, frames);
   }
   else
   {
@@ -203,9 +203,9 @@ int mrg_pcm_write (Mrg *mrg, const int8_t *data, int frames)
     }
     float factor = client_freq * 1.0 / host_freq;
     int   scaled_frames = frames / factor;
-    int   bpf = mmm_pcm_audio_format_bytes_per_frame (client_format);
+    int   bpf = mmm_pcm_bytes_per_frame (client_format);
 
-    uint8_t *packet = malloc (scaled_frames * mmm_pcm_audio_format_bytes_per_frame (client_format) + 16);
+    uint8_t *packet = malloc (scaled_frames * mmm_pcm_bytes_per_frame (client_format) + 16);
     *((uint32_t *)packet) = scaled_frames;
 
     /* we do both allocations and resampling at the pcm queuing stage.. at it
@@ -272,7 +272,7 @@ void mrg_pcm_set_sample_rate (Mrg *mrg, int sample_rate)
     client_freq = sample_rate;
 }
 
-void mrg_pcm_set_format (Mrg *mrg, MrgAudioFormat format)
+void mrg_pcm_set_format (Mrg *mrg, MrgPCM format)
 {
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
@@ -283,7 +283,7 @@ void mrg_pcm_set_format (Mrg *mrg, MrgAudioFormat format)
     client_format = format;
 }
 
-MrgAudioFormat mrg_pcm_get_format (Mrg *mrg)
+MrgPCM mrg_pcm_get_format (Mrg *mrg)
 {
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))

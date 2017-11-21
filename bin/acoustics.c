@@ -202,7 +202,7 @@ static inline void monitor_audio (Acoustics *acoustics, uint8_t *buf, int frames
         if (read) {
           int i;
           int outpos = 0;
-          int bpf = mmm_pcm_bytes_per_frame (client->mmm);
+          int bpf = mmm_pcm_bytes_per_frame (mmm_pcm_get_format (client->mmm));
 
           for (i = 0; i < read / bpf / factor; i++)
           {

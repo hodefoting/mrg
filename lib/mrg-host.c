@@ -452,15 +452,15 @@ void mrg_host_audio_iteration (MrgHost *host)
         int remaining = frames;
         int requested;
 
-        MmmAudioFormat client_format = mmm_pcm_get_format (client->mmm);
-        MmmAudioFormat host_format = mrg_pcm_get_format (host->mrg);
+        MmmPCM client_format = mmm_pcm_get_format (client->mmm);
+        MmmPCM host_format = mrg_pcm_get_format (host->mrg);
 
-        int cbpf = mmm_pcm_bytes_per_frame (client->mmm);
-        int cchannels = mmm_pcm_get_channels (client->mmm);
+        int cbpf = mmm_pcm_bytes_per_frame (client_format);
+        int cchannels = mmm_pcm_channels (client_format);
         int cbps = cbpf / cchannels;
 
-        int hbpf = mmm_pcm_audio_format_bytes_per_frame (host_format);
-        int hchannels = mmm_pcm_audio_format_get_channels (host_format);
+        int hbpf = mmm_pcm_bytes_per_frame (host_format);
+        int hchannels = mmm_pcm_channels (host_format);
         int hbps = hbpf / hchannels;
 
         int cfloat = 0;
@@ -525,7 +525,7 @@ void mrg_host_audio_iteration (MrgHost *host)
    }
    pthread_mutex_unlock (&host_mutex);
    if (got_data)
-     mrg_pcm_write (host->mrg, (void *)data, frames);
+     mrg_pcm_queue (host->mrg, (void *)data, frames);
 }
 
 static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
