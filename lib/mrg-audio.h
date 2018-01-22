@@ -17,6 +17,7 @@ MrgPCM mrg_pcm_get_format      (Mrg *mrg);
 int    mrg_pcm_get_sample_rate (Mrg *mrg);
 void   mrg_pcm_set_sample_rate (Mrg *mrg, int sample_rate);
 int    mrg_pcm_get_frame_chunk (Mrg *mrg);
+int    mrg_pcm_get_queued      (Mrg *mrg);
 int    mrg_pcm_queue           (Mrg *mrg, const int8_t *data, int frames);
 
 #endif

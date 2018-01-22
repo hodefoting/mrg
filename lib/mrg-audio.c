@@ -6,7 +6,7 @@
 #include <alsa/asoundlib.h>
 #include <alloca.h>
 
-#define DESIRED_PERIOD_SIZE 800
+#define DESIRED_PERIOD_SIZE 1000
 
 static float    host_freq     = 48000;
 static MrgPCM   host_format   = MRG_s16S;
@@ -244,6 +244,11 @@ static long mrg_pcm_get_queued_frames (Mrg *mrg)
     return mmm_pcm_get_queued_frames (mrg->backend_data);
   }
   return pcm_queued;
+}
+
+int mrg_pcm_get_queued (Mrg *mrg)
+{
+  return mrg_pcm_get_queued_frames (mrg);
 }
 
 int mrg_pcm_get_frame_chunk (Mrg *mrg)
