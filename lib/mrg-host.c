@@ -515,7 +515,6 @@ void mrg_host_audio_iteration (MrgHost *host)
                   }
 
                   remaining -= read / factor;
-   fprintf (stderr, ".");
                   got_data++;
                 }
               }
