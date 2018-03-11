@@ -132,6 +132,7 @@ typedef void (*MrgCb) (MrgEvent *event,
                        void     *data,
                        void     *data2);
 
+
 /* XXX: need full version for lua ffi */
 void mrg_add_binding (Mrg *mrg,
                       const char *key,

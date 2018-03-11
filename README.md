@@ -1,16 +1,17 @@
 microraptor gui
 ===============
 
-Immediate UI framework with cairo. Also a minimal usable graphical user
+Explorations of alternative means of interactive user interfaces.
+Incrementally augment the cairo API with interactivity and CSS powered
+text-layout. This permits interesting ability to experiment with the
+alternate mental model to create user interafaces in, most other
+frameworks are retained mode - like motif, gtk, qt, clutter, svg/html DOM -
+
 environment built using the framework, including: a shell/host for client
 programs, a terminal emulator, file browser and text editor written using the
 library.
 
 Features:
-* cairos drawing/transformation API
-* pointer/keyboard/multi touch events
-* CSS styling/layout
-* Single pass direct XML SVG/XHTML layout/renderer (minimal state/no DOM)
 * SDL/GTK/framebuffer/terminal backends.
 * PNG/JPG image caching
 
@@ -35,7 +36,7 @@ CSS styled rendering (using a context stack; where the pushing of contexts
 specifies the "element.class#id" of each now element rendering entered.
 
 Backends / dependencies
-=======================
+-----------------------
 
 MicroRaptor Gui has three independent backends it can use: SDL-1.2, GTK+-3.0
 and ANSI/vt100 terminals.
@@ -47,7 +48,7 @@ applications you can even build static libraries skipping even the cairo
 support.
 
 Build/run
-=========
+---------
 
 Clone both mrg and mmm, and have SDL-1.2 and GTK+-3.0 development packages
 installed. A 
@@ -79,21 +80,21 @@ the mrg binary.
 Launches the editor on the text file.
 
 Luajit ffi
-==========
+----------
 
 All of the mrg C API maps easily to lua when using luajit ffi, binds easily
 with luajit ffi. See the `./luajit` dir for an example, that also bundles the
 needed cairo bindings.
 
 Microraptor and GTK
-===================
+-------------------
 
 Microraptor can use GTK as a backend or microraptor can be used in GTK+
 applications, when used in gtk applications in widgets it is better to rely on
 native mainloop integration with `g_timeout` and `g_idle` instead of similar library functionality provided by microraptor gui.
 
 An immediate mode UI compromise
-===============================
+-------------------------------
      
 In terms of programming paradigm, microraptor contains aspects of 
 both traditional retained widget-tree/scene-graph ui's and 
