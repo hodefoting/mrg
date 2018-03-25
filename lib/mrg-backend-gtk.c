@@ -164,22 +164,29 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     default: break;
   }
 
+  guchar tmp_name[6]={0,};
+  if (!name)
+  {
+    name = (gchar*)&tmp_name[0];
+    mrg_unichar_to_utf8 (gdk_keyval_to_unicode (event->key.keyval), tmp_name);
+  }
+
   if (event->key.state & GDK_CONTROL_MASK)
   {
     char buf[128];
     if (name)
-    sprintf (buf, "control-%s", name);
+      sprintf (buf, "control-%s", name);
     else
-    sprintf (buf, "control-%c", event->key.keyval);
+      sprintf (buf, "control-%s", name);
     name = g_intern_string (buf);
   }
   if (event->key.state & GDK_MOD1_MASK)
   {
     char buf[128];
     if (name)
-    sprintf (buf, "alt-%s", name);
+      sprintf (buf, "alt-%s", name);
     else
-    sprintf (buf, "alt-%c", event->key.keyval);
+      sprintf (buf, "alt-%s", name);
     name = g_intern_string (buf);
   }
   if (event->key.state & GDK_SHIFT_MASK)
@@ -188,15 +195,14 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     if (name && mrg_utf8_strlen(name)>1)
       sprintf (buf, "shift-%s", name);
     else
-      sprintf (buf, "%c", event->key.keyval);
+      sprintf (buf, "%s", name);
     name = g_intern_string (buf);
   }
 
-  if (!name)
-    name = event->key.string;
+  gboolean ret = mrg_key_press (mrg, gdk_keyval_to_unicode (event->key.keyval), name,
+                                event->key.time);
 
-  return mrg_key_press (mrg, gdk_keyval_to_unicode (event->key.keyval), name,
-                        event->key.time);
+  return ret;
 }
 
 static int event_to_id (MrgGtk *mrg_gtk, GdkEvent *event)
@@ -318,8 +324,9 @@ static gboolean draw (GtkWidget *widget, cairo_t *cr, void *userdata)
 /*  if (_mrg_is_dirty (mrg)) */
        /* the gtk backend leaves dirty region handling up to gtk */
     {
-      mrg->width = gtk_widget_get_allocated_width (mrg_gtk->eventbox);
-      mrg->height = gtk_widget_get_allocated_height (mrg_gtk->eventbox);
+      mrg_set_size (mrg,
+            gtk_widget_get_allocated_width (mrg_gtk->eventbox),
+            gtk_widget_get_allocated_height (mrg_gtk->eventbox));
 
       mrg_ui_update (mrg);
     }
@@ -489,7 +496,7 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
 
 
 
-  g_timeout_add (30, idle_iteration, mrg);
+  g_timeout_add (40, idle_iteration, mrg);
 
   g_object_set_data_full (G_OBJECT (mrg_gtk->eventbox), "mrg", mrg, (void*)mrg_destroy);
 
