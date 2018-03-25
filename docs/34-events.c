@@ -89,8 +89,8 @@ void ui (Mrg *mrg, void *data) {
      event_copy.type == MRG_KEY_UP)
  {
    mrg_printf (mrg, "unicode=%if", event_copy.unicode);
-   mrg_printf (mrg, "key_name=\"%s\"", event_copy.key_name);
-   if (!strcmp (event_copy.key_name, "control-q"))
+   mrg_printf (mrg, "key_name=\"%s\"", event_copy.string);
+   if (!strcmp (event_copy.string, "control-q"))
      mrg_quit (mrg); //exit(0);
  }
  else
