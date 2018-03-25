@@ -232,12 +232,12 @@ static int event_to_id (MrgGtk *mrg_gtk, GdkEvent *event)
 
 static gboolean touch_event (GtkWidget *widget, GdkEvent *event, gpointer userdata)
 {
+  int device_no = 0;
   Mrg    *mrg = userdata;
   MrgGtk *mrg_gtk = mrg->backend_data;
 
   switch (event->touch.type)
   {
-    int device_no = 0;
     case GDK_TOUCH_BEGIN:
       device_no = event_to_id (mrg_gtk, event);
       return mrg_pointer_press (mrg, event->touch.x + mrg_gtk->xoffset,
