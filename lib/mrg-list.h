@@ -184,6 +184,32 @@ again:
 }
 
 static inline void
+mrg_list_insert_before (MrgList **list, MrgList *sibling,
+                        void *data)
+{
+  if (*list == NULL || *list == sibling)
+    {
+      mrg_list_prepend (list, data);
+    }
+  else
+    {
+      MrgList *prev = NULL;
+      for (MrgList *l = *list; l; l=l->next)
+        {
+          if (l == sibling)
+            break;
+          prev = l;
+        }
+      if (prev) {
+        MrgList *new_=calloc(sizeof (MrgList), 1);
+        new_->next = sibling;
+        new_->data = data;
+        prev->next=new_;
+      }
+    }
+}
+
+static inline void
 mrg_list_insert_sorted (MrgList **list, void *data,
                        int(*compare)(const void *a, const void *b, void *userdata),
                        void *userdata)
