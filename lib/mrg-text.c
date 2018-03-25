@@ -122,7 +122,8 @@ static int is_a_number (const char *word)
 /* the syntax highlighting is done with static globals; deep in the text
  * rendering, this permits the editing code to recognize which string is
  * edited and directly work with pointer arithmetic on that instead of
- * marked up xml for the highlighting.
+ * marked up xml for the highlighting - it limits the syntax highlighting
+ * context ability
  */
 enum {
   MRG_HL_NEUTRAL      = 0,
@@ -389,10 +390,29 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
       cairo_show_text (cr, string);
     else if (!strcmp (style->syntax_highlight, "C"))
       mrg_hl_text (cr, string);
-    else 
+    else
       cairo_show_text (cr, string);
 
     cairo_get_current_point (cr, &new_x, NULL);
+
+    if (style->text_decoration & MRG_UNDERLINE)
+      {
+        cairo_move_to (cr, old_x, y);
+        cairo_line_to (cr, new_x, y);
+        cairo_stroke (cr);
+      }
+    if (style->text_decoration & MRG_LINETHROUGH)
+      {
+        cairo_move_to (cr, old_x, y - style->font_size / 2);
+        cairo_line_to (cr, new_x, y - style->font_size / 2);
+        cairo_stroke (cr);
+      }
+    if (style->text_decoration & MRG_OVERLINE)
+      {
+        cairo_move_to (cr, old_x, y - style->font_size);
+        cairo_line_to (cr, new_x, y - style->font_size);
+        cairo_stroke (cr);
+      }
 
   }
 
@@ -874,13 +894,13 @@ static int mrg_print_wrap (Mrg        *mrg,
             }
           else
             {
-              emit_word (mrg, print, data, word, 
+              emit_word (mrg, print, data, word,
                          max_lines, skip_lines,
                          cursor_start,
                          &pos, &wraps, &wl, c, gotspace);
             }
           pos++;
-          
+
           if (retx && *retx < 0 && pos >= cursor_start)
             {
               float tailwidth;
@@ -912,6 +932,8 @@ static int mrg_print_wrap (Mrg        *mrg,
     {
       if (print)
       {
+        if (data[c-1]==' ')
+          mrg->x += measure_word_width (mrg, " ");
         mrg_start (mrg, ".cursor", NULL);
         _mrg_spaces (mrg, 1);
         mrg_end (mrg);
