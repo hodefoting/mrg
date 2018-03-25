@@ -166,6 +166,8 @@ static Mrg *mrg_new2 (int width, int height, const char *backend)
   return NULL;
 }
 
+#include <signal.h>
+
 void mrg_style_defaults (Mrg *mrg);
 
 Mrg *mrg_new (int width, int height, const char *backend)
@@ -173,6 +175,7 @@ Mrg *mrg_new (int width, int height, const char *backend)
   Mrg *mrg = NULL;
 
   MRG_INFO("new %i %i", width, height);
+
 
   if (!backend)
   {
@@ -201,6 +204,7 @@ Mrg *mrg_new (int width, int height, const char *backend)
   if (mrg)
     mrg_style_defaults (mrg);
   mrg->edited_str = mrg_string_new ("");
+  signal(SIGCHLD, SIG_IGN);
   return mrg;
 }
 
@@ -226,10 +230,13 @@ int  mrg_height (Mrg *mrg)
 
 void mrg_set_size (Mrg *mrg, int width, int height)
 {
-  mrg->width = width;
-  mrg->height = height;
-  mrg_resized (mrg, width, height, 0);
-  mrg_queue_draw (mrg, NULL);
+  if (mrg->width != width || mrg->height != height)
+  {
+    mrg->width = width;
+    mrg->height = height;
+    mrg_resized (mrg, width, height, 0);
+    mrg_queue_draw (mrg, NULL);
+  }
 }
 
 int  _mrg_has_quit (Mrg *mrg)
@@ -593,6 +600,9 @@ static void mrg_parse_style_id (Mrg          *mrg,
         }
         if (*p == 0)
           return;
+        temp[temp_l++] = *p;  // XXX: added to make reported fallthrough
+        temp[temp_l]=0;       //      not be reported - butexplicit
+        break;
       default:
         temp[temp_l++] = *p;
         temp[temp_l]=0;
@@ -618,7 +628,7 @@ void mrg_start_with_style (Mrg        *mrg,
 
   mrg->state->style_id = style_id ? strdup (style_id) : NULL;
 
-  mrg_parse_style_id (mrg, 
+  mrg_parse_style_id (mrg,
       mrg->state->style_id,
       &mrg->state->style_node);
 
@@ -678,7 +688,7 @@ void mrg_end (Mrg *mrg)
   }
   mrg->state_no--;
   if (mrg->state_no < 0)
-    fprintf (stderr, "unbalanced mrg_start/mrg_end, too many ends\n");
+    fprintf (stderr, "unbalanced mrg_start/mrg_end, enderflow\n");
   mrg->state = &mrg->states[mrg->state_no];
   if (mrg->in_paint)
     cairo_restore (mrg_cr (mrg));
@@ -783,7 +793,7 @@ float mrg_prev_frame_time (Mrg *mrg)
   return prev_frame_ticks / 1000.0;
 }
 
-static float target_fps = 40;
+static float target_fps = 60;
 
 void mrg_set_target_fps (Mrg *mrg, float fps)
 {
