@@ -32,7 +32,8 @@ typedef enum {
   MRG_DISPLAY_INLINE = 0,
   MRG_DISPLAY_BLOCK,
   MRG_DISPLAY_LIST_ITEM,
-  MRG_DISPLAY_HIDDEN
+  MRG_DISPLAY_HIDDEN,
+  MRG_DISPLAY_INLINE_BLOCK
 } MrgDisplay;
 
 /* matches cairo order */
@@ -266,6 +267,8 @@ struct _MrgStyle {
   float             height;
   float             min_height;
   float             max_height;
+  float             min_width;
+  float             max_width;
 
   float             border_top_width;
   float             border_left_width;

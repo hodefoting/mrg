@@ -40,6 +40,7 @@ const char * html_css =
 "tbody           { display: table-row-group }\n"
 "tfoot           { display: table-footer-group }\n"
 "col             { display: table-column }\n"
+"img             { display: inline-block }\n"
 "colgroup        { display: table-column-group }\n"
 "td, th          { display: table-cell }\n"
 "caption         { display: table-caption }\n"

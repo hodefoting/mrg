@@ -273,6 +273,18 @@ static inline float mrg_parse_px_x (Mrg *mrg, const char *str, char **endptr)
     if (endptr)
       *endptr=end + 1;
   }
+  else if (end[0]=='v' && end[1] == 'h')
+  {
+    result = result / 100.0 * (mrg_edge_bottom (mrg) - mrg_edge_top (mrg));
+    if (endptr)
+      *endptr=end + 1;
+  }
+  else if (end[0]=='v' && end[1] == 'w')
+  {
+    result = result / 100.0 * (mrg_edge_right (mrg) - mrg_edge_left (mrg));
+    if (endptr)
+      *endptr=end + 1;
+  }
   else if (end[0]=='r' && end[1]=='e' && end[2]=='m')
   {
     result *= mrg_rem (mrg);
@@ -337,6 +349,18 @@ static inline float mrg_parse_px_y (Mrg *mrg, const char *str, char **endptr)
   if (end[0]=='%')
   {
     result = result / 100.0 * (mrg_edge_bottom (mrg) - mrg_edge_top (mrg));
+    if (endptr)
+      *endptr=end + 1;
+  }
+  else if (end[0]=='v' && end[1] == 'h')
+  {
+    result = result / 100.0 * (mrg_edge_bottom (mrg) - mrg_edge_top (mrg));
+    if (endptr)
+      *endptr=end + 1;
+  }
+  else if (end[0]=='v' && end[1] == 'w')
+  {
+    result = result / 100.0 * (mrg_edge_right (mrg) - mrg_edge_left (mrg));
     if (endptr)
       *endptr=end + 1;
   }
@@ -588,11 +612,15 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
     s->min_height = mrg_parse_px_y (mrg, value, NULL);
   else if (!strcmp (name, "max-height"))
     s->max_height = mrg_parse_px_y (mrg, value, NULL);
+  else if (!strcmp (name, "min-width"))
+    s->min_height = mrg_parse_px_x (mrg, value, NULL);
+  else if (!strcmp (name, "max-width"))
+    s->max_height = mrg_parse_px_x (mrg, value, NULL);
   else if (!strcmp (name, "border-width"))
     {
       s->border_top_width =
       s->border_bottom_width =
-      s->border_right_width = 
+      s->border_right_width =
       s->border_left_width = mrg_parse_px_y (mrg, value, NULL);
     }
   else if (!strcmp (name, "border-color"))
@@ -901,7 +929,7 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
         s->float_ = MRG_FLOAT_LEFT;
       else if (!strcmp (value, "right"))
         s->float_ = MRG_FLOAT_RIGHT;
-      else 
+      else
         s->float_ = MRG_FLOAT_NONE;
     }
   else if (!strcmp (name, "overflow"))
@@ -914,7 +942,7 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
         s->overflow = MRG_OVERFLOW_SCROLL;
       else if (!strcmp (value, "auto"))
         s->overflow = MRG_OVERFLOW_AUTO;
-      else 
+      else
         s->overflow = MRG_OVERFLOW_VISIBLE;
     }
   else if (!strcmp (name, "clear"))
@@ -1069,7 +1097,7 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       else if (!strcmp (value, "list-item"))
         s->display = MRG_DISPLAY_LIST_ITEM;
       else if (!strcmp (value, "inline-block"))
-        s->display = MRG_DISPLAY_INLINE;
+        s->display = MRG_DISPLAY_INLINE_BLOCK;
       else
         s->display = MRG_DISPLAY_INLINE;
     }

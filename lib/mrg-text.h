@@ -83,6 +83,8 @@ void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
                      void (*link_cb) (MrgEvent *event, void *href, void *link_data),
                      void *link_data,
+                     void *(finalize)(void *listen_data, void *listen_data2, void *finalize_data),
+                     void *finalize_data,
                      char *html);
 
 void mrg_xml_renderf (Mrg *mrg,

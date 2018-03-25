@@ -394,7 +394,7 @@ static void ui_xhtml (Mrg *mrg, void *data)
 
   if (contents)
   {
-    mrg_xml_render (mrg, tmp->str, NULL, NULL, contents);
+    mrg_xml_render (mrg, tmp->str, NULL, NULL, NULL, NULL, contents);
     free (contents);
   }
   mrg_string_free (tmp, 1);

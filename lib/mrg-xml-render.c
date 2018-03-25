@@ -616,6 +616,8 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
     case MRG_POSITION_RELATIVE:
       /* XXX: deal with style->right and style->bottom */
       cairo_translate (mrg_cr (mrg), style->left, style->top);
+      /* fallthrough */
+
     case MRG_POSITION_STATIC:
 
 
@@ -712,7 +714,7 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
          */
         mrg_set_xy (mrg, ctx->state->original_x = left + width + style->padding_left + style->border_right_width + style->padding_right + style->margin_right + style->margin_left + style->border_left_width,
             y - style->font_size + style->padding_top + style->border_top_width);
-      }
+      } /* XXX: maybe spot for */
       break;
     case MRG_POSITION_ABSOLUTE:
       {
@@ -722,7 +724,6 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
         mrg_set_edge_top (mrg, style->top + style->margin_top + style->border_top_width + style->padding_top);
         ctx->state->block_start_x = mrg_x (mrg);
         ctx->state->block_start_y = mrg_y (mrg);
-
       }
       break;
     case MRG_POSITION_FIXED:
@@ -752,6 +753,7 @@ void _mrg_layout_pre (Mrg *mrg, MrgHtml *ctx)
   }
 
   if (style->display == MRG_DISPLAY_BLOCK ||
+      style->display == MRG_DISPLAY_INLINE_BLOCK ||
       style->float_)
   {
      float height = style->height;
@@ -816,6 +818,7 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
   
   /* adjust cursor back to before display */
 
+
   if ((style->display == MRG_DISPLAY_BLOCK || style->float_) &&
        style->height != 0.0)
   {
@@ -834,11 +837,10 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
     float fx,fy,fw,fh; // these tempvars arent really needed.
     was_float = style->float_;
     fx = ctx->state->block_start_x - style->padding_left - style->border_left_width - style->margin_left;
-    fy = ctx->state->block_start_y - mrg_em(mrg) - style->padding_top - style->border_top_width  
+    fy = ctx->state->block_start_y - mrg_em(mrg) - style->padding_top - style->border_top_width
       - style->margin_top;
 
     fw = mrg_edge_right (mrg) - mrg_edge_left (mrg)
-      
      + style->padding_left + style->border_left_width + style->margin_left
      + style->padding_right + style->border_right_width + style->margin_right;
 
@@ -875,6 +877,7 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
       geo->height = mrg_y (mrg) - (ctx->state->block_start_y - mrg_em(mrg));
     else
       geo->height = style->height;
+
     geo->gen++;
 
     mrg_box (mrg,
@@ -909,7 +912,7 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
     if (!style->float_ && style->display == MRG_DISPLAY_BLOCK)
     {
       vmarg = style->margin_bottom;
-    
+
       mrg_set_xy (mrg, 
           mrg_edge_left (mrg),
           mrg_y (mrg) + vmarg + style->border_bottom_width);
@@ -919,6 +922,7 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
   {
     mrg->x += paint_span_bg_final (mrg, mrg->x, mrg->y, 0);
   }
+
 
   if (style->position == MRG_POSITION_RELATIVE)
     cairo_translate (mrg_cr (mrg), -style->left, -style->top);
@@ -980,7 +984,7 @@ static char *entities[][2]={
   {"cedil",  "¸"},
   {"bull",   "·"},
   {"amp",   "&"},
-  {"mdash",  "–"}, 
+  {"mdash",  "–"},
   {"apos",   "'"},
   {"quot",   "\""},
   {"iexcl",  "¡"},
@@ -1168,6 +1172,7 @@ again:
       switch (command)
       {
         case 'a':
+          /* fallthrough*/ 
         case 'A':
           if (numbers == 7)
           {
@@ -1287,6 +1292,8 @@ void mrg_xml_render (Mrg *mrg,
                      char *uri_base,
                      void (*link_cb) (MrgEvent *event, void *href, void *link_data),
                      void *link_data,
+                     void *(finalize)(void *listen_data, void *listen_data2, void *finalize_data),
+                     void *finalize_data,
                      char *html_)
 {
   char *html;
@@ -1305,6 +1312,15 @@ void mrg_xml_render (Mrg *mrg,
   html = malloc (strlen (html_) + 3);
   sprintf (html, "%s ", html_);
   xmltok = xmltok_buf_new (html);
+
+  {
+    int no = mrg->text_listen_count;
+    mrg->text_listen_data1[no] = link_data;
+    mrg->text_listen_data2[no] = html_;
+    mrg->text_listen_finalize[no] = (void*)finalize;
+    mrg->text_listen_finalize_data[no] = finalize_data;
+    mrg->text_listen_count++;
+  }
 
   _mrg_set_wrap_edge_vfuncs (mrg, wrap_edge_left, wrap_edge_right, ctx);
   _mrg_set_post_nl (mrg, _mrg_draw_background_increment, ctx);
@@ -1345,8 +1361,7 @@ void mrg_xml_render (Mrg *mrg,
               mrg_print (mrg, entities[i][1]);
               dealt_with = 1;
             }
-          
-          
+
           if (!dealt_with){
             mrg_start (mrg, "dim", (void*)((size_t)pos));
             mrg_print (mrg, data);
@@ -1407,12 +1422,12 @@ void mrg_xml_render (Mrg *mrg,
         mrg_string_clear (style);
         break;
       case t_att:
-	if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
-        strncpy (ctx->attribute[ctx->attributes], data, MRG_XML_MAX_ATTRIBUTE_LEN-1);
+        if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
+          strncpy (ctx->attribute[ctx->attributes], data, MRG_XML_MAX_ATTRIBUTE_LEN-1);
         break;
       case t_val:
-	if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
-        strncpy (ctx->value[ctx->attributes++], data, MRG_XML_MAX_VALUE_LEN-1);
+        if (ctx->attributes < MRG_XML_MAX_ATTRIBUTES-1)
+          strncpy (ctx->value[ctx->attributes++], data, MRG_XML_MAX_VALUE_LEN-1);
         break;
       case t_endtag:
 
@@ -1494,7 +1509,7 @@ void mrg_xml_render (Mrg *mrg,
               "font-size",
               "font-family",
               "fill-color",
-              "fill", 
+              "fill",
               "stroke-width",
               "stroke-color",
               "stroke-linecap",
@@ -1569,24 +1584,6 @@ void mrg_xml_render (Mrg *mrg,
           mrg->y = mrg_parse_float (mrg, get_attr (ctx, "y"), NULL);
         }
 
-        if (!strcmp (data, "img") && get_attr (ctx, "href"))
-        {
-          int img_width, img_height;
-          const char *href = get_attr (ctx, "href");
-          mrg_printf (mrg, "\n");
-
-          if (mrg_query_image (mrg, href, &img_width, &img_height))
-          {
-            mrg->y += img_height;
-            _mrg_draw_background_increment (mrg, &mrg->html, 0);
-            mrg_image (mrg, mrg->x, mrg->y - img_height, -1, -1, href);
-          }
-          else
-          {
-            mrg_printf (mrg, "[%s]", href);
-          }
-        }
-          
         if (!strcmp (data, "a"))
         {
           if (link_cb && get_attr (ctx, "href")) 
@@ -1613,6 +1610,42 @@ void mrg_xml_render (Mrg *mrg,
               mrg_stylesheet_add (mrg, contents, uri_base, MRG_STYLE_XML, NULL);
               free (contents);
             }
+          }
+        }
+
+        if (!strcmp (data, "img") && get_attr (ctx, "src"))
+        {
+          int img_width, img_height;
+          const char *src = get_attr (ctx, "src");
+
+          if (mrg_query_image (mrg, src, &img_width, &img_height))
+          {
+            float width = mrg_style(mrg)->width;
+            float height = mrg_style(mrg)->height;
+
+            if (width < 1)
+            {
+               width = img_width;
+            }
+            if (height < 1)
+            {
+               height = img_height *1.0 / img_width * width;
+            }
+
+            _mrg_draw_background_increment (mrg, &mrg->html, 0);
+            mrg->y += height;
+
+            mrg_image (mrg,
+            mrg->x,
+            mrg->y - height,
+            width,
+            height, src);
+
+            mrg->x += width;
+          }
+          else
+          {
+            mrg_printf (mrg, "![%s]", src);
           }
         }
 
@@ -1758,13 +1791,13 @@ void mrg_xml_renderf (Mrg *mrg,
   va_start(ap, format);
   vsnprintf(buffer, needed, format, ap);
   va_end (ap);
-  mrg_xml_render (mrg, uri_base, link_cb, link_data, buffer);
+  mrg_xml_render (mrg, uri_base, link_cb, link_data, NULL, NULL, buffer);
   free (buffer);
 }
 
 void mrg_print_xml (Mrg *mrg, char *xml)
 {
-  mrg_xml_render (mrg, NULL, NULL, NULL, xml);
+  mrg_xml_render (mrg, NULL, NULL, NULL, NULL, NULL, xml);
 }
 
 void
