@@ -424,13 +424,15 @@ static void _mrg_vt_move_to (MrgVT *vt, int y, int x)
   mrg_vt_trimlines (vt, vt->rows);
 }
 
+static void mrg_vt_line_feed (MrgVT *vt);
+
 static void _mrg_vt_add_str (MrgVT *vt, const char *str)
 {
   if (vt->cursor_x > vt->cols)
   {
     if (vt->autowrap) {
-      mrg_vt_feed_byte (vt, '\n');
-      vt->cursor_x = 1;
+      mrg_vt_line_feed (vt);
+      _mrg_vt_move_to (vt, vt->cursor_y, 1);
     }
     else
       vt->cursor_x = vt->cols;
@@ -1257,7 +1259,7 @@ static void _mrg_vt_htab (MrgVT *vt)
 {
   do {
     _mrg_vt_add_str (vt, " ");
-  } while ( ! vt->tabs[vt->cursor_x-1]);
+  } while ( ! vt->tabs[vt->cursor_x-1] && vt->cursor_x < vt->cols);
 }
 
 void mrg_vt_feed_byte (MrgVT *vt, int byte)
