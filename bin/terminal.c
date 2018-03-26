@@ -82,7 +82,7 @@ int terminal_main (int argc, char **argv)
 
   mrg_vt_set_term_size (vt, DEFAULT_COLS, DEFAULT_ROWS);
   mrg_set_ui (mrg, render_vt, vt);
-  mrg_set_title (mrg, mrg_vt_get_commandline (vt));
+  mrg_set_title (mrg,  argv[1]?argv[1]:mrg_vt_find_shell_command());
   mrg_main (mrg);
   mrg_vt_destroy (vt);
   mrg_destroy (mrg);
