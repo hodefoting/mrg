@@ -1,0 +1,2 @@
+source: img.html
+command:  ../mrg browser img.html -o output/img.png

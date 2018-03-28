@@ -1,2 +1,0 @@
-source: xhtml.html
-command:  ../mrg browser xhtml.html -o output/xpng.html

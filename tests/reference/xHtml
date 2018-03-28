@@ -1,0 +1,2 @@
+source: xHtml.html
+command:  ../mrg browser xHtml.html -o output/xHtml.png
