@@ -30,6 +30,7 @@ struct _MrgString
   int   allocated_length;
 }  __attribute((packed));
 
+MrgString   *mrg_string_new_with_size  (const char *initial, int initial_size);
 MrgString   *mrg_string_new            (const char *initial);
 void         mrg_string_free           (MrgString  *string, int freealloc);
 char        *mrg_string_dissolve       (MrgString  *string);

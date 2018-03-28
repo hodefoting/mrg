@@ -27,9 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void mrg_string_init (MrgString *string)
+static void mrg_string_init (MrgString *string, int initial_size)
 {
-  string->allocated_length = 8; // XXX: working around a bug in string or vt
+  string->allocated_length = initial_size;
   string->length = 0;
   string->utf8_length = 0;
   string->str = malloc (string->allocated_length);
@@ -88,7 +88,8 @@ void mrg_string_append_unichar (MrgString *string, unsigned int unichar)
 
 static inline void _mrg_string_append_str (MrgString *string, const char *str)
 {
-  while (str && *str)
+  if (!str) return;
+  while (*str)
     {
       _mrg_string_append_byte (string, *str);
       str++;
@@ -99,13 +100,18 @@ void mrg_string_append_str (MrgString *string, const char *str)
   _mrg_string_append_str (string, str);
 }
 
-MrgString *mrg_string_new (const char *initial)
+MrgString *mrg_string_new_with_size (const char *initial, int initial_size)
 {
   MrgString *string = calloc (sizeof (MrgString), 1);
-  mrg_string_init (string);
+  mrg_string_init (string, initial_size);
   if (initial)
     _mrg_string_append_str (string, initial);
   return string;
+}
+
+MrgString *mrg_string_new (const char *initial)
+{
+  return mrg_string_new_with_size (initial, 8);
 }
 
 void mrg_string_append_data (MrgString *string, const char *str, int len)
