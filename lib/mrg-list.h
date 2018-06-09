@@ -140,48 +140,9 @@ static inline MrgList *mrg_list_find (MrgList *list, void *data)
   return list;
 }
 
-/* a bubble-sort for now, simplest thing that could be coded up
- * right to make the code continue working
- */
-static inline void mrg_list_sort (MrgList **list, 
+void mrg_list_sort (MrgList **list,
     int(*compare)(const void *a, const void *b, void *userdata),
-    void *userdata)
-{
-  /* replace this with an insertion sort */
-  MrgList *temp = *list;
-  MrgList *t;
-  MrgList *prev;
-again:
-  prev = NULL;
-
-  for (t = temp; t; t = t->next)
-    {
-      if (t->next)
-        {
-          if (compare (t->data, t->next->data, userdata) > 0)
-            {
-              /* swap */
-              if (prev)
-                {
-                  MrgList *tnn = t->next->next;
-                  prev->next = t->next;
-                  prev->next->next = t;
-                  t->next = tnn;
-                }
-              else
-                {
-                  MrgList *tnn = t->next->next;
-                  temp = t->next;
-                  temp->next = t;
-                  t->next = tnn;
-                }
-              goto again;
-            }
-        }
-      prev = t;
-    }
-  *list = temp;
-}
+    void *userdata);
 
 static inline void
 mrg_list_insert_before (MrgList **list, MrgList *sibling,

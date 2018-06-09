@@ -144,7 +144,7 @@ MrgList *mrg_list_find (MrgList *list, void *data)
 /* a bubble-sort for now, simplest thing that could be coded up
  * right to make the code continue working
  */
-void mrg_list_sort (MrgList **list, 
+void mrg_list_sort_bubble (MrgList **list,
     int(*compare)(const void *a, const void *b, void *userdata),
     void *userdata)
 {
@@ -182,6 +182,92 @@ again:
       prev = t;
     }
   *list = temp;
+}
+
+static MrgList*
+mrg_list_merge_sorted (MrgList* list1,
+                       MrgList* list2,
+    int(*compare)(const void *a, const void *b, void *userdata), void *userdata
+)
+{
+  if (list1 == NULL)
+     return(list2);
+  else if (list2==NULL)
+     return(list1);
+
+  if (compare (list1->data, list2->data, userdata) >= 0)
+  {
+    list1->next = mrg_list_merge_sorted (list1->next,list2, compare, userdata);
+    /*list1->next->prev = list1;
+      list1->prev = NULL;*/
+    return list1;
+  }
+  else
+  {
+    list2->next = mrg_list_merge_sorted (list1,list2->next, compare, userdata);
+    /*list2->next->prev = list2;
+      list2->prev = NULL;*/
+    return list2;
+  }
+}
+
+static void
+mrg_list_split_half (MrgList*  head,
+                     MrgList** list1,
+                     MrgList** list2)
+{
+  MrgList* fast;
+  MrgList* slow;
+  if (head==NULL || head->next==NULL)
+  {
+    *list1 = head;
+    *list2 = NULL;
+  }
+  else
+  {
+    slow = head;
+    fast = head->next;
+
+    while (fast != NULL)
+    {
+      fast = fast->next;
+      if (fast != NULL)
+      {
+        slow = slow->next;
+        fast = fast->next;
+      }
+    }
+
+    *list1 = head;
+    *list2 = slow->next;
+    slow->next = NULL;
+  }
+}
+
+void mrg_list_sort_merge (MrgList **head,
+    int(*compare)(const void *a, const void *b, void *userdata),
+    void *userdata)
+{
+  MrgList* list1;
+  MrgList* list2;
+
+  /* Base case -- length 0 or 1 */
+  if ((*head == NULL) || ((*head)->next == NULL))
+  {
+    return;
+  }
+
+  mrg_list_split_half (*head, &list1, &list2);
+  mrg_list_sort_merge(&list1, compare, userdata);
+  mrg_list_sort_merge(&list2, compare, userdata);
+  *head = mrg_list_merge_sorted (list1, list2, compare, userdata);
+}
+
+void mrg_list_sort (MrgList **list,
+    int(*compare)(const void *a, const void *b, void *userdata),
+    void *userdata)
+{
+  mrg_list_sort_merge (list, compare, userdata);
 }
 
 void
