@@ -141,49 +141,6 @@ MrgList *mrg_list_find (MrgList *list, void *data)
   return list;
 }
 
-/* a bubble-sort for now, simplest thing that could be coded up
- * right to make the code continue working
- */
-void mrg_list_sort_bubble (MrgList **list,
-    int(*compare)(const void *a, const void *b, void *userdata),
-    void *userdata)
-{
-  /* replace this with an insertion sort */
-  MrgList *temp = *list;
-  MrgList *t;
-  MrgList *prev;
-again:
-  prev = NULL;
-
-  for (t = temp; t; t = t->next)
-    {
-      if (t->next)
-        {
-          if (compare (t->data, t->next->data, userdata) > 0)
-            {
-              /* swap */
-              if (prev)
-                {
-                  MrgList *tnn = t->next->next;
-                  prev->next = t->next;
-                  prev->next->next = t;
-                  t->next = tnn;
-                }
-              else
-                {
-                  MrgList *tnn = t->next->next;
-                  temp = t->next;
-                  temp->next = t;
-                  t->next = tnn;
-                }
-              goto again;
-            }
-        }
-      prev = t;
-    }
-  *list = temp;
-}
-
 static MrgList*
 mrg_list_merge_sorted (MrgList* list1,
                        MrgList* list2,
@@ -244,7 +201,7 @@ mrg_list_split_half (MrgList*  head,
   }
 }
 
-void mrg_list_sort_merge (MrgList **head,
+void mrg_list_sort (MrgList **head,
     int(*compare)(const void *a, const void *b, void *userdata),
     void *userdata)
 {
@@ -258,16 +215,9 @@ void mrg_list_sort_merge (MrgList **head,
   }
 
   mrg_list_split_half (*head, &list1, &list2);
-  mrg_list_sort_merge(&list1, compare, userdata);
-  mrg_list_sort_merge(&list2, compare, userdata);
+  mrg_list_sort (&list1, compare, userdata);
+  mrg_list_sort (&list2, compare, userdata);
   *head = mrg_list_merge_sorted (list1, list2, compare, userdata);
-}
-
-void mrg_list_sort (MrgList **list,
-    int(*compare)(const void *a, const void *b, void *userdata),
-    void *userdata)
-{
-  mrg_list_sort_merge (list, compare, userdata);
 }
 
 void
