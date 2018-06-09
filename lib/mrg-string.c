@@ -179,6 +179,24 @@ mrg_string_append_printf (MrgString *string, const char *format, ...)
   free (buffer);
 }
 
+MrgString *mrg_string_new_printf (const char *format, ...)
+{
+  MrgString *string = mrg_string_new_with_size ("", 8);
+  va_list ap;
+  size_t needed;
+  char  *buffer;
+  va_start(ap, format);
+  needed = vsnprintf(NULL, 0, format, ap) + 1;
+  buffer = malloc(needed);
+  va_end (ap);
+  va_start(ap, format);
+  vsnprintf(buffer, needed, format, ap);
+  va_end (ap);
+  _mrg_string_append_str (string, buffer);
+  free (buffer);
+  return string;
+}
+
 void
 mrg_string_set (MrgString *string, const char *new_string)
 {
