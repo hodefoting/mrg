@@ -413,7 +413,7 @@ float mrg_draw_string (Mrg *mrg, MrgStyle *style,
         cairo_line_to (cr, new_x, y - style->font_size);
         cairo_stroke (cr);
       }
-
+    cairo_move_to (cr, new_x, y);
   }
 
   if (mrg->text_listen_active)
