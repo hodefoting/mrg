@@ -169,7 +169,8 @@ MrgBackend mrg_backend_mmm = {
   mrg_mmm_get_position,
   mrg_mmm_set_title,
   mrg_mmm_get_title,
-  mrg_mmm_restart
+  mrg_mmm_restart,
+  NULL, /* get profile */
 };
 
 MrgBackend mrg_backend_mmm_client = {
@@ -189,7 +190,8 @@ MrgBackend mrg_backend_mmm_client = {
   mrg_mmm_get_position,
   mrg_mmm_set_title,
   mrg_mmm_get_title,
-  NULL,
+  NULL, /* restart */
+  NULL /* get profile */
 };
 
 static Mrg *_mrg_mmm_client_new (int width, int height)

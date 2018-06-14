@@ -83,7 +83,8 @@ MrgBackend mrg_backend_mem = {
   NULL, /* mrg_gtk_get_position, */
   NULL, /* mrg_gtk_set_title, */
   NULL, /* mrg_gtk_get_title, */
-  NULL
+  NULL, /* mrg_restart */
+  NULL, /* mrg_get_profile  */
 };
 
 static Mrg *_mrg_mem_new (int width, int height)

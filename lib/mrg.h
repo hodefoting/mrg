@@ -174,4 +174,6 @@ void mrg_new_page (Mrg *mrg);
 void mrg_render_pdf (Mrg *mrg, const char *pdf_path);
 void mrg_render_svg (Mrg *mrg, const char *svg_path);
 
+const uint8_t *mrg_get_profile (Mrg *mrg, int *length);
+
 #endif

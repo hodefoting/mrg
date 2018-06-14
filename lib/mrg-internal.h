@@ -34,7 +34,7 @@
 typedef struct _MrgStyleNode MrgStyleNode;
 
 #define MRG_STYLE_MAX_CLASSES 16
-#define MRG_STYLE_MAX_PSEUDO  8
+#define MRG_STYLE_MAX_PSEUDO  16
 
 
 /* XXX: both style_id's and selectors should be parsed into these..
@@ -262,6 +262,7 @@ struct _MrgBackend {
   const char *      (*mrg_get_title)    (Mrg *mrg);
 
   void              (*mrg_restart)      (Mrg *mrg);
+  const char *      (*mrg_get_profile)  (Mrg *mrg, int *profile_length);
 };
 
 struct _Mrg {

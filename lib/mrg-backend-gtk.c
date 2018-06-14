@@ -359,7 +359,7 @@ static void mrg_gtk_destroy (Mrg *mrg)
 
 static void mrg_gtk_fullscreen (Mrg *mrg, int fullscreen)
 {
-  MrgGtk *mrg_gtk = mrg->backend_data;
+  MrgGtk *mrg_gtk   = mrg->backend_data;
   GtkWidget *window = gtk_widget_get_ancestor (mrg_gtk->drawingarea, GTK_TYPE_WINDOW);
   if (fullscreen)
     gtk_window_fullscreen (GTK_WINDOW (window));
@@ -416,6 +416,7 @@ static void mrg_gtk_get_position  (Mrg *mrg, int *x, int *y)
 }
 
 static Mrg *_mrg_gtk_new (int width, int height);
+char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length);
 
 MrgBackend mrg_backend_gtk = {
   "gtk",
@@ -434,7 +435,8 @@ MrgBackend mrg_backend_gtk = {
   mrg_gtk_get_position,
   mrg_gtk_set_title,
   mrg_gtk_get_title,
-  NULL
+  NULL, /* mrg_restart */
+  mrg_gtk_get_icc_profile
 };
 
 static GtkTargetEntry target_table[] = {
@@ -581,5 +583,60 @@ GtkWidget *mrg_gtk_get_hbox (Mrg *mrg)
     return NULL;
   return mrg_gtk->hbox;
 }
+
+#include <gdk/gdkx.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+
+char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length)
+{
+  MrgGtk *mrg_gtk = mrg->backend_data;
+  Atom     icc_atom, type;
+  int      format;
+  unsigned long     nitems;
+  unsigned long     bytes_after;
+  unsigned long     length;
+  uint8_t *str;
+  int      result;
+  char     atom_name[32]="_ICC_PROFILE";
+
+  GdkScreen *screen = gtk_widget_get_screen (mrg_gtk->window);
+
+  if (ret_length )
+    *ret_length = -1;
+
+  if (!GDK_IS_X11_SCREEN (screen))
+    return NULL;
+
+  Display   *dpy = GDK_DISPLAY_XDISPLAY (gdk_screen_get_display (screen));
+
+  if (gdk_screen_get_number (screen) > 0)
+    sprintf (atom_name, "_ICC_PROFILE_%i", gdk_screen_get_number (screen));
+
+  icc_atom = gdk_x11_get_xatom_by_name_for_display (gdk_screen_get_display (screen), atom_name);
+  result = XGetWindowProperty (dpy, GDK_WINDOW_XID (gdk_screen_get_root_window (screen)), icc_atom, 0, 128 * 1024, False, XA_CARDINAL, &type, &format, &nitems, &bytes_after, (uint8_t**)&str);
+
+    if ((result == Success) && (type == XA_CARDINAL) && (nitems > 0)) {
+      uint8_t *ret;
+      switch (format)
+      {
+        case 8:  length = nitems; break;
+        case 16: length = nitems * 2; break;
+        case 32: length = nitems * sizeof (long); break;
+        default:
+          XFree (str);
+          return NULL;
+      }
+      ret = malloc (length);
+      memcpy (ret, str, length);
+      XFree (str);
+      if (ret_length )
+        *ret_length = length;
+      return ret;
+    }
+
+  return NULL;
+}
+
 
 #endif

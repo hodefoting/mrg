@@ -306,6 +306,17 @@ void mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
     mrg->backend->mrg_queue_draw (mrg, &rect_copy);
 }
 
+const uint8_t *mrg_get_profile (Mrg *mrg, int *length)
+{
+  if (mrg->backend->mrg_get_profile)
+    return mrg->backend->mrg_get_profile (mrg, length);
+
+  return NULL;
+
+}
+
+
+
 int _mrg_is_dirty (Mrg *mrg)
 {
   return mrg->dirty.width != 0;

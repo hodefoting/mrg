@@ -466,6 +466,7 @@ MrgBackend mrg_backend_nct = {
   NULL, /* mrg_nct_set_title, XXX: this is possible! */
   NULL, /* mrg_nct_get_title, */
   NULL, /* mrg_restart */
+  NULL  /* get profile */
 };
 
 static Mrg *_mrg_terminal_new (int width, int height)
