@@ -1329,7 +1329,7 @@ void mrg_xml_render (Mrg *mrg,
 
   while (type != t_eof)
   {
-    char *data;
+    char *data = NULL;
     type = xmltok_get (xmltok, &data, &pos);
 
     if (type == t_tag ||
@@ -1503,7 +1503,7 @@ void mrg_xml_render (Mrg *mrg,
           if (klass)
             free (klass);
           {
-            /* collext XML attributes and convert into CSS declarations */
+            /* collect XML attributes and convert into CSS declarations */
             const char *style_attribute[] ={
               "fill-rule",
               "font-size",
@@ -1648,7 +1648,7 @@ void mrg_xml_render (Mrg *mrg,
             mrg_printf (mrg, "![%s]", src);
           }
         }
-
+#if 1
         if (!strcmp (data, "link") ||
             !strcmp (data, "meta") ||
             !strcmp (data, "input") ||
@@ -1660,10 +1660,10 @@ void mrg_xml_render (Mrg *mrg,
           mrg_end (mrg);
           depth--;
         }
+#endif
         break;
 
       case t_closeemptytag:
-
       case t_closetag:
         if (!should_be_empty)
         {
@@ -1684,7 +1684,7 @@ void mrg_xml_render (Mrg *mrg,
             } else 
             if (depth > 0 && !strcmp (tag[depth-1], data))
             {
-              //fprintf (stderr, "%i: fixing close of %s when %s is open\n", pos, data, tag[depth]);
+              fprintf (stderr, "%i: fixing close of %s when %s is open\n", pos, data, tag[depth]);
 
               mrg_end (mrg);
               depth --;
