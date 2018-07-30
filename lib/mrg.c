@@ -309,7 +309,7 @@ void mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 const uint8_t *mrg_get_profile (Mrg *mrg, int *length)
 {
   if (mrg->backend->mrg_get_profile)
-    return mrg->backend->mrg_get_profile (mrg, length);
+    return (uint8_t*)mrg->backend->mrg_get_profile (mrg, length);
 
   return NULL;
 
