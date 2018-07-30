@@ -77,12 +77,22 @@ typedef struct _MrgImage MrgImage;
  */
 void  mrg_ui_update (Mrg *mrg);
 
-MrgImage *mrg_query_image (Mrg *mrg, const char *path, 
+MrgImage *mrg_query_image (Mrg *mrg, const char *path,
                            int *width,
                            int *height);
+
+MrgImage *mrg_query_image_memory (Mrg *mrg,
+                                  const char *contents,
+                                  int         length,
+                                  const char *eid,
+                                  int        *width,
+                                  int        *height);
+
 cairo_surface_t *mrg_image_get_surface (MrgImage *image);
 
 void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path);
+void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid);
+
 
 void mrg_set_image_cache_mb (Mrg *mrg, int new_max_size);
 int mrg_get_image_cache_mb (Mrg *mrg);

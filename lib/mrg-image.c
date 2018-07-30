@@ -70,8 +70,101 @@ int mrg_get_image_cache_mb (Mrg *mrg)
   return image_cache_max_size_mb;
 }
 
+#include "mrg-sha256.h"
+
+/* transcribes a binary digest to ascii
+ */
+static void
+bin2hex (const unsigned char *bin,
+         char                *ascii,
+         int                  hash_length)
+{
+  int c;
+  char *hex="0123456789abcdef";
+  for (c=0; c<hash_length; c++)
+   {
+     ascii[c*2+0]=hex[bin[c]/16];
+     ascii[c*2+1]=hex[bin[c]%16];
+   }
+  ascii[hash_length*2]=0;
+}
+
+// creates an exclusive id, by hashing the data, the result
+// in eid should be able to hold at least 100 chars
+static void data_to_eid (const char *data,
+                         int         length,
+                         char       *eid)
+{
+  unsigned char hash[32];
+  SHA256_CTX ctx;
+  sha256_init (&ctx);
+  sha256_update (&ctx, (void*)data, length);
+  sha256_final (&ctx, hash);
+  bin2hex (hash, eid, 32);
+}
+
+MrgImage *mrg_query_image_memory (Mrg *mrg,
+                                  const char *contents,
+                                  int         length,
+                                  const char *eid,
+                                  int        *width,
+                                  int        *height)
+{
+    int w, h, comp;
+    char temp[96]="";
+    if (eid == NULL)
+      {
+        data_to_eid (contents, length, temp);
+        eid = &temp[0];
+      }
+    fprintf (stderr, "[%s]\n", eid);
+
+  for (MrgList *l = image_cache; l; l = l->next)
+  {
+    MrgImage *image = l->data;
+    if (!strcmp (image->path, eid))
+    {
+      if (width)
+        *width = cairo_image_surface_get_width (image->surface);
+      if (height)
+        *height = cairo_image_surface_get_height (image->surface);
+      return image;
+    }
+  }
+
+    unsigned char *data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
+    if (data)
+    {
+      MrgImage *image = malloc (sizeof (MrgImage));
+      image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
+      image->path = strdup (eid);
+    {
+      int i;
+      char *src = (void*) data;
+      char *dst = (void*)cairo_image_surface_get_data (image->surface);
+      /* XXX: this depends on endianness of platform */
+      for (i = 0; i < w * h; i++)
+      {
+        dst[i*4 + 0] = src[i*4 + 2];
+        dst[i*4 + 1] = src[i*4 + 1];
+        dst[i*4 + 2] = src[i*4 + 0];
+        dst[i*4 + 3] = src[i*4 + 3];
+      }
+    }
+    mrg_list_prepend_full (&image_cache, image,
+                           (void*)free_image, NULL);
+    free (data);
+
+    image_cache_size +=
+        compute_size (w, h);
+
+    return mrg_query_image (mrg, eid, width, height);
+  }
+  return NULL;
+}
+
 MrgImage *mrg_query_image (Mrg *mrg,
-                           const char *path, 
+                           const char *path,
                            int *width,
                            int *height)
 {
@@ -119,61 +212,25 @@ MrgImage *mrg_query_image (Mrg *mrg,
       char *contents = NULL;
       long length;
       _mrg_file_get_contents (path, &contents, &length);
+
       if (contents)
       {
-          int w, h, comp;
-          unsigned char *data;
-          data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
-          if (data)
-          {
-          MrgImage *image = malloc (sizeof (MrgImage));
-          image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
-          image->path = strdup (path);
-          {
-            int i;
-            char *src = (void*) data;
-            char *dst = (void*)cairo_image_surface_get_data (image->surface);
-            /* XXX: this depends on endianness of platform */
-            for (i = 0; i < w * h; i++)
-            {
-              dst[i*4 + 0] = src[i*4 + 2];
-              dst[i*4 + 1] = src[i*4 + 1];
-              dst[i*4 + 2] = src[i*4 + 0];
-              dst[i*4 + 3] = src[i*4 + 3];
-            }
-          }
-          mrg_list_prepend_full (&image_cache, image,
-                                 (void*)free_image, NULL);
-          free (data);
-          free (contents);
-
-          image_cache_size +=
-              compute_size (w, h);
-
-
-          return mrg_query_image (mrg, path, width, height);
-        }
-        free (contents);
+         MrgImage *image = mrg_query_image_memory (mrg,
+                                                   contents, length, NULL,
+                                                   width, height);
+         free (contents);
+         return image;
       }
     }
   }
   return NULL;
 }
 
-void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path)
+
+static void _mrg_image (Mrg *mrg, float x0, float y0, float width, float height, MrgImage *image, int orig_width, int orig_height)
 {
-  int orig_width, orig_height;
-  MrgImage *image;
   cairo_t *cr = mrg_cr (mrg);
   cairo_surface_t *surface = NULL;
-
-  if (!path)
-    return;
-
-  image = mrg_query_image (mrg, path, &orig_width, &orig_height);
-  if (!image)
-    return;
-
   surface = image->surface;
 
   if (width == -1 && height == -1)
@@ -188,7 +245,7 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
     height = orig_height * width / orig_width;
 
   cairo_save (cr);
-  
+
   cairo_rectangle (cr, x0, y0, width, height);
   cairo_clip (cr);
   cairo_translate (cr, x0, y0);
@@ -200,6 +257,38 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
   cairo_paint (cr);
   cairo_restore (cr);
 }
+
+void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path)
+{
+  MrgImage *image;
+  int orig_width, orig_height;
+
+  if (!path)
+    return;
+
+  image = mrg_query_image (mrg, path, &orig_width, &orig_height);
+  if (!image)
+    return;
+
+  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height);
+}
+
+void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid)
+{
+  int orig_width, orig_height;
+  MrgImage *image;
+  cairo_t *cr = mrg_cr (mrg);
+  cairo_surface_t *surface = NULL;
+
+  if (!data)
+    return;
+
+  image = mrg_query_image_memory (mrg, data, length, eid, &orig_width, &orig_height);
+  if (!image)
+    return;
+  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height);
+}
+
 
 cairo_surface_t *mrg_image_get_surface (MrgImage *image)
 {
