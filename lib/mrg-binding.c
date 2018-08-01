@@ -36,26 +36,23 @@ void mrg_add_binding_full (Mrg *mrg,
                            MrgDestroyNotify destroy_notify,
                            void       *destroy_data)
 {
-  int i;
-  for (i = 0; mrg->bindings[i].nick; i++)
-    if (!strcmp (mrg->bindings[i].nick, key))
-    {
-      /* we just add them, with later ones having priority..
-       */
-    }
-  for (i = 0; mrg->bindings[i].nick; i ++);
-
-  mrg->bindings[i].nick = strdup (key);
-  strcpy (mrg->bindings[i].nick, key);
+  if (mrg->n_bindings +1 >= MRG_MAX_BINDINGS)
+  {
+    fprintf (stderr, "warning: mrg binding overflow\n");
+    return;
+  }
+  mrg->bindings[mrg->n_bindings].nick = strdup (key);
+  strcpy (mrg->bindings[mrg->n_bindings].nick, key);
 
   if (action)
-    mrg->bindings[i].command = action ? strdup (action) : NULL;
+    mrg->bindings[mrg->n_bindings].command = action ? strdup (action) : NULL;
   if (label)
-    mrg->bindings[i].label = label ? strdup (label) : NULL;
-  mrg->bindings[i].cb = cb;
-  mrg->bindings[i].cb_data = cb_data;
-  mrg->bindings[i].destroy_notify = destroy_notify;
-  mrg->bindings[i].destroy_data = destroy_data;
+    mrg->bindings[mrg->n_bindings].label = label ? strdup (label) : NULL;
+  mrg->bindings[mrg->n_bindings].cb = cb;
+  mrg->bindings[mrg->n_bindings].cb_data = cb_data;
+  mrg->bindings[mrg->n_bindings].destroy_notify = destroy_notify;
+  mrg->bindings[mrg->n_bindings].destroy_data = destroy_data;
+  mrg->n_bindings++;
 }
 
 void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
@@ -63,11 +60,8 @@ void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
   Mrg *mrg = event->mrg;
   int i;
   int handled = 0;
-  int max;
-  for (i = 0; mrg->bindings[i].nick; i++);
-  max = i-1;
 
-  for (i = max; i>=0; i--)
+  for (i = mrg->n_bindings-1; i>=0; i--)
     if (!strcmp (mrg->bindings[i].nick, event->string))
     {
       if (mrg->bindings[i].cb)
@@ -79,7 +73,7 @@ void _mrg_bindings_key_down (MrgEvent *event, void *data1, void *data2)
       }
     }
   if (!handled)
-  for (i = max; i>=0; i--)
+  for (i = mrg->n_bindings-1; i>=0; i--)
     if (!strcmp (mrg->bindings[i].nick, "unhandled"))
     {
       if (mrg->bindings[i].cb)
@@ -105,6 +99,7 @@ void mrg_clear_bindings (Mrg *mrg)
       free (mrg->bindings[i].label);
   }
   memset (&mrg->bindings, 0, sizeof (mrg->bindings));
+  mrg->n_bindings = 0;
 }
 
 MrgBinding *mrg_get_bindings (Mrg *mrg)

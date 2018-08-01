@@ -73,7 +73,7 @@ MrgList *device_get_grabs (Mrg *mrg, int device_no)
 
 /* XXX: stopping sibling grabs should be an addtion to stop propagation,
  * this would permit multiple events to co-register, and use that
- * to signal each other,.. or perhaps better coordination is needed
+ * to signal each other,.. or perhaps more coordination is needed
  */
 void _mrg_clear_text_closures (Mrg *mrg)
 {
