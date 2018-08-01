@@ -1207,6 +1207,11 @@ void  mrg_text_listen_full (Mrg *mrg, MrgType types,
     mrg_text_listen_done (mrg);
     return;
   }
+  if (no + 1 >= MRG_MAX_TEXT_LISTEN)
+  {
+    fprintf (stderr, "mrg text listen overflow\n");
+    return;
+  }
 
   mrg->text_listen_types[no] = types;
   mrg->text_listen_cb[no] = cb;
@@ -1329,6 +1334,12 @@ static void cmd_down (MrgEvent *event, void *data1, void *data2)
         best = no;
       }
     }
+    if (best_y == cy)
+    {
+      mrg->cursor_pos = strl;
+      mrg_queue_draw (mrg, NULL);
+      return;
+    }
     mrg->cursor_pos = best;
   }
 
@@ -1381,6 +1392,12 @@ static void cmd_up (MrgEvent *event, void *data1, void *data2)
       }
     }
     mrg->cursor_pos = best;
+    if (best_y == cy)
+    {
+      mrg->cursor_pos = 0;
+      mrg_queue_draw (mrg, NULL);
+      return; // without stop propagate this should permit things registered earlier to fire
+    }
   }
 
   if (mrg->cursor_pos < 0)
