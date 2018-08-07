@@ -31,7 +31,7 @@ static int compute_size (int w, int h)
 }
 
 static long image_cache_size = 0;
-static int image_cache_max_size_mb = 128; 
+static int image_cache_max_size_mb = 384;
 
 static MrgList *image_cache = NULL;
 
@@ -110,14 +110,13 @@ MrgImage *mrg_query_image_memory (Mrg *mrg,
                                   int        *width,
                                   int        *height)
 {
-    int w, h, comp;
-    char temp[96]="";
-    if (eid == NULL)
-      {
-        data_to_eid (contents, length, temp);
-        eid = &temp[0];
-      }
-    fprintf (stderr, "[%s]\n", eid);
+  int w, h, comp;
+  char temp[96]="";
+  if (eid == NULL)
+    {
+      data_to_eid (contents, length, temp);
+      eid = &temp[0];
+    }
 
   for (MrgList *l = image_cache; l; l = l->next)
   {
@@ -132,12 +131,12 @@ MrgImage *mrg_query_image_memory (Mrg *mrg,
     }
   }
 
-    unsigned char *data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
-    if (data)
-    {
-      MrgImage *image = malloc (sizeof (MrgImage));
-      image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
-      image->path = strdup (eid);
+  unsigned char *data = stbi_load_from_memory ((void*)contents, length, &w, &h, &comp, 4);
+  if (data)
+  {
+    MrgImage *image = malloc (sizeof (MrgImage));
+    image->surface = cairo_image_surface_create (CAIRO_FORMAT_RGB24, w, h);
+    image->path = strdup (eid);
     {
       int i;
       char *src = (void*) data;
@@ -163,10 +162,10 @@ MrgImage *mrg_query_image_memory (Mrg *mrg,
   return NULL;
 }
 
-MrgImage *mrg_query_image (Mrg *mrg,
+MrgImage *mrg_query_image (Mrg        *mrg,
                            const char *path,
-                           int *width,
-                           int *height)
+                           int        *width,
+                           int        *height)
 {
   MrgList *l;
 
@@ -226,8 +225,11 @@ MrgImage *mrg_query_image (Mrg *mrg,
   return NULL;
 }
 
-
-static void _mrg_image (Mrg *mrg, float x0, float y0, float width, float height, MrgImage *image, int orig_width, int orig_height)
+static void _mrg_image (Mrg *mrg,
+                        float x0, float y0,
+                        float width, float height,
+                        MrgImage *image, int orig_width, int orig_height,
+                        int *used_width, int *used_height)
 {
   cairo_t *cr = mrg_cr (mrg);
   cairo_surface_t *surface = NULL;
@@ -244,6 +246,11 @@ static void _mrg_image (Mrg *mrg, float x0, float y0, float width, float height,
   if (height == -1)
     height = orig_height * width / orig_width;
 
+  if (used_width)
+    *used_width = width;
+  if (used_height)
+    *used_height = height;
+
   cairo_save (cr);
 
   cairo_rectangle (cr, x0, y0, width, height);
@@ -258,7 +265,7 @@ static void _mrg_image (Mrg *mrg, float x0, float y0, float width, float height,
   cairo_restore (cr);
 }
 
-void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path)
+void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path, int *used_width, int *used_height)
 {
   MrgImage *image;
   int orig_width, orig_height;
@@ -270,15 +277,14 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
   if (!image)
     return;
 
-  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height);
+  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height,
+              used_width, used_height);
 }
 
-void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid)
+void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid, int *used_width, int *used_height)
 {
   int orig_width, orig_height;
   MrgImage *image;
-  cairo_t *cr = mrg_cr (mrg);
-  cairo_surface_t *surface = NULL;
 
   if (!data)
     return;
@@ -286,7 +292,7 @@ void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, 
   image = mrg_query_image_memory (mrg, data, length, eid, &orig_width, &orig_height);
   if (!image)
     return;
-  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height);
+  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height, used_width, used_height);
 }
 
 

@@ -216,7 +216,6 @@ int browser_main (int argc, char **argv)
   {
     mrg_ui_update (mrg);
     mrg_ui_update (mrg); /* we do it twice, to resolve some html/css measurements */
-    mrg_destroy (mrg);
   }
   else
   {

@@ -372,7 +372,7 @@ file_get_contents (const char  *path,
 static void ui_png (Mrg *mrg, void *data)
 {
   State *state = data;
-  mrg_image (mrg, 0, 0, mrg_width (mrg), -1, state->path);
+  mrg_image (mrg, 0, 0, mrg_width (mrg), -1, state->path, NULL, NULL);
   mrg_add_binding (mrg, "escape",    NULL, NULL, go_parent_cb, state);
   mrg_add_binding (mrg, " ",         NULL, NULL, go_next_cb, state);
   mrg_add_binding (mrg, "control- ", NULL, NULL, go_prev_cb, state);

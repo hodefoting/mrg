@@ -1172,7 +1172,7 @@ again:
       switch (command)
       {
         case 'a':
-          /* fallthrough*/ 
+          /* fallthrough */
         case 'A':
           if (numbers == 7)
           {
@@ -1180,6 +1180,7 @@ again:
             s++;
             goto again;
           }
+          /* fallthrough */
         case 'm':
           if (numbers == 2)
           {
@@ -1639,7 +1640,7 @@ void mrg_xml_render (Mrg *mrg,
             mrg->x,
             mrg->y - height,
             width,
-            height, src);
+            height, src, NULL, NULL);
 
             mrg->x += width;
           }

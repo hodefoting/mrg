@@ -26,11 +26,11 @@ static void scroll_cb (MrgEvent *event, void *data1, void *data2)
 
 static void ui (Mrg *mrg, void *data)
 {
-  mrg_image (mrg, 0, 10, 32, -1,    "hodefoting.png");
-  mrg_image (mrg, 40, 10, 64, -1,   "hodefoting.png");
-  mrg_image (mrg, 128, 10, -1, 64,  "hodefoting.png");
-  mrg_image (mrg, 196, 10, -1, 128, "hodefoting.png");
-  mrg_image (mrg, 10, 196, -1, -1, "hodefoting.png");
+  mrg_image (mrg, 0, 10, 32, -1,    "hodefoting.png", NULL, NULL);
+  mrg_image (mrg, 40, 10, 64, -1,   "hodefoting.png", NULL, NULL);
+  mrg_image (mrg, 128, 10, -1, 64,  "hodefoting.png", NULL, NULL);
+  mrg_image (mrg, 196, 10, -1, 128, "hodefoting.png", NULL, NULL);
+  mrg_image (mrg, 10, 196, -1, -1, "hodefoting.png", NULL, NULL);
 
   mrg_text_listen (mrg, MRG_SCROLL, scroll_cb, NULL, NULL);
   mrg_print (mrg, "scroll me");
