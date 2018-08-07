@@ -19,7 +19,7 @@ void ui (Mrg *mrg, void *data) {
   make_big (mrg);
   mrg_xml_renderf (mrg, NULL,
                link_cb, NULL,
-"<p>Foo <b>Change <span style='color:%s'>color</a> to"
+"<p>Foo Change <span style='color:%s'>color</span></a> to"
 " <a href='red'>red</a>, "
 "<a href='green'>green</a>, "
 "<a href='blue'>blue</a>, "
