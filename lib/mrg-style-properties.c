@@ -882,6 +882,17 @@ static void mrg_css_handle_property_pass1 (Mrg *mrg, const char *name,
       s->color.alpha = dval;
       s->background_color.alpha = dval;
   }
+  else  if (!strcmp (name, "print-symbols"))
+  {
+      if (!strcmp (value, "true"))
+        s->print_symbols = 1;
+      else if (!strcmp (value, "1"))
+        s->print_symbols = 1;
+      else if (!strcmp (value, "yes"))
+        s->print_symbols = 1;
+      else
+        s->print_symbols = 0;
+  }
   else  if (!strcmp (name, "font-weight"))
     {
       if (!strcmp (value, "bold") ||
