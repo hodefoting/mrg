@@ -276,10 +276,12 @@ _mrg_rectangle_combine_bounds (MrgRectangle       *rect_dest,
   }
 }
 
-void mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
+void
+mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 {
   MrgRectangle rect_copy = {0, };
   rectangle = NULL; // XXX XXX XXX hack, which affects performance
+                    //
   if (!rectangle)
   {
     rect_copy.x = 0;
@@ -300,7 +302,14 @@ void mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
   rect_copy.height *= mrg->ddpx;
 #endif
 
-  _mrg_rectangle_combine_bounds (&mrg->dirty, &rect_copy);
+  if (mrg->in_paint)
+  {
+    _mrg_rectangle_combine_bounds (&mrg->dirty_during_paint, &rect_copy);
+  }
+  else
+  {
+    _mrg_rectangle_combine_bounds (&mrg->dirty, &rect_copy);
+  }
 
   if (mrg->backend->mrg_queue_draw)
     mrg->backend->mrg_queue_draw (mrg, &rect_copy);
@@ -315,8 +324,6 @@ const uint8_t *mrg_get_profile (Mrg *mrg, int *length)
 
 }
 
-
-
 int _mrg_is_dirty (Mrg *mrg)
 {
   return mrg->dirty.width != 0;
@@ -328,6 +335,14 @@ void _mrg_set_clean  (Mrg *mrg)
   mrg->dirty.y = 0;
   mrg->dirty.width = 0;
   mrg->dirty.height = 0;
+}
+
+void _mrg_set_clean_ddp  (Mrg *mrg)
+{
+  mrg->dirty_during_paint.x = 0;
+  mrg->dirty_during_paint.y = 0;
+  mrg->dirty_during_paint.width = 0;
+  mrg->dirty_during_paint.height = 0;
 }
 
 void  mrg_set_ui (Mrg *mrg, void (*ui)(Mrg *mrg, void *ui_data),
@@ -490,7 +505,7 @@ void mrg_prepare (Mrg *mrg)
 
     /* XXX: this should be well documented, since a full screen fill
      * is quite performance sensitive, thus knowing the best way
-     * to do it is good.
+     * to achieve it with CSS is good.
      */
     mrg_cairo_set_source_color (cr, &mrg_style(mrg)->background_color);
     cairo_save (cr);
@@ -527,8 +542,10 @@ void mrg_flush  (Mrg *mrg)
 
   if (mrg->backend->mrg_flush)
     mrg->backend->mrg_flush (mrg);
+  //_mrg_set_clean (mrg);
+  mrg->dirty = mrg->dirty_during_paint;
+  _mrg_set_clean_ddp (mrg);
 
-  _mrg_set_clean (mrg);
   mrg->in_paint --;
   frame_end = _mrg_ticks ();
 

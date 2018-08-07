@@ -58,7 +58,11 @@ typedef struct _MrgHtmlState MrgHtmlState;
 #define MRG_MAX_STYLE_DEPTH 640
 #define MRG_MAX_STATE_DEPTH 128 //XXX: can these be different?
 #define MRG_MAX_FLOATS      64
-#define MRG_MAX_CBS         64
+#define MRG_MAX_CBS         1024
+
+/* other important maximums */
+#define MRG_MAX_BINDINGS     1024
+#define MRG_MAX_TEXT_LISTEN  1024
 
 
 typedef struct MrgItemCb {
@@ -265,6 +269,7 @@ struct _MrgBackend {
   const char *      (*mrg_get_profile)  (Mrg *mrg, int *profile_length);
 };
 
+
 struct _Mrg {
   float          rem;
 
@@ -300,7 +305,7 @@ struct _Mrg {
   float          pointer_y[MRG_MAX_DEVICES];
   unsigned char  pointer_down[MRG_MAX_DEVICES];
 
-  MrgBinding     bindings[640];
+  MrgBinding     bindings[MRG_MAX_BINDINGS];
   int            n_bindings;
 
 
@@ -308,6 +313,7 @@ struct _Mrg {
   float          y; /* in px */
 
   MrgRectangle   dirty;
+  MrgRectangle   dirty_during_paint; // queued during painting
 
   MrgState      *state;
   MrgModifierState modifier_state;
@@ -361,13 +367,13 @@ struct _Mrg {
   float     offset_y;
   cairo_scaled_font_t *scaled_font;
 
-  MrgType      text_listen_types[640];
-  MrgCb        text_listen_cb[640];
-  void        *text_listen_data1[640];
-  void        *text_listen_data2[640];
+  MrgType      text_listen_types[MRG_MAX_TEXT_LISTEN];
+  MrgCb        text_listen_cb[MRG_MAX_TEXT_LISTEN];
+  void        *text_listen_data1[MRG_MAX_TEXT_LISTEN];
+  void        *text_listen_data2[MRG_MAX_TEXT_LISTEN];
 
-  void       (*text_listen_finalize[640])(void *listen_data, void *listen_data2, void *finalize_data);
-  void        *text_listen_finalize_data[640];
+  void       (*text_listen_finalize[MRG_MAX_TEXT_LISTEN])(void *listen_data, void *listen_data2, void *finalize_data);
+  void        *text_listen_finalize_data[MRG_MAX_TEXT_LISTEN];
   int          text_listen_count;
   int          text_listen_active;
 
