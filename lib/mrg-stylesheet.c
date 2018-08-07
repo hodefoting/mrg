@@ -136,7 +136,7 @@ void mrg_css_default (Mrg *mrg)
   }
 }
 
-#define MRG_MAX_SELECTOR_LENGTH 16
+#define MRG_MAX_SELECTOR_LENGTH 32
 
 typedef struct StyleEntry {
   char        *selector;

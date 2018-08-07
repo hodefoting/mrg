@@ -326,7 +326,7 @@ static MrgClient *validate_client (MrgHost *host, const char *client_name)
   {
     MrgClient *client = calloc (sizeof (MrgClient), 1);
 
-    char tmp[256];
+    char tmp[512];
     sprintf (tmp, "%s/%s", host->fbdir, client_name);
     client->host = host;
     client->mmm = mmm_host_open (tmp);
@@ -437,7 +437,7 @@ int mrg_host_audio_iteration (MrgHost *host)
    int got_data = 0;
 
    if (frames <= 0)
-     return;
+     return 0;
 
    for (int i = 0; i < frames * 2; i++)
      data[i] = 0;
@@ -757,6 +757,16 @@ static void *audio_thread (MrgHost *host)
   return NULL;
 }
 
+static MrgHost *mrg__host = NULL;
+static void reapclients(void)
+{
+  for (MrgList *l = mrg__host->clients; l; l = l->next)
+  {
+    MrgClient *ic = l->data;
+    mrg_client_kill (ic);
+  }
+}
+
 MrgHost *mrg_host_new (Mrg *mrg, const char *path)
 {
   MrgHost *host = calloc (sizeof (MrgHost), 1);
@@ -764,6 +774,11 @@ MrgHost *mrg_host_new (Mrg *mrg, const char *path)
   pthread_mutex_init(&host_mutex, NULL);
   if (!path)
     path = "/tmp/mrg";
+  else
+    {
+      mrg__host = host;
+      atexit(reapclients);
+    }
   init_env (host, path);
   host->mrg = mrg;
 

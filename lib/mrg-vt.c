@@ -200,7 +200,7 @@ void mrg_vt_feed_byte (MrgVT *vt, int byte);
 static void vtcmd_reset_device (MrgVT *vt, const char *sequence);
 
 #define log(args...) \
-  if (vt->debug) \
+  if (0 && vt->debug) \
     fprintf (stderr, args);
 
 static void mrg_vt_set_title (MrgVT *vt, const char *new_title)
@@ -277,7 +277,7 @@ static void vtcmd_reset_device (MrgVT *vt, const char *sequence)
   /* populate lines */
   for (int i=0; i<vt->rows;i++)
   {
-    vt->current_line = mrg_string_new ("");
+    vt->current_line = mrg_string_new_with_size ("", vt->cols * 3);
     mrg_list_prepend (&vt->lines, vt->current_line);
     vt->line_count++;
   }
@@ -416,7 +416,7 @@ static void _mrg_vt_move_to (MrgVT *vt, int y, int x)
   {
     for (; i > 0; i--)
       {
-        vt->current_line = mrg_string_new ("");
+        vt->current_line = mrg_string_new_with_size ("", vt->cols * 3);
         mrg_list_append (&vt->lines, vt->current_line);
         vt->line_count++;
       }
@@ -473,7 +473,7 @@ static void vtcmd_set_top_and_bottom_margins (MrgVT *vt, const char *sequence)
   vt->scroll_bottom = bottom;
 }
 
-static void vt_scroll_style (MrgVT *vt, int amount)
+void vt_scroll_style (MrgVT *vt, int amount)
 {
   if (amount > 0)
   {
@@ -496,6 +496,8 @@ static void vt_scroll_style (MrgVT *vt, int amount)
 static void vt_scroll (MrgVT *vt, int amount)
 {
   int remove_no, insert_before;
+  MrgString *string = NULL;
+
   if (amount < 0)
     {
       remove_no = vt->scroll_top;
@@ -513,17 +515,24 @@ static void vt_scroll (MrgVT *vt, int amount)
   {
     if (i == remove_no)
     {
-      mrg_string_free (l->data, 1);
-      mrg_list_remove (&vt->lines, l->data);
+      string = l->data;
+      mrg_list_remove (&vt->lines, string);
       break;
     }
   }
 
+  if (string)
+  {
+    mrg_string_set (string, "");
+  }
+  else
+  {
+    string = mrg_string_new_with_size ("", vt->cols * 3);
+  }
+
   if (amount > 0 && vt->scroll_top == 1)
   {
-    MrgString *new_line = mrg_string_new ("");
-    mrg_list_append (&vt->lines, new_line);
-    vt->current_line = new_line;
+    mrg_list_append (&vt->lines, string);
   }
   else
   {
@@ -531,20 +540,18 @@ static void vt_scroll (MrgVT *vt, int amount)
     {
       if (i == insert_before)
       {
-        MrgString *new_line = mrg_string_new ("");
-        mrg_list_insert_before (&vt->lines, l, new_line);
-        vt->current_line = new_line;
+        mrg_list_insert_before (&vt->lines, l, string);
         break;
       }
     }
 
     if (i != insert_before)
     {
-      MrgString *new_line = mrg_string_new ("");
-      mrg_list_append (&vt->lines, new_line);
-      vt->current_line = new_line;
+      mrg_list_append (&vt->lines, string);
     }
   }
+
+  vt->current_line = string;
   /* not updating line count since we should always remove one and add one */
 
   vt_scroll_style (vt, amount);
@@ -673,7 +680,7 @@ static void vtcmd_erase_in_line (MrgVT *vt, const char *sequence)
         char *p = (char*)mrg_utf8_skip (vt->current_line->str, vt->cursor_x-1);
         if (p) *p = 0;
         vt->current_line->length = strlen (vt->current_line->str);
-        vt->current_line->utf8_length = mrg_utf8_strlen (vt->current_line->str); //XXX
+        vt->current_line->utf8_length = vt->cursor_x-1;
       }
       break;
     case 1: // clear from beginning to cursor
@@ -984,13 +991,15 @@ static void vtcmd_delete_n_lines (MrgVT *vt, const char *sequence)
   {
     int i;
     MrgList *l;
+    MrgString *string = vt->current_line;
+    mrg_string_set (string, "");
     mrg_list_remove (&vt->lines, vt->current_line);
     for (i=vt->rows, l = vt->lines; l; l=l->next, i--)
     {
       if (i == vt->scroll_bottom)
       {
-        vt->current_line = mrg_string_new ("");
-        mrg_list_insert_before (&vt->lines, l, vt->current_line);
+        vt->current_line = string;
+        mrg_list_insert_before (&vt->lines, l, string);
         break;
       }
     }
@@ -1220,9 +1229,9 @@ static void mrg_vt_line_feed (MrgVT *vt)
   {
     if (vt->lines->data == vt->current_line)
     {
-      mrg_list_prepend (&vt->lines, mrg_string_new (""));
+      vt->current_line = mrg_string_new_with_size ("", vt->cols*3);
+      mrg_list_prepend (&vt->lines, vt->current_line);
       vt->line_count++;
-      vt->current_line = vt->lines->data;
     }
 
     vt->cursor_y++;
@@ -1232,10 +1241,7 @@ static void mrg_vt_line_feed (MrgVT *vt)
       vt_scroll_style (vt, -1);
     }
 
-    if (vt->cr_on_lf)
-      _mrg_vt_move_to (vt, vt->cursor_y, 1);
-    else
-      _mrg_vt_move_to (vt, vt->cursor_y, vt->cursor_x);
+    _mrg_vt_move_to (vt, vt->cursor_y, vt->cr_on_lf?1:vt->cursor_x);
   }
   else
   {
@@ -1454,6 +1460,7 @@ void mrg_vt_poll (MrgVT *vt)
 {
   unsigned char buf[2048];
   int count = 0;
+  int sleeps = 45;
 {
   int len;
 a:
@@ -1467,14 +1474,18 @@ a:
     if (count < 1024 * 256)
     {
       if (len < sizeof (buf))
-        usleep (1000); /* to give pipe chance to fill  */
+      {
+        usleep (450); /* to give pipe chance to fill  */
+        sleeps --;
+      }
+      if (sleeps >= 0 && !vt->done)
       goto a;
     }
   }
 
   if (vt->cursor_y > vt->rows)
     vt->cursor_y = vt->rows;
-  if (count >0)
+  if (count >0 || vt->done)
   {
     if (vt->mrg)
       mrg_queue_draw (vt->mrg, NULL);
@@ -1482,7 +1493,7 @@ a:
    }
   else
    {
-     usleep (1000);
+     usleep (125);
    }
 }
 }
