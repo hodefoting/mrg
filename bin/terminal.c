@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-float font_size = 20.0;
+float font_size = 16.0;
 float line_spacing = 2.0;
 
 static void event_handler (MrgEvent *event, void *data1, void *data2)
@@ -73,14 +73,18 @@ signal_child (int signum) {
 int terminal_main (int argc, char **argv)
 {
   Mrg *mrg;
-  mrg = mrg_new ((DEFAULT_COLS+1) * font_size * 0.60,
-                 (DEFAULT_ROWS+1) * font_size * 0.60 * line_spacing, NULL);
+  mrg = mrg_new ((DEFAULT_COLS+1) * font_size * 0.60, (DEFAULT_ROWS+1) * font_size * 0.60 * line_spacing, NULL);
+  //mrg = mrg_new (-1, -1, NULL);
   mrg_tmp = mrg;
 
   signal (SIGCHLD, signal_child);
   MrgVT *vt = mrg_vt_new (mrg, argv[1]?argv[1]:mrg_vt_find_shell_command());
 
-  mrg_vt_set_term_size (vt, DEFAULT_COLS, DEFAULT_ROWS);
+//  mrg_vt_set_term_size (vt, DEFAULT_COLS, DEFAULT_ROWS);
+  {
+     MrgEvent foo; foo.mrg = mrg;foo.string = NULL;
+     event_handler (&foo, vt, NULL);
+  }
   mrg_set_ui (mrg, render_vt, vt);
   mrg_set_title (mrg,  argv[1]?argv[1]:mrg_vt_find_shell_command());
   mrg_main (mrg);
