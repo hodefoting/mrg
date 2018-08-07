@@ -176,7 +176,6 @@ int main (int argc, char **argv)
   add_client (compositor, render_client, "foo", 10, 100);
   add_client (compositor, render_client, "bar", 10, 300);
   add_client (compositor, drag_render_ui, "aaa" , 200, 10);
-
   add_client (compositor, drag_render_ui, "aaa" , 100, 400);
 
   mrg_main (mrg);
