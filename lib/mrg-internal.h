@@ -134,7 +134,6 @@ typedef struct MrgState {
 
 void _mrg_text_init      (Mrg *mrg);
 int  _mrg_is_dirty       (Mrg *mrg);
-void _mrg_set_clean      (Mrg *mrg);
 void _mrg_debug_overlays (Mrg *mrg);
 int  _mrg_has_quit       (Mrg *mrg);
 void _mrg_init           (Mrg *mrg, int width, int height);

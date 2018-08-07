@@ -329,15 +329,7 @@ int _mrg_is_dirty (Mrg *mrg)
   return mrg->dirty.width != 0;
 }
 
-void _mrg_set_clean  (Mrg *mrg)
-{
-  mrg->dirty.x = 0;
-  mrg->dirty.y = 0;
-  mrg->dirty.width = 0;
-  mrg->dirty.height = 0;
-}
-
-void _mrg_set_clean_ddp  (Mrg *mrg)
+static void _mrg_set_clean_ddp  (Mrg *mrg)
 {
   mrg->dirty_during_paint.x = 0;
   mrg->dirty_during_paint.y = 0;
@@ -542,7 +534,6 @@ void mrg_flush  (Mrg *mrg)
 
   if (mrg->backend->mrg_flush)
     mrg->backend->mrg_flush (mrg);
-  //_mrg_set_clean (mrg);
   mrg->dirty = mrg->dirty_during_paint;
   _mrg_set_clean_ddp (mrg);
 
