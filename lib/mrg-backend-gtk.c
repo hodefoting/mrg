@@ -186,7 +186,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     if (name)
       sprintf (buf, "alt-%s", name);
     else
-      sprintf (buf, "alt-%s", name);
+      sprintf (buf, "alt");//-%s", name);
     name = g_intern_string (buf);
   }
   if (event->key.state & GDK_SHIFT_MASK)
@@ -195,7 +195,7 @@ static gboolean key_press_event (GtkWidget *window, GdkEvent *event, gpointer   
     if (name && mrg_utf8_strlen(name)>1)
       sprintf (buf, "shift-%s", name);
     else
-      sprintf (buf, "%s", name);
+      sprintf (buf, "%s", name?name:"shift");
     name = g_intern_string (buf);
   }
 
@@ -416,7 +416,7 @@ static void mrg_gtk_get_position  (Mrg *mrg, int *x, int *y)
 }
 
 static Mrg *_mrg_gtk_new (int width, int height);
-char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length);
+const char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length);
 
 MrgBackend mrg_backend_gtk = {
   "gtk",
@@ -588,7 +588,7 @@ GtkWidget *mrg_gtk_get_hbox (Mrg *mrg)
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
-char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length)
+const char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length)
 {
   MrgGtk *mrg_gtk = mrg->backend_data;
   Atom     icc_atom, type;
@@ -632,7 +632,7 @@ char *mrg_gtk_get_icc_profile (Mrg *mrg, int *ret_length)
       XFree (str);
       if (ret_length )
         *ret_length = length;
-      return ret;
+      return (char*)ret;
     }
 
   return NULL;
