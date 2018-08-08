@@ -1337,6 +1337,7 @@ static void cmd_down (MrgEvent *event, void *data1, void *data2)
     if (best_y == cy)
     {
       mrg->cursor_pos = strl;
+      mrg_key_press (mrg, 0, "down-nudge", 0);
       mrg_queue_draw (mrg, NULL);
       return;
     }
@@ -1396,6 +1397,7 @@ static void cmd_up (MrgEvent *event, void *data1, void *data2)
     {
       mrg->cursor_pos = 0;
       mrg_queue_draw (mrg, NULL);
+      mrg_key_press (mrg, 0, "up-nudge", 0);
       return; // without stop propagate this should permit things registered earlier to fire
     }
   }
