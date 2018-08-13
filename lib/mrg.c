@@ -833,6 +833,13 @@ void mrg_new_page (Mrg *mrg)
     cairo_show_page (mrg->printing_cr);
     mrg_set_xy (mrg, mrg_x(mrg), mrg_em (mrg));
   }
+  else
+  {
+    cairo_t *cr = mrg_cr (mrg);
+    cairo_translate(cr, 0, mrg_height (mrg));
+
+    mrg_set_xy (mrg, mrg_x(mrg), mrg_em (mrg));
+  }
 }
 
 void mrg_render_pdf (Mrg *mrg, const char *pdf_path)
