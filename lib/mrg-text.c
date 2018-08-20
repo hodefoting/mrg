@@ -950,8 +950,6 @@ static int mrg_print_wrap (Mrg        *mrg,
   return wraps;
 }
 
-
-
 int mrg_print_get_xy (Mrg *mrg, const char *string, int no, float *x, float *y)
 {
   int ret;

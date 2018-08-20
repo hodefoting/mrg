@@ -426,7 +426,7 @@ MrgList *mrg_host_clients (MrgHost *host)
   return host->clients;
 }
 
-void mrg_host_audio_iteration (MrgHost *host)
+int mrg_host_audio_iteration (MrgHost *host)
 {
    MrgList *l;
    int frames = mrg_pcm_get_frame_chunk (host->mrg);
@@ -524,7 +524,10 @@ void mrg_host_audio_iteration (MrgHost *host)
    }
    pthread_mutex_unlock (&host_mutex);
    if (got_data)
+   {
      mrg_pcm_queue (host->mrg, (void *)data, frames);
+   }
+   return got_data;
 }
 
 static void mrg_client_press (MrgEvent *event, void *client_, void *host_)
@@ -743,8 +746,10 @@ static void *audio_thread (MrgHost *host)
 {
   //int c;
   for (;;) {
-    mrg_host_audio_iteration (host);
-    usleep (200);
+    if (mrg_host_audio_iteration (host))
+      usleep (400);
+    else
+      usleep (5000);
   }
   return NULL;
 }
