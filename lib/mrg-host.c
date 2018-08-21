@@ -310,7 +310,7 @@ void mrg_client_set_size (MrgClient *client, int width, int height)
 
 static int pos = 10;
 
-static void validate_client (MrgHost *host, const char *client_name)
+static MrgClient *validate_client (MrgHost *host, const char *client_name)
 {
   MrgList *l;
   for (l = host->clients; l; l = l->next)
@@ -319,7 +319,7 @@ static void validate_client (MrgHost *host, const char *client_name)
     if (client->filename &&
         !strcmp (client->filename, client_name))
     {
-      return;
+      return NULL;
     }
   }
 
@@ -335,7 +335,7 @@ static void validate_client (MrgHost *host, const char *client_name)
     if (!client->mmm)
     {
       fprintf (stderr, "failed to open client %s\n", tmp);
-      return;
+      return NULL;
     }
 
     client->filename = strdup (client_name);
@@ -360,6 +360,7 @@ static void validate_client (MrgHost *host, const char *client_name)
       }
     }
     mrg_list_append (&host->clients, client);
+    return client;
   }
 }
 
@@ -388,8 +389,9 @@ static int pid_is_alive (long pid)
   return kill (pid, 0) == 0;
 }
 
-void mrg_host_monitor_dir (MrgHost *host)
+MrgClient *mrg_host_monitor_dir (MrgHost *host)
 {
+  MrgClient *new_client = NULL;
   MrgList *l;
   pthread_mutex_lock (&host_mutex);
 again:
@@ -415,10 +417,11 @@ again:
   while ((ent = readdir (dir)))
   {
     if (ent->d_name[0]!='.')
-      validate_client (host, ent->d_name);
+      new_client = validate_client (host, ent->d_name);
   }
   closedir (dir);
   pthread_mutex_unlock (&host_mutex);
+  return new_client;
 }
 
 MrgList *mrg_host_clients (MrgHost *host)

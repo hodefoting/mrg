@@ -65,7 +65,8 @@ static void launch_terminal (MrgEvent *event, void *mmm, void *data2)
 
 static void launch_browser (MrgEvent *event, void *mmm, void *data2)
 {
-  system("mrg browser mrg:index.html &");
+  //system("mrg browser mrg:index.html &");
+  system("znl &");//mrg browser mrg:index.html &");
 }
 
 static void kill_client (MrgEvent *event, void *client_, void *data2)

@@ -14,7 +14,10 @@ void       mrg_host_add_client_mrg   (MrgHost     *host,
                                       float        y);
 void       mrg_host_set_focused      (MrgHost *host, MrgClient *client);
 MrgClient *mrg_host_get_focused      (MrgHost *host);
-void       mrg_host_monitor_dir      (MrgHost *host);
+
+MrgClient *mrg_host_monitor_dir      (MrgHost *host); // return value can be ignored, but is the last added client discovered
+                                                      // during this monitoring - client can be missed if multiple launched between monitor calls
+
 void       mrg_host_register_events  (MrgHost *host);
 MrgList   *mrg_host_clients          (MrgHost *host);
 int        mrg_host_audio_iteration  (MrgHost *host);
