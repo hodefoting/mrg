@@ -413,13 +413,15 @@ again:
   static int iteration = 0;
 
   iteration ++;
-
-  while ((ent = readdir (dir)))
+  if (dir)
   {
+    while ((ent = readdir (dir)))
+    {
     if (ent->d_name[0]!='.')
       new_client = validate_client (host, ent->d_name);
+    }
+    closedir (dir);
   }
-  closedir (dir);
   pthread_mutex_unlock (&host_mutex);
   return new_client;
 }
@@ -711,8 +713,13 @@ static void init_env (MrgHost *host, const char *path)
   system (buf);
 }
 
+static void reapclients(void);
+
 void mrg_host_destroy (MrgHost *host)
 {
+  mrg_host_monitor_dir (host);
+  reapclients();
+  mrg_host_monitor_dir (host);
   free (host);
 }
 
@@ -776,7 +783,6 @@ MrgHost *mrg_host_new (Mrg *mrg, const char *path)
     path = "/tmp/mrg";
   else
     {
-      mrg__host = host;
       atexit(reapclients);
     }
   init_env (host, path);
@@ -785,6 +791,7 @@ MrgHost *mrg_host_new (Mrg *mrg, const char *path)
   mrg_add_idle (mrg, host_idle_check, host);
 
   pthread_create (&tid, NULL,(void*)audio_thread, host);
+  mrg__host = host;
   return host;
 }
 
