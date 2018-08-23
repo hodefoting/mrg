@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-float font_size = 12.0;
+float font_size = 15.0;
 float line_spacing = 2.0;
 
 static void event_handler (MrgEvent *event, void *data1, void *data2)
