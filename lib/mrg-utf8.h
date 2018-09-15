@@ -42,7 +42,8 @@ static inline const char *mrg_utf8_skip (const char *s, int utf8_length)
    return s;
 }
 
-int          mrg_unichar_to_utf8       (unsigned int ch,
-                                        unsigned char*dest);
+int          mrg_unichar_to_utf8       (unsigned int   ch,
+                                        unsigned char *dest);
+unsigned int mrg_utf8_to_unichar       (unsigned char *utf8);
 
 #endif

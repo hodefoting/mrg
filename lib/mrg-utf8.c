@@ -35,3 +35,36 @@ mrg_unichar_to_utf8 (unsigned int  ch,
     return 0;
 }
 
+unsigned int mrg_utf8_to_unichar (unsigned char *utf8)
+{
+  unsigned char c = utf8[0];
+  if ((c & 0x80) == 0)
+    return c;
+  else if ((c & 0xE0) == 0xC0)
+    return ((utf8[0] & 0x1F) << 6) |
+            (utf8[1] & 0x3F);
+  else if ((c & 0xF0) == 0xE0)
+    return ((utf8[0] & 0xF)  << 12)|
+           ((utf8[1] & 0x3F) << 6) |
+            (utf8[2] & 0x3F);
+  else if ((c & 0xF8) == 0xF0)
+    return ((utf8[0] & 0x7)  << 18)|
+           ((utf8[1] & 0x3F) << 12)|
+           ((utf8[2] & 0x3F) << 6) |
+            (utf8[3] & 0x3F);
+  else if ((c & 0xFC) == 0xF8)
+    return ((utf8[0] & 0x3)  << 24)|
+           ((utf8[1] & 0x3F) << 18)|
+           ((utf8[2] & 0x3F) << 12)|
+           ((utf8[3] & 0x3F) << 6) |
+            (utf8[4] & 0x3F);
+  else if ((c & 0xFE) == 0xFC)
+    return ((utf8[0] & 0x1)  << 30)|
+           ((utf8[1] & 0x3F) << 24)|
+           ((utf8[2] & 0x3F) << 18)|
+           ((utf8[3] & 0x3F) << 12)|
+           ((utf8[4] & 0x3F) << 6) |
+            (utf8[5] & 0x3F);
+  return 0;
+}
+
