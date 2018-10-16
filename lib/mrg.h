@@ -91,9 +91,9 @@ MrgImage *mrg_query_image_memory (Mrg *mrg,
 cairo_surface_t *mrg_image_get_surface (MrgImage *image);
 
 
-void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path, int *used_width, int *used_height);
+void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, float opacity, const char *path, int *used_width, int *used_height);
 
-void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid, int *used_width, int *used_height);
+void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, float opacity, const char *data, int length, const char *eid, int *used_width, int *used_height);
 
 
 void mrg_set_image_cache_mb (Mrg *mrg, int new_max_size);

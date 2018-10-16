@@ -1640,7 +1640,9 @@ void mrg_xml_render (Mrg *mrg,
             mrg->x,
             mrg->y - height,
             width,
-            height, src, NULL, NULL);
+            height,
+            1.0f,
+            src, NULL, NULL);
 
             mrg->x += width;
           }

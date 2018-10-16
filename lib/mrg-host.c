@@ -868,5 +868,6 @@ void mrg_client_set_value (MrgClient *client, const char *name, const char *valu
 {
   if (client->mrg)
     return;
-  mmm_set_value (client->mmm, name, value);
+  if (client->mmm)
+    mmm_set_value (client->mmm, name, value);
 }

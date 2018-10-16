@@ -227,7 +227,7 @@ MrgImage *mrg_query_image (Mrg        *mrg,
 
 static void _mrg_image (Mrg *mrg,
                         float x0, float y0,
-                        float width, float height,
+                        float width, float height, float opacity,
                         MrgImage *image, int orig_width, int orig_height,
                         int *used_width, int *used_height)
 {
@@ -261,11 +261,14 @@ static void _mrg_image (Mrg *mrg,
       height / orig_height);
 
   cairo_set_source_surface (cr, surface, 0, 0);
-  cairo_paint (cr);
+  if (opacity >= 1.0f)
+    cairo_paint (cr);
+  else
+    cairo_paint_with_alpha (cr, opacity);
   cairo_restore (cr);
 }
 
-void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const char *path, int *used_width, int *used_height)
+void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, float opacity, const char *path, int *used_width, int *used_height)
 {
   MrgImage *image;
   int orig_width, orig_height;
@@ -277,11 +280,11 @@ void mrg_image (Mrg *mrg, float x0, float y0, float width, float height, const c
   if (!image)
     return;
 
-  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height,
+  _mrg_image (mrg, x0, y0, width, height, opacity, image, orig_width, orig_height,
               used_width, used_height);
 }
 
-void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, const char *data, int length, const char *eid, int *used_width, int *used_height)
+void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, float opacity, const char *data, int length, const char *eid, int *used_width, int *used_height)
 {
   int orig_width, orig_height;
   MrgImage *image;
@@ -292,7 +295,7 @@ void mrg_image_memory (Mrg *mrg, float x0, float y0, float width, float height, 
   image = mrg_query_image_memory (mrg, data, length, eid, &orig_width, &orig_height);
   if (!image)
     return;
-  _mrg_image (mrg, x0, y0, width, height, image, orig_width, orig_height, used_width, used_height);
+  _mrg_image (mrg, x0, y0, width, height, opacity, image, orig_width, orig_height, used_width, used_height);
 }
 
 
