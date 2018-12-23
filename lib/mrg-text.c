@@ -1266,6 +1266,7 @@ static void cmd_backspace (MrgEvent *event, void *data1, void *data2)
       memcpy (new + ((mark - mrg->edited_str->str)), rest, strlen (rest));
       new [strlen (mrg->edited_str->str)-(rest-mark)] = 0;
       mrg->update_string (new, mrg->update_string_user_data);
+      mrg_string_set (mrg->edited_str, new);
       free (new);
       mrg->cursor_pos--;
     }
@@ -1286,6 +1287,7 @@ static void cmd_delete (MrgEvent *event, void *data1, void *data2)
   new [strlen (mrg->edited_str->str)-(rest-mark)] = 0;
 
   mrg->update_string (new, mrg->update_string_user_data);
+  mrg_string_set (mrg->edited_str, new);
   free (new);
   mrg_queue_draw (mrg, NULL);
   mrg_event_stop_propagate (event);
@@ -1460,6 +1462,11 @@ static void cmd_right (MrgEvent *event, void *data1, void *data2)
   mrg_event_stop_propagate (event);
 }
 
+
+/* the added utf8 bits go to edited_str as well, so that successive edits do work out
+ *
+ */
+
 static void add_utf8 (Mrg *mrg, const char *string)
 {
   char *new;
@@ -1478,6 +1485,7 @@ static void add_utf8 (Mrg *mrg, const char *string)
           rest, strlen (rest));
   new [strlen (string) + strlen (mrg->edited_str->str)] = 0;
   mrg->update_string (new, mrg->update_string_user_data);
+  mrg_string_set (mrg->edited_str, new);
   free (new);
   mrg_queue_draw (mrg, NULL);
   mrg->cursor_pos++;
