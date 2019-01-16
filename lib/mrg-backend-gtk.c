@@ -537,6 +537,7 @@ static Mrg *_mrg_gtk_new (int width, int height)
   hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_window_set_default_size (GTK_WINDOW(window), width, height);
+
   g_signal_connect (window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
   canvas = mrg_gtk_new (NULL, NULL);
   if (!canvas)
@@ -551,6 +552,7 @@ static Mrg *_mrg_gtk_new (int width, int height)
 
   gtk_widget_grab_focus (canvas);
   gtk_widget_show_all(window);
+  gdk_window_set_event_compression (gtk_widget_get_window(window), FALSE);
 
   mrg_gtk->window = window;
   mrg_gtk->hbox = hbox;

@@ -301,11 +301,6 @@ void _mrg_item_unref (MrgItem *mrgitem)
   }
 }
 
-/* for more perfect inegration with cairo - should also support
- * listening for the shape of the current path, that makes the
- * integration even tighter.
- */
-
 void mrg_listen (Mrg     *mrg,
                  MrgType  types,
                  MrgCb    cb,
