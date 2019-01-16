@@ -81,6 +81,9 @@ MrgImage *mrg_query_image (Mrg *mrg, const char *path,
                            int *width,
                            int *height);
 
+void mrg_forget_image (Mrg *mrg,
+                       const char *path);
+
 MrgImage *mrg_query_image_memory (Mrg *mrg,
                                   const char *contents,
                                   int         length,

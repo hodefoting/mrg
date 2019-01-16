@@ -43,19 +43,25 @@ static void free_image (void *data, void *foo)
   free (data);
 }
 
+
+void forget_image (MrgImage *image)
+{
+  int w, h;
+  w = cairo_image_surface_get_width (image->surface);
+  h = cairo_image_surface_get_height (image->surface);
+  mrg_list_remove (&image_cache, image);
+  image_cache_size -= compute_size (w, h);
+}
+
 static void trim_cache (void)
 {
   while (image_cache_size > image_cache_max_size_mb * 1024 * 1024)
   {
     MrgImage *image;
     int item = mrg_list_length (image_cache);
-    int w, h;
     item = random() % item;
     image = mrg_list_nth (image_cache, item)->data;
-    w = cairo_image_surface_get_width (image->surface);
-    h = cairo_image_surface_get_height (image->surface);
-    mrg_list_remove (&image_cache, image);
-    image_cache_size -= compute_size (w, h);
+    forget_image (image);
   }
 }
 
@@ -160,6 +166,24 @@ MrgImage *mrg_query_image_memory (Mrg *mrg,
     return mrg_query_image (mrg, eid, width, height);
   }
   return NULL;
+}
+
+void mrg_forget_image (Mrg *mrg,
+                       const char *path)
+{
+  MrgList *l;
+
+  if (!path)
+    return NULL;
+  for (l = image_cache; l; l = l->next)
+  {
+    MrgImage *image = l->data;
+    if (!strcmp (image->path, path))
+    {
+      forget_image (image);
+      return;
+    }
+  }
 }
 
 MrgImage *mrg_query_image (Mrg        *mrg,
