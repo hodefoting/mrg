@@ -498,7 +498,8 @@ GtkWidget *mrg_gtk_new (void (*ui_update)(Mrg *mrg, void *user_data),
 
 
 
-  g_timeout_add (40, idle_iteration, mrg);
+  g_idle_add (idle_iteration, mrg);
+  //g_timeout_add (5, idle_iteration, mrg);
 
   g_object_set_data_full (G_OBJECT (mrg_gtk->eventbox), "mrg", mrg, (void*)mrg_destroy);
 
