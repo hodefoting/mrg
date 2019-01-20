@@ -1,4 +1,4 @@
-CC=ccache gcc
+CC=gcc
 LIB_PKGMODULES=cairo mmm
 LIB_VERSION_MAJOR=0
 LIB_VERSION_MINOR=1
