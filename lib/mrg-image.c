@@ -174,7 +174,7 @@ void mrg_forget_image (Mrg *mrg,
   MrgList *l;
 
   if (!path)
-    return NULL;
+    return;
   for (l = image_cache; l; l = l->next)
   {
     MrgImage *image = l->data;
