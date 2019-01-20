@@ -71,7 +71,7 @@ EXAMPLES_CFLAGS += -I.. -Ilib $(shell test "$(EXAMPLES_PKGMODULES)" 2>/dev/null 
 EXAMPLES_LD_FLAGS += $(shell test "$(EXAMPLES_PKGMODULES)" 2>/dev/null && pkg-config $(EXAMPLES_PKGMODULES) --libs | sed 's/-Wl,--export-dynamic//' | sed 's/-pthread//')
 
 examples/%: examples/%.c $(LIBNAME).a
-	@echo "CCLD" $@; $(CC) -I.. -I. $(EXAMPLES_CFLAGS) $(LIB_CFLAGS) $(LIB_LD_FLAGS) $(EXAMPLES_LD_FLAGS) $< $(LIBNAME).a -o $@
+	@echo "CCLD" $@; $(CC) -I.. -I. $(EXAMPLES_CFLAGS) $(LIB_CFLAGS) $< $(LIBNAME).a $(EXAMPLES_LD_FLAGS) $(LIB_LD_FLAGS) -o $@
 
 
 all: $(EXAMPLES_BINS)
