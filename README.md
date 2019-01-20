@@ -50,8 +50,8 @@ support.
 Build/run
 ---------
 
-Clone both mrg and mmm, and have SDL-1.2 and GTK+-3.0 development packages
-installed. A 
+Clone both mrg and mmm (from neighboring git locations), and have alsa, SDL-1.2
+and GTK+-3.0 development packages installed.`
 
     $ make && sudo make install
 
