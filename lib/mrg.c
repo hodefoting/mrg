@@ -220,11 +220,13 @@ void mrg_destroy (Mrg *mrg)
 
 int  mrg_width (Mrg *mrg)
 {
+  if (!mrg) return 640;
   return mrg->width / mrg->ddpx;
 }
 
 int  mrg_height (Mrg *mrg)
 {
+  if (!mrg) return 480;
   return mrg->height / mrg->ddpx;
 }
 
@@ -241,7 +243,7 @@ void mrg_set_size (Mrg *mrg, int width, int height)
 
 int  _mrg_has_quit (Mrg *mrg)
 {
-  return mrg->quit;
+  return mrg?mrg->quit:1;
 }
 
 static void 
