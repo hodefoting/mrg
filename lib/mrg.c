@@ -280,6 +280,8 @@ void
 mrg_queue_draw (Mrg *mrg, MrgRectangle *rectangle)
 {
   MrgRectangle rect_copy = {0, };
+  if (!mrg)
+    return;
   rectangle = NULL; // XXX XXX XXX hack, which affects performance
                     //
   if (!rectangle)
