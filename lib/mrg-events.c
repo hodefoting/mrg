@@ -893,12 +893,12 @@ int mrg_pointer_motion (Mrg *mrg, float x, float y, int device_no, uint32_t time
               mrg->tap_hysteresis
          )
       {
-        fprintf (stderr, "-");
+        //fprintf (stderr, "-");
         mrg_list_prepend (&remove_grabs, grab);
       }
       else
       {
-        fprintf (stderr, ":");
+        //fprintf (stderr, ":");
       }
     }
 
