@@ -932,7 +932,7 @@ static int mrg_print_wrap (Mrg        *mrg,
     {
       if (print)
       {
-        if (data[c-1]==' ')
+        if (c && data[c-1]==' ')
           mrg->x += measure_word_width (mrg, " ");
         mrg_start (mrg, ".cursor", NULL);
         _mrg_spaces (mrg, 1);
