@@ -229,14 +229,14 @@ int mrg_pcm_queue (Mrg *mrg, const int8_t *data, int frames)
       pcm_cur_left = scaled_frames;  // and current cur_left is valid
 
     mrg_list_append (&pcm_list, packet);
-    pcm_queued += frames;
+    pcm_queued += scaled_frames;
 
     return frames;
   }
   return 0;
 }
 
-static long mrg_pcm_get_queued_frames (Mrg *mrg)
+static int mrg_pcm_get_queued_frames (Mrg *mrg)
 {
   if (!strcmp (mrg->backend->name, "mmm") ||
       !strcmp (mrg->backend->name, "mmm-client"))
