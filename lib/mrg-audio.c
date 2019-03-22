@@ -251,6 +251,11 @@ int mrg_pcm_get_queued (Mrg *mrg)
   return mrg_pcm_get_queued_frames (mrg);
 }
 
+float mrg_pcm_get_queued_length (Mrg *mrg)
+{
+  return 1.0 * mrg_pcm_get_queued_frames (mrg) / host_freq;
+}
+
 int mrg_pcm_get_frame_chunk (Mrg *mrg)
 {
 #if 1
