@@ -186,6 +186,26 @@ void mrg_forget_image (Mrg *mrg,
   }
 }
 
+static int suffix_is_png (const char *path)
+{
+  int len;
+  if (!path)
+    return 0;
+  len = strlen (path);
+  if (len < 5) return 0;
+  if (path[len-1]=='g' &&
+      path[len-2]=='n' &&
+      path[len-3]=='p' &&
+      path[len-4]=='.')
+    return 1;
+  if (path[len-1]=='G' &&
+      path[len-2]=='N' &&
+      path[len-3]=='P' &&
+      path[len-4]=='.')
+    return 1;
+  return 0;
+}
+
 MrgImage *mrg_query_image (Mrg        *mrg,
                            const char *path,
                            int        *width,
@@ -210,7 +230,7 @@ MrgImage *mrg_query_image (Mrg        *mrg,
   trim_cache ();
   {
 #if 1
-    if (strstr (path, "png") || strstr (path, "PNG"))
+    if (suffix_is_png (path))
     {
       /* use cairo and thus the full libpng for decoding PNG images
        */
