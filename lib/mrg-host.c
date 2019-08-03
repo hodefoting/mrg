@@ -241,6 +241,8 @@ void mrg_client_maximize (MrgClient *client)
 
 float mrg_client_get_x (MrgClient *client)
 {
+  if (!client)
+    return 0.0;
   if (client->mrg)
     return  client->int_x;
   if (client->mmm)
@@ -250,6 +252,8 @@ float mrg_client_get_x (MrgClient *client)
 
 float mrg_client_get_y (MrgClient *client)
 {
+  if (!client)
+    return 0.0;
   if (client->mrg)
     return  client->int_y;
   if (client->mmm)
@@ -259,6 +263,8 @@ float mrg_client_get_y (MrgClient *client)
 
 void mrg_client_set_x (MrgClient *client, float x)
 {
+  if (!client)
+    return;
   if (client->mrg)
     client->int_x = x;
   else if (client->mmm)
@@ -267,6 +273,8 @@ void mrg_client_set_x (MrgClient *client, float x)
 
 void mrg_client_set_y (MrgClient *client, float y)
 {
+  if (!client)
+    return;
   if (client->mrg)
     client->int_y = y;
   else if (client->mmm)
@@ -275,8 +283,9 @@ void mrg_client_set_y (MrgClient *client, float y)
 
 void mrg_client_get_size (MrgClient *client, int *width, int *height)
 {
-  int w, h;
-
+  int w = 0, h = 0;
+  if (!client)
+  {
   if (client->pid != -1)
   {
     mmm_host_get_size (client->mmm, &w, &h);
@@ -288,6 +297,7 @@ void mrg_client_get_size (MrgClient *client, int *width, int *height)
     w = mrg_width (client->mrg);
     h = mrg_height (client->mrg);
   }
+  }
 
   if (width)
     *width = w;
@@ -298,6 +308,8 @@ void mrg_client_get_size (MrgClient *client, int *width, int *height)
 
 void mrg_client_set_size (MrgClient *client, int width, int height)
 {
+  if (!client)
+    return;
   if (client->pid != -1)
   {
     mmm_host_set_size (client->mmm, width, height);
