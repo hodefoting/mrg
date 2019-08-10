@@ -307,7 +307,7 @@ int split_uri (char *uri,
   return 0;
 }
 
-#include "../data.inc"
+#include "data.inc"
 
 typedef struct {
   const char *path;

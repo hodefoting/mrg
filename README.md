@@ -53,7 +53,10 @@ Build/run
 Clone both mrg and mmm (from neighboring git locations), and have alsa, SDL-1.2
 and GTK+-3.0 development packages installed.`
 
-    $ make && sudo make install
+    $ meson build
+    $ cd build
+    build$ ninja
+    build$ ninja install
 
 in first mmm and then mrg shouler permit running:
 

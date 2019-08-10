@@ -179,8 +179,8 @@ path_equal (cairo_path_t *path,
     data2 = &path2->data[i];
     if (data->header.type != data2->header.type)
       return 0;
-    if (data->header.type == CAIRO_PATH_CURVE_TO)
-      count = 3;
+    if (data->header.length != data2->header.length)
+      return 0;
     switch (data->header.type) {
       case CAIRO_PATH_MOVE_TO: count = 1; break;
       case CAIRO_PATH_LINE_TO: count = 1; break;
