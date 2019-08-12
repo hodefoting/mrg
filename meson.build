@@ -87,6 +87,7 @@ pkgconfig.generate(filebase: 'mrg',
   name: 'mrg',
   description: 'Memory mapped machine',
   version: meson.project_version(),
+  requires : [ cairo ],
   libraries: [ mrg_lib ],
   libraries_private: [
     '-lm',
