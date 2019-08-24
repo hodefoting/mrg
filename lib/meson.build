@@ -65,4 +65,6 @@ x11    = dependency('x11')
 install_headers( mrg_headers, subdir: 'mrg-0.0' )
 mrg_lib = library('mrg', mrg_sources,
                   include_directories: [ rootInclude, mrgInclude, ],
-                  dependencies: [mmm, cairo, gtk, math, thread, alsa, util, x11] )
+                  dependencies: [mmm, cairo, gtk, math, thread, alsa, util, x11] 
+                  ,install:true
+)
