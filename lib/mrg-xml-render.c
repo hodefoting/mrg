@@ -818,7 +818,6 @@ void _mrg_layout_post (Mrg *mrg, MrgHtml *ctx)
   
   /* adjust cursor back to before display */
 
-
   if ((style->display == MRG_DISPLAY_BLOCK || style->float_) &&
        style->height != 0.0)
   {
@@ -1131,10 +1130,13 @@ mrg_parse_svg_path (Mrg *mrg, const char *str)
   char *s;
   int numbers = 0;
   double number[12];
+  double pcx, pcy, cx, cy;
 
   if (!str)
     return -1;
   cairo_move_to (cr, 0, 0);
+  cx = 0; cy = 0;
+  pcx = cx; pcy = cy;
 
   s = (void*)str;
 again:
@@ -1146,28 +1148,37 @@ again:
     {
       case 'z':
       case 'Z':
+        pcx = cx; pcy = cy;
         cairo_close_path (cr);
         break;
       case 'm':
       case 'a':
+      case 's':
+      case 'S':
       case 'M':
       case 'c':
       case 'C':
       case 'l':
       case 'L':
+      case 'h':
+      case 'H':
+      case 'v':
+      case 'V':
          command = *s;
          break;
 
-
       case '-':case '.':case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7': case '8': case '9':
       if (*s == '-')
-        number[numbers] = mrg_parse_float (mrg, s, &s);
+      {
+        number[numbers] = -mrg_parse_float (mrg, s+1, &s);
+        s--;
+      }
       else
       {
         number[numbers] = mrg_parse_float (mrg, s, &s);
         s--;
       }
-        numbers++;
+      numbers++;
 
       switch (command)
       {
@@ -1185,6 +1196,29 @@ again:
           if (numbers == 2)
           {
             cairo_rel_move_to (cr, number[0], number[1]);
+	    cx += number[0];
+	    cy += number[1];
+            pcx = cx; pcy = cy;
+            s++;
+            goto again;
+          }
+          break;
+        case 'h':
+          if (numbers == 1)
+          {
+            cairo_rel_line_to (cr, number[0], 0.0);
+	    cx += number[0];
+            pcx = cx; pcy = cy;
+            s++;
+            goto again;
+          }
+          break;
+        case 'v':
+          if (numbers == 1)
+          {
+            cairo_rel_line_to (cr, 0.0, number[0]);
+	    cy += number[0];
+            pcx = cx; pcy = cy;
             s++;
             goto again;
           }
@@ -1193,6 +1227,9 @@ again:
           if (numbers == 2)
           {
             cairo_rel_line_to (cr, number[0], number[1]);
+	    cx += number[0];
+	    cy += number[1];
+            pcx = cx; pcy = cy;
             s++;
             goto again;
           }
@@ -1203,6 +1240,24 @@ again:
             cairo_rel_curve_to (cr, number[0], number[1],
                                     number[2], number[3],
                                     number[4], number[5]);
+            pcx = cx + number[2];
+	    pcy = cy + number[3];
+	    cx += number[4];
+	    cy += number[5];
+            s++;
+            goto again;
+          }
+          break;
+	case 's':
+          if (numbers == 4)
+          {
+            cairo_curve_to (cr, 2 * cx - pcx, 2 * cy - pcy,
+                                number[0] + cx, number[1] + cy,
+                                number[2] + cx, number[3] + cy);
+	    pcx = number[0] + cx;
+	    pcy = number[1] + cy;
+	    cx += number[2];
+	    cy += number[3];
             s++;
             goto again;
           }
@@ -1211,6 +1266,29 @@ again:
           if (numbers == 2)
           {
             cairo_move_to (cr, number[0], number[1]);
+	    cx = number[0];
+	    cy = number[1];
+	    pcx = cx; pcy = cy;
+            s++;
+            goto again;
+          }
+          break;
+        case 'H':
+          if (numbers == 1)
+          {
+            cairo_line_to (cr, number[0], cy);
+	    cx = number[0];
+	    pcx = cx; pcy = cy;
+            s++;
+            goto again;
+          }
+          break;
+        case 'V':
+          if (numbers == 1)
+          {
+            cairo_line_to (cr, cx, number[0]);
+	    cy = number[0];
+	    pcx = cx; pcy = cy;
             s++;
             goto again;
           }
@@ -1219,6 +1297,9 @@ again:
           if (numbers == 2)
           {
             cairo_line_to (cr, number[0], number[1]);
+	    cx = number[0];
+	    cy = number[1];
+	    pcx = cx; pcy = cy;
             s++;
             goto again;
           }
@@ -1229,6 +1310,26 @@ again:
             cairo_curve_to (cr, number[0], number[1],
                                 number[2], number[3],
                                 number[4], number[5]);
+	    pcx = number[2];
+	    pcy = number[3];
+	    cx = number[4];
+	    cy = number[5];
+            s++;
+            goto again;
+          }
+          break;
+        case 'S':
+          if (numbers == 4)
+          {
+            float ax = 2 * cx - pcx;
+            float ay = 2 * cy - pcy;
+            cairo_curve_to (cr, ax, ay,
+                                number[0], number[1],
+                                number[2], number[3]);
+	    pcx = number[0];
+	    pcy = number[1];
+	    cx = number[2];
+	    cy = number[3];
             s++;
             goto again;
           }
