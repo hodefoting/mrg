@@ -62,7 +62,7 @@ thread = dependency('threads')
 alsa   = dependency('alsa')
 x11    = dependency('x11')
 
-install_headers( mrg_headers, subdir: 'mrg-0.0/mrg' )
+install_headers( mrg_headers, subdir: 'mrg-0.1/mrg' )
 mrg_lib = library('mrg', mrg_sources,
                   include_directories: [ rootInclude, mrgInclude, ],
                   dependencies: [mmm, cairo, gtk, math, thread, alsa, util, x11] 
