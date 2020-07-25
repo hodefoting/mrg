@@ -66,7 +66,7 @@ extra_warnings_list = [
 common_c_flags += cc.get_supported_arguments(extra_warnings_list)
 
 
-mmm = dependency('mmm',         version: '>=0.0.0',
+mmm = dependency('mmm',         version: '>=0.1.1',
   required: true
 )
 cairo = dependency('cairo',     version: '>=0.0.0',
