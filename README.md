@@ -1,6 +1,9 @@
 microraptor gui
 ===============
 
+NOTE: Microraptor gui is discontinued, see [ctx](https://ctx.graphics/) for the
+successor UI architecture experiments by its author.
+
 Explorations of alternative means of interactive user interfaces.
 Incrementally augment the cairo API with interactivity and CSS powered
 text-layout. This permits interesting ability to experiment with the
